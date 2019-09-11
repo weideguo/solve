@@ -42,40 +42,40 @@ playbook
 存储命令的文本文件，solve逐行读取并执行
 
 ###单行命令的格式###
-* [<ip>]
+* [&lt;ip&gt;]
   主机跳转，每个脚本的第一条命令必须为主机跳转，每个playbook文件可以有一个或多个跳转语句，在表明之后的命令都在该主机执行 。命令之后不要存在空格。
 
-* <single-line shell command>
+* &lt;single-line shell command&gt;
   单行shell命令
 
-* PUT:<file to upload>:<path in remote host>
+* PUT:&lt;file to upload&gt;:&lt;path in remote host&gt;
   从solve所在的主机上传文件。PUT为关键字，使用":"分隔参数。第一个参数为本地文件的全路径，第二个参数为要保存在远端主机的路径。远端路径不存在则创建。远端文件存在则判断MD5码是否一致，一致则不再上传，不一致则重命名远端文件然后重新上传。命令之后不要存在空格。
 
-* GET:<local path>:<file in remote host>
+* GET:&lt;local path&gt;:&lt;file in remote host&gt;
   从远端主机下载文件到solve所在的主机。GET为关键字，使用":"分隔参数。第一个参数为要保存在本地的路径，第二个参数为远端主机文件的全路径。本地路径不存在则创建，本地文件已经存在则重命名然后下载。命令之后不要存在空格。
 
 * wait
   wait为关键字，阻塞至所有后台运行全命令结束。默认playbook的命令逐行运行，后一行命令在前一行命令执行结束后再运行，可以使用<single-line shell command> &实现将单行命令放入后台运行，从而不必阻塞后一行命令。
 
-* global.<global_var_name>=<other string>\`<shell command>`<other string>
+* global.&lt;global_var_name&gt;=&lt;other string&gt;\`&lt;shell command&gt;`&lt;other string&gt;
    全局参数可以通过执行shell命令的返回值获取。即符号"="之后的字符串当成shell命令运行后的结果。
 
-* \#<comment>
+* \# &lt;comment&gt;
 
    \#开头的注释。不要在注释中包含jinja模板，即双括号包含字段如{{xxx}}
 
-###参数替换###
+### 参数替换 ###
 
-所有命令可以使用{{<var name>}}指定参数为可替换参数，参数的来源
+所有命令可以使用{{&lt;var name&gt;}}指定参数为可替换参数，参数的来源
 * global参数
 
-  使用格式为{{global.<global_var_name>}}
+  使用格式为{{global.&lt;global_var_name&gt;}}
 
-  运行时替换为global.<global_var_name>=<other string>\`<shell command>`<other string>全局参数的设置值
+  运行时替换为global.&lt;global_var_name&gt;=&lt;other string&gt;\`&lt;shell command&gt;`&lt;other string&gt;全局参数的设置值
 
 * session参数
 
-  使用格式为{{session.<session_var_name>}}
+  使用格式为{{session.&lt;session_var_name&gt;}}
 
   job中的session对应的参数
 
@@ -89,23 +89,11 @@ playbook
 
 demo
 --------------
-###使用样例###
+### 使用样例 ###
 redis_send redis_log redis_job redis_config为配置文件conf/config.py中设置的redis
 
 ```
 #创建连接主机 名字必须为 realhost_<ip>
-redis_config> hmset realhost_10.0.0.1 "ip" "10.0.0.1" "user" "root" "passwd" "my_host_passwd" "ssh_port" "22"
-#创建执行对象 执行对象的属性可以任意组合
-redis_config> hmset server_mysql_10.0.0.1 "host" "realhost_10.0.0.1" "db_port" "3306" "const" "mysql_const"
-#创建执行对象依赖的对象mysql_const
-redis_config> hmset mysql_const "db_user" "root" "db_passwd" "my_mysql_passwd"
-```
-```shell
-#创建playbook
-#vim /tmp/myplaybook.txt
-
-#执行对象存在host属性，对应的值存在ip属性。第一条命令必须设置主机跳转。可以不适用参数，直接写如ip地址如 [127.0.0.1]
-[{{host.ip}}]
 #全局参数
 global.my_global_test=`date +%s`abc
 #使用全局参数
@@ -141,7 +129,7 @@ redis_log> hgetall log_job_dcf3e208d47011e99464000c295dd589
 #根据提示输入 cluster_str、playbook以及需要设置的session参数
 python script/solve_exe.py
 ```
-###job的参数说明###
+### job的参数说明 ###
 
 |   参数名    | 说明 | 必须 |
 | :---: | :----: | :--: |
@@ -151,10 +139,10 @@ python script/solve_exe.py
 | begin_line | 从第playbook的第几行开始执行。如果设置这个，必须同时设置begin_host。 | - |
 | begin_host | 初始连接主机的ip。因为跳过一些playbook的行，可能导致没有主机跳转语句。 | - |
 
-###高级用法###
+### 高级用法 ###
 ```
 #对指定执行对象终止操作
-#kill_<cluster id>由 log_job_<job id>中确定
+#kill_<cluster id>&lt;&gt;由 log_job_<job id>中确定
 redis_send> set kill_<cluster id> 1
 #主机连接的建立与关闭
 redis_send> rpsuh conn_control "10.0.0.1" "close_10.0.0.1"
@@ -168,7 +156,7 @@ redis_send> rpsuh cmd_10.0.0.1 "whoami@@@@@9d21376cd47911e99464000c295dd589"
 redis_log> lrange log_host_10.0.0.1 0 100
 ```
 
-###more###
+### more ###
 更多playbook与使用样例详见playbook目录
 
 更友好的交互模式详见solve-web的说明
