@@ -41,28 +41,35 @@ playbook
 
 存储命令的文本文件，solve逐行读取并执行
 
-###单行命令的格式###
+### 单行命令的格式 ###
 * [&lt;ip&gt;]
+  
   主机跳转，每个脚本的第一条命令必须为主机跳转，每个playbook文件可以有一个或多个跳转语句，在表明之后的命令都在该主机执行 。命令之后不要存在空格。
 
 * &lt;single-line shell command&gt;
+  
   单行shell命令
 
 * PUT:&lt;file to upload&gt;:&lt;path in remote host&gt;
+  
   从solve所在的主机上传文件。PUT为关键字，使用":"分隔参数。第一个参数为本地文件的全路径，第二个参数为要保存在远端主机的路径。远端路径不存在则创建。远端文件存在则判断MD5码是否一致，一致则不再上传，不一致则重命名远端文件然后重新上传。命令之后不要存在空格。
 
 * GET:&lt;local path&gt;:&lt;file in remote host&gt;
+  
   从远端主机下载文件到solve所在的主机。GET为关键字，使用":"分隔参数。第一个参数为要保存在本地的路径，第二个参数为远端主机文件的全路径。本地路径不存在则创建，本地文件已经存在则重命名然后下载。命令之后不要存在空格。
 
 * wait
+  
   wait为关键字，阻塞至所有后台运行全命令结束。默认playbook的命令逐行运行，后一行命令在前一行命令执行结束后再运行，可以使用<single-line shell command> &实现将单行命令放入后台运行，从而不必阻塞后一行命令。
 
 * global.&lt;global_var_name&gt;=&lt;other string&gt;\`&lt;shell command&gt;`&lt;other string&gt;
-   全局参数可以通过执行shell命令的返回值获取。即符号"="之后的字符串当成shell命令运行后的结果。
+  
+  全局参数可以通过执行shell命令的返回值获取。即符号"="之后的字符串当成shell命令运行后的结果。
 
 * \# &lt;comment&gt;
 
-   \#开头的注释。不要在注释中包含jinja模板，即双括号包含字段如{{xxx}}
+  
+  \#开头的注释。不要在注释中包含jinja模板，即双括号包含字段如{{xxx}}
 
 ### 参数替换 ###
 
