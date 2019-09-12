@@ -1,0 +1,9 @@
+#全局变量可以跨主机引用
+#声明 global.XX=YYYY  
+#或   global.XX=`who`    可将执行命令的结果付给全局变量
+#引用 {{global.XX}}
+[{{db1.host.ip}}]
+global.v1=`ifconfig | grep -oP "(?<=addr:).*?(?=  Bcast)"`
+
+[{{db2.host.ip}}]
+echo "{{global.v1}}" > /tmp/`date +%Y%m%d`.test

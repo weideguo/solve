@@ -1,0 +1,12 @@
+#在使用playbook时临时设置session参数
+# 调用格式如 {{session.XXX}}
+#
+#需要在redis中
+#hmset session_<job_id> XXX XXX_value
+#
+[{{db1.host.ip}}]
+echo {{session.var1}} {{session.var2}} {{session.var3}} > /tmp/test_`date +%Y%m%d`
+echo {{session.var2}} >> /tmp/test_`date +%Y%m%d`
+echo {{session.var1}} >> /tmp/test_`date +%Y%m%d`
+echo {{session.var4}} >> /tmp/test_`date +%Y%m%d`
+echo {{session.var2}} >> /tmp/test_`date +%Y%m%d`

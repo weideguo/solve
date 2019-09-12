@@ -1,0 +1,6 @@
+#对集群进行操作
+#使用const存储的常量
+[{{db1.host.ip}}]
+echo {{const.password}} > /tmp/test.tttt.20190423
+
+

@@ -1,0 +1,26 @@
+#选择集群进行操作
+#hmset cluster1 "db1" "server_db1" "db2" "server_db2" "app" "server_app" "const" "const"
+#hmset server_db1 "host" "host_192.168.59.128" "db_port" "5640" "db_user" "root" "db_passwd" "" "db_str" "mytest" "backup_dir" "/tmp"
+#hmset "host_192.168.59.128" "ip" "192.168.59.129" "user" "root" "passwd" "my_host_passwd" "ssh_port" "22"
+#可以使用任意深度的嵌套
+[{{db1.host.ip}}]
+wait
+global.xx="xxxxxxxxxxxxx"
+global.yy=`date +%s`
+yyyy
+echo {{session.abc}} > /tmp/abc_20190705  #中文又何妨
+echo {{global.xx}}
+sleep 5 &
+sleep 4 &
+wait
+#yyy
+wait
+sleep 5 &
+sleep 4 &
+echo {{global.yy}}
+wait
+echo {{db1}}
+echo {{db1.host}}
+[{{db1.host.ip}}]
+echo {{db1.host.user}}
+echo "hhhh"

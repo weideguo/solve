@@ -1,0 +1,20 @@
+#后台运行
+#在后面加 " &"可将命令放入后台 
+#wait 等待 现有的后台命令执行完毕
+[{{db1.host.ip}}]
+
+global.mm=`whoami`
+echo "xxx"
+sleep 3 &
+sleep 5 &
+sleep 4 &
+wait
+www
+echo {{global.mm}}
+echo "yyyy"
+sleep 1 &
+sleep 2 &
+sleep 1 &
+wait
+
+echo "zzzz"

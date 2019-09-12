@@ -1,0 +1,7 @@
+#直接选择主机操作
+#hmset "readhost_192.168.59.128" "ip" "192.168.59.129" "user" "root" "passwd" "my_host_passwd" "ssh_port" "22"
+#hmset host_192.168.59.128 readhost "readhost_192.168.59.128"
+#
+[{{host.ip}}]
+
+echo "hhhh" > /tmp/solve_20190506.txt

@@ -1,0 +1,9 @@
+#直接对host操作
+#上传命令也可以放到后台运行
+[{{ip}}]
+PUT:{{session.file_to_send}}:/tmp  &
+echo "upload begin"
+
+wait
+
+echo "upload complete"

@@ -1,0 +1,12 @@
+#可以实现跨主机后台运行
+[{{db1.host.ip}}]
+echo "xxx"
+sleep 3 &
+sleep 4 &
+
+[{{db2.host.ip}}]
+sleep 2 &
+sleep 1 &
+wait
+
+echo "zzzz"
