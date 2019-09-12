@@ -14,7 +14,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -102,3 +101,11 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# ignore some dir 
+logs/
+bak/
+*.bak/
+
+# ignore some file
+*.bak
