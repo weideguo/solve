@@ -74,13 +74,13 @@ class ClusterExecution():
         for c in re.findall("(?<={{).+?(?=}})",cmd):
             c_r=c.replace(".","_____")                   #.被jinja2特殊使用 因此使用_____临时替代
             cmd=cmd.replace(c,c_r)
-            try:
-                
+            try: 
                 data[c_r]=self.get_value(target,c).decode('utf8')
             except:            
-                data[c_r]=""
+                data[c_r]=self.get_value(target,c)
 
-        real_cmd=Template(cmd).render(data).encode('utf8')        
+        #real_cmd=Template(cmd).render(data).encode('utf8')        
+        real_cmd=Template(cmd).render(data)       
         return real_cmd
         
     def run(self,target,playbook,cluster_id,begin_host,begin_line):
