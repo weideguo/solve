@@ -122,7 +122,7 @@ class ClusterExecution():
 
         with open(playbook,"r") as f:
 
-            next_cmd=f.readline()
+            next_cmd=f.readline().rstrip()
             current_line=1            
             while next_cmd and self.exe_next:
                 
@@ -133,8 +133,13 @@ class ClusterExecution():
                     else:
                         cmd=""
                 else:
-                    cmd=next_cmd.replace("\n","")
-            
+                    cmd=next_cmd
+                
+                try:
+                    cmd=cmd.decode("utf8")            
+                except:
+                    cmd=cmd
+
                 #logger_err.debug(begin_host+self.current_host+" "+str(current_line)+" "+str(begin_line)+" "+cmd+" "+next_cmd)                
 
                 self.redis_log_client.rpush(config.prefix_log_cluster+self.cluster_id,self.current_uuid)
@@ -154,11 +159,6 @@ class ClusterExecution():
                  
                     logger.debug("origin command: %s ------------ <%s %s> %s" % (cmd,self.target,self.cluster_id,self.current_uuid))
                     
-                    try:
-                        cmd=cmd.decode("utf8")
-                    except:
-                        cmd=cmd
-
                     cmd=self.render(target,cmd)
                     cmd=cmd.strip()
                    
