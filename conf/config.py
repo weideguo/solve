@@ -27,6 +27,20 @@ redis_config_port=6379
 redis_config_passwd="my_redis_passwd"
 redis_config_db=15
 
+###################################################################################################
+
+remote_model="core.plugin.ssh.remote_host.RemoteHost" #远端主机实现模块
+"""
+模块的类中
+__init__(self,host_info,redis_send_pool,redis_log_pool) 接受的三个参数：主机的信息(dict) 接受命令的redis连接池 执行结果存放的redis连接池
+至少要实现方法forever_run()以供上层调用
+
+可以每个实例化后的对象对应一个远端主机                        使用ssh分发命令时使用该方法
+也可以通过判断只实例化一个对象进行命令分发协调 单例模式       使用salt分发命令时使用该方法
+
+
+core.plugin.ssh.remote_host                使用ssh实现
+"""
 
 ###################################################################################################
 

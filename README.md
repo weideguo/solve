@@ -149,7 +149,7 @@ python script/solve_exe.py
 ### 高级用法 ###
 ```
 #对指定执行对象终止操作
-#kill_<cluster id>&lt;&gt;由 log_job_<job id>中确定
+#kill_<cluster id>;由 log_job_<job id>中确定
 redis_send> set kill_<cluster id> 1
 #主机连接的建立与关闭
 redis_send> rpsuh conn_control "10.0.0.1" "close_10.0.0.1"

@@ -9,11 +9,19 @@ from traceback import format_exc
 
 import redis
 
-from .remote_host import RemoteHost
 from .cluster_exe import ClusterExecution
 from lib.utils import my_md5,file_row_count
 from lib.logger import logger,logger_err
 from conf import config
+
+
+import importlib
+
+
+class_name = config.remote_model.split(".")[-1]
+module_name = ".".join(config.remote_model.split(".")[:-1])
+mod = importlib.import_module(module_name)
+RemoteHost = getattr(mod, class_name)
 
 
 class JobManager():

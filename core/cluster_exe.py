@@ -74,13 +74,14 @@ class ClusterExecution():
         for c in re.findall("(?<={{).+?(?=}})",cmd):
             c_r=c.replace(".","_____")                   #.被jinja2特殊使用 因此使用_____临时替代
             cmd=cmd.replace(c,c_r)
-            try: 
+            try:
+                
                 data[c_r]=self.get_value(target,c).decode('utf8')
             except:            
                 data[c_r]=self.get_value(target,c)
 
         #real_cmd=Template(cmd).render(data).encode('utf8')        
-        real_cmd=Template(cmd).render(data)       
+        real_cmd=Template(cmd).render(data)      
         return real_cmd
         
     def run(self,target,playbook,cluster_id,begin_host,begin_line):
@@ -125,7 +126,7 @@ class ClusterExecution():
             next_cmd=f.readline().rstrip()
             current_line=1            
             while next_cmd and self.exe_next:
-                
+                 
                 self.current_uuid=uuid.uuid1().hex
                 if current_line < begin_line:
                     if current_line == 1:
@@ -136,10 +137,10 @@ class ClusterExecution():
                     cmd=next_cmd
                 
                 try:
-                    cmd=cmd.decode("utf8")            
+                    cmd=cmd.decode("utf8")
                 except:
                     cmd=cmd
-
+                
                 #logger_err.debug(begin_host+self.current_host+" "+str(current_line)+" "+str(begin_line)+" "+cmd+" "+next_cmd)                
 
                 self.redis_log_client.rpush(config.prefix_log_cluster+self.cluster_id,self.current_uuid)
@@ -158,7 +159,7 @@ class ClusterExecution():
                     self.redis_log_client.hset(self.current_uuid,"origin_cmd",cmd)
                  
                     logger.debug("origin command: %s ------------ <%s %s> %s" % (cmd,self.target,self.cluster_id,self.current_uuid))
-                    
+
                     cmd=self.render(target,cmd)
                     cmd=cmd.strip()
                    
@@ -354,13 +355,11 @@ class ClusterExecution():
                         r["stdout"]=""
                         logger.info("get kill signal in <%s %s> %s" % (self.target,self.cluster_id,c_uuid))
                     else:
-                        try:
-                            r=self.redis_log_client.hgetall(c_uuid)
-                            r["stdout"]
-                            #self.redis_log_client.expire(c_uuid,config.cmd_log_expire_sec)
-                            continue_check=False
+                        r=self.redis_log_client.hgetall(c_uuid)
+                        if "stdout" in r:
                             
-                        except KeyError:
+                            continue_check=False
+                        else:
                             continue_check=True
            
             else:

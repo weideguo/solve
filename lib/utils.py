@@ -1,8 +1,8 @@
 #coding:utf8
 
 import socket
-
 import hashlib
+import threading
 
 def hash_bytestr_iter(bytesiter, hasher, hex_str=True):
     for block in bytesiter:
@@ -76,4 +76,22 @@ def file_row_count(file):
     return rownum
 
 
+def Singleton(cls):
+    """
+    线程安全的单例模式装饰器
+    @Singleton
+    class A():pass
+    """
+    _instance_lock = threading.Lock()
+    _instance = {}
+        
+    def _singleton(*args, **kargs):
+        if cls not in _instance:
+            with _instance_lock:
+                #等待锁释放后，对象可能已经被其他线程创建
+                if cls not in _instance:
+                    _instance[cls] = cls(*args, **kargs)
+        return _instance[cls]
+    
+    return _singleton
 
