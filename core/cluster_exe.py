@@ -357,11 +357,10 @@ class ClusterExecution():
                     else:
                         r=self.redis_log_client.hgetall(c_uuid)
                         if "stdout" in r:
-                            
                             continue_check=False
                         else:
                             continue_check=True
-           
+             
             else:
                 ignore_last_err=True        #不检测结果 则恒忽略此步的执行结果以继续下一步操作
                 r["stdout"]=""
