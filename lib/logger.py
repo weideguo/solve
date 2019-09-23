@@ -20,7 +20,3 @@ logger_err.setLevel(logging.DEBUG)
 sh_err = logging.StreamHandler(stream=sys.stderr)
 sh_err.setFormatter(format)
 logger_err.addHandler(sh_err)
-
-"""
-Python 的模块就是天然的单例模式，所以多次import不会生成多个实例化对象
-"""
