@@ -354,12 +354,15 @@ class ClusterExecution():
                         r["stdout"]=""
                         logger.info("get kill signal in <%s %s> %s" % (self.target,self.cluster_id,c_uuid))
                     else:
-                        r=self.redis_log_client.hgetall(c_uuid)
-                        if "stdout" in r:
+                        try:
+                            r=self.redis_log_client.hgetall(c_uuid)
+                            r["stdout"]
+                            #self.redis_log_client.expire(c_uuid,config.cmd_log_expire_sec)
                             continue_check=False
-                        else:
+                            
+                        except KeyError:
                             continue_check=True
-             
+           
             else:
                 ignore_last_err=True        #不检测结果 则恒忽略此步的执行结果以继续下一步操作
                 r["stdout"]=""

@@ -290,11 +290,7 @@ class RemoteHost():
         begin_timestamp=time.time()
         exe_result["begin_timestamp"]=begin_timestamp
         exe_result["cmd"]=cmd
-
-        if cmd_uuid:
-            exe_result["uuid"]=cmd_uuid
-        else:
-            exe_result["uuid"]=uuid.uuid1().hex
+        exe_result["uuid"]=cmd_uuid
 
         logger.debug(str(exe_result)+" begin")
         
@@ -399,7 +395,7 @@ class RemoteHost():
                     try:
                         cmd_uuid=allcmd[1]
                     except IndexError:
-                        cmd_uuid=""
+                        cmd_uuid=uuid.uuid1().hex
 
                     #self.thread_q.put(1)                #控制并发数
 
