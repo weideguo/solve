@@ -301,45 +301,49 @@ class RemoteHost():
         exe_result["exe_host"]=self.host_info["ip"]
         exe_result["from_host"]=get_host_ip(self.host_info["ip"])
 
-        #上传文件的cmd PUT:/local_path/file_name:/remote_path
-        #下载文件的cmd GET:/local_path/file_name:/remote_path
-        if re.match("PUT:.+?:.+?",cmd) or re.match("GET:.+?:.+?",cmd):                      
-            cmd_type=cmd.split(":")[0]
-            exe_result["cmd_type"]=cmd_type            
-            self.set_log(exe_result,is_update=False)      #命令执行前   
+        try:
+            #上传文件的cmd PUT:/local_path/file_name:/remote_path
+            #下载文件的cmd GET:/local_path/file_name:/remote_path
+            if re.match("PUT:.+?:.+?",cmd) or re.match("GET:.+?:.+?",cmd):                      
+                cmd_type=cmd.split(":")[0]
+                exe_result["cmd_type"]=cmd_type            
+                self.set_log(exe_result,is_update=False)      #命令执行前   
 
-            if cmd_type=="PUT":
-                file_flag,local_file,remote_path=cmd.split(":")
-                remote_path=remote_path.rstrip()
+                if cmd_type=="PUT":
+                    file_flag,local_file,remote_path=cmd.split(":")
+                    remote_path=remote_path.rstrip()
+                    
+                    if os.path.isfile(local_file):
+                        local_md5,remote_md5,is_success,err_msg=self.send_file(local_file,remote_path,exe_result["uuid"])
+                    else:
+                        local_md5,remote_md5,is_success,err_msg=("","",0,"local file not exist")
+
+                elif cmd_type=="GET":
+                    file_flag,local_path,remote_file=cmd.split(":") 
+                    remote_file=remote_file.rstrip()
+                    
+                    if self.is_remote_file(ftp_client,remote_file):
+                        local_md5,remote_md5,is_success,err_msg=self.get_file(local_path,remote_file,exe_result["uuid"])
+                    else:
+                        local_md5,remote_md5,is_success,err_msg=("","",0,"remote file not exist")
+
+                exe_result["local_md5"]=local_md5
+                exe_result["remote_md5"]=remote_md5
+                exe_result["is_success"]=int(is_success)
                 
-                if os.path.isfile(local_file):
-                    local_md5,remote_md5,is_success,err_msg=self.send_file(local_file,remote_path,exe_result["uuid"])
-                else:
-                    local_md5,remote_md5,is_success,err_msg=("","",0,"local file not exist")
+                stdout=""
+                stderr=err_msg
+                exit_code=int(not is_success) 
 
-            elif cmd_type=="GET":
-                file_flag,local_path,remote_file=cmd.split(":") 
-                remote_file=remote_file.rstrip()
-                
-                if self.is_remote_file(ftp_client,remote_file):
-                    local_md5,remote_md5,is_success,err_msg=self.get_file(local_path,remote_file,exe_result["uuid"])
-                else:
-                    local_md5,remote_md5,is_success,err_msg=("","",0,"remote file not exist")
+            else:
+                cmd_type="CMD"
+                exe_result["cmd_type"]=cmd_type
+                self.set_log(exe_result,is_update=False)      #命令执行前                   
 
-            exe_result["local_md5"]=local_md5
-            exe_result["remote_md5"]=remote_md5
-            exe_result["is_success"]=int(is_success)
-            
-            stdout=""
-            stderr=err_msg
-            exit_code=int(not is_success) 
-
-        else:
-            cmd_type="CMD"
-            exe_result["cmd_type"]=cmd_type
-            self.set_log(exe_result,is_update=False)      #命令执行前                   
-
-            stdout, stderr, exit_code=self.exe_cmd(cmd)
+                stdout, stderr, exit_code=self.exe_cmd(cmd)
+        except:
+            logger_err.error(format_exc())
+            stdout, stderr, exit_code="","some error happen when execute,please check the log",1
 
         exe_result["stdout"]=stdout
         exe_result["stderr"]=stderr
