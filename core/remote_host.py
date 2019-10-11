@@ -328,23 +328,23 @@ class RemoteHost():
             exe_result["is_success"]=int(is_success)
             
             if is_success:
-                exe_result["stdout"]=""
-                exe_result["stderr"]=""
-                exe_result["exit_code"]=0
+                stdout=""
+                stderr=""
+                exit_code=0
             else:
-                exe_result["stdout"]=""                
-                exe_result["stderr"]="local file md5 %s does not same as remote file md5 %s" % (local_md5,remote_md5)
-                exe_result["exit_code"]=1
+                stdout=""                
+                stderr="local file md5 %s does not same as remote file md5 %s" % (local_md5,remote_md5)
+                exit_code=1
         else:
             cmd_type="CMD"
             exe_result["cmd_type"]=cmd_type
             self.set_log(exe_result,is_update=False)      #命令执行前                   
 
             stdout, stderr, exit_code=self.exe_cmd(cmd)
-            exe_result["stdout"]=stdout
-            exe_result["stderr"]=stderr
-            exe_result["exit_code"]=exit_code   
 
+        exe_result["stdout"]=stdout
+        exe_result["stderr"]=stderr
+        exe_result["exit_code"]=exit_code   
         exe_result["end_timestamp"]=time.time()
 
         self.set_log(exe_result)               #命令执行完毕后更新日志
