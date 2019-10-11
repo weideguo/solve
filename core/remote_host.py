@@ -99,7 +99,9 @@ class RemoteHost():
         
     def send_file(self,local_file,remote_path,c_uuid):
         """
-        传输文件
+        从本地上传文件到远端 文件名不变
+        远端目录如果不存在 则创建一个
+        远端文件如果存在 则使用时间戳重命名远端文件
         """
         def set_send_info(current_size,total_size):
             self.redis_log_client.hset(c_uuid,"current_size",current_size)
@@ -134,7 +136,7 @@ class RemoteHost():
                             
                         except:
                             logger_err.error(format_exc())
-                            return "","copy remote file failed",0
+                            return "","",0,"copy remote file failed"
                     else:
                         #如果远端文件不存在 则需要再次上传
                         put_flag = True
@@ -159,7 +161,7 @@ class RemoteHost():
             except:
                 should_upload=True
                 logger_err.error(format_exc())
-                return "","create remote dir failed",0            
+                return "","",0,"create remote dir failed"            
 
             if should_upload:
                 ftp_client.put(local_file,remote_file,callback=set_send_info)                 #使用回调函数设置传输进度
@@ -175,12 +177,14 @@ class RemoteHost():
         
         ftp_client.close()
 
-        return local_md5,remote_md5,is_success
+        return local_md5,remote_md5,is_success,""
             
 
     def get_file(self,local_path,remote_file,c_uuid):
         """
-        下载文件到本地
+        下载文件到本地 文件名不变
+        如果本地文件存在 则使用时间戳重命名现有文件
+        如果本地目录不存在 则创建
         """
         ftp_client=self.ssh_client.open_sftp()
 
@@ -193,9 +197,9 @@ class RemoteHost():
             try:
                 os.makedirs(local_path)
             except:
-                return "create local dir failed","",0
+                return "","",0,"create local dir failed"
         elif os.path.isfile(local_path):
-            return "create local dir failed","",0
+            return "","",0,"create local dir failed,it is a file"
 
         def set_get_info(current_size,total_size):
             self.redis_log_client.hset(c_uuid,"current_size",current_size)
@@ -209,7 +213,7 @@ class RemoteHost():
         is_success = (local_md5==remote_md5)
     
         ftp_client.close()
-        return local_md5,remote_md5,is_success
+        return local_md5,remote_md5,is_success,""
 
 
     def is_remote_file(self,ftp_client,remote_file):
@@ -309,32 +313,27 @@ class RemoteHost():
                 remote_path=remote_path.rstrip()
                 
                 if os.path.isfile(local_file):
-                    local_md5,remote_md5,is_success=self.send_file(local_file,remote_path,exe_result["uuid"])
+                    local_md5,remote_md5,is_success,err_msg=self.send_file(local_file,remote_path,exe_result["uuid"])
                 else:
-                    local_md5,remote_md5,is_success=("file not exist","",0)
+                    local_md5,remote_md5,is_success,err_msg=("","",0,"local file not exist")
 
             elif cmd_type=="GET":
                 file_flag,local_path,remote_file=cmd.split(":") 
                 remote_file=remote_file.rstrip()
                 
                 if self.is_remote_file(ftp_client,remote_file):
-                    local_md5,remote_md5,is_success=self.get_file(local_path,remote_file,exe_result["uuid"])
+                    local_md5,remote_md5,is_success,err_msg=self.get_file(local_path,remote_file,exe_result["uuid"])
                 else:
-                    local_md5,remote_md5,is_success=("","remote file not exist",0)
+                    local_md5,remote_md5,is_success,err_msg=("","",0,"remote file not exist")
 
             exe_result["local_md5"]=local_md5
             exe_result["remote_md5"]=remote_md5
-
             exe_result["is_success"]=int(is_success)
             
-            if is_success:
-                stdout=""
-                stderr=""
-                exit_code=0
-            else:
-                stdout=""                
-                stderr="local file md5 %s does not same as remote file md5 %s" % (local_md5,remote_md5)
-                exit_code=1
+            stdout=""
+            stderr=err_msg
+            exit_code=int(not is_success) 
+
         else:
             cmd_type="CMD"
             exe_result["cmd_type"]=cmd_type
@@ -345,6 +344,7 @@ class RemoteHost():
         exe_result["stdout"]=stdout
         exe_result["stderr"]=stderr
         exe_result["exit_code"]=exit_code   
+
         exe_result["end_timestamp"]=time.time()
 
         self.set_log(exe_result)               #命令执行完毕后更新日志
