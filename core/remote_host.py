@@ -120,9 +120,9 @@ class RemoteHost():
             #已经存在其他上传操作的情况
             wait_flag = 1 
             while wait_flag:
-                if self.redis_log_client.hget(config.prefix_put+self.host_info["ip"],local_md5):
+                exist_remote_file = self.redis_log_client.hget(config.prefix_put+self.host_info["ip"],local_md5)
+                if exist_remote_file:
                     wait_flag = 0
-                    exist_remote_file = self.redis_log_client.hget(config.prefix_put+self.host_info["ip"],local_md5)
                     if self.is_remote_file(ftp_client,exist_remote_file):
                         #复制已经存在的文件
                         try:
@@ -140,7 +140,6 @@ class RemoteHost():
                     else:
                         #如果远端文件不存在 则需要再次上传
                         put_flag = True
-                        self.redis_log_client.hdel(config.prefix_put+self.host_info["ip"],local_md5)
                 else:
                     #如果其他上传还在进行 则等待后再检查
                     self.redis_log_client.hset(c_uuid,"remote_md5","waiting others complete:"+str(wait_flag))
@@ -152,20 +151,25 @@ class RemoteHost():
                         put_flag = True
         else:
             #没有其他上传操作
-            self.redis_log_client.hset(config.prefix_put+self.host_info["ip"],local_md5,"")
             put_flag = True
 
         if put_flag:
+            self.redis_log_client.hset(config.prefix_put+self.host_info["ip"],local_md5,"")
             try:
                 should_upload=self.remote_mkdirs(ftp_client,remote_file,local_md5)
             except:
-                should_upload=True
+                self.redis_log_client.hdel(config.prefix_put+self.host_info["ip"],local_md5)
                 logger_err.error(format_exc())
                 return "","",0,"create remote dir failed"            
 
             if should_upload:
-                ftp_client.put(local_file,remote_file,callback=set_send_info)                 #使用回调函数设置传输进度
-                self.redis_log_client.hset(config.prefix_put+self.host_info["ip"],local_md5,remote_file)
+                try:
+                    ftp_client.put(local_file,remote_file,callback=set_send_info)                 #使用回调函数设置传输进度
+                    self.redis_log_client.hset(config.prefix_put+self.host_info["ip"],local_md5,remote_file)
+                except:
+                    self.redis_log_client.hdel(config.prefix_put+self.host_info["ip"],local_md5)
+                    logger_err.error(format_exc())
+                    return "","",0,"upload failed"
 
         if config.is_copy_by_link:
             remote_md5=local_md5
@@ -295,12 +299,11 @@ class RemoteHost():
         exe_result["begin_timestamp"]=begin_timestamp
         exe_result["cmd"]=cmd
         exe_result["uuid"]=cmd_uuid
-
-        logger.debug(str(exe_result)+" begin")
-        
         exe_result["exe_host"]=self.host_info["ip"]
         exe_result["from_host"]=get_host_ip(self.host_info["ip"])
 
+        logger.debug(str(exe_result)+" begin")
+        
         try:
             #上传文件的cmd PUT:/local_path/file_name:/remote_path
             #下载文件的cmd GET:/local_path/file_name:/remote_path
