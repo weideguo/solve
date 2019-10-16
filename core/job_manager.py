@@ -204,9 +204,7 @@ class JobManager():
                     self.redis_config_client.hset(new_c,"session",s)
                 except:
                     pass
-
-                self.redis_config_client.expire(new_c,config.copy_config_expire_sec)
-
+                
                 ce=ClusterExecution(self.redis_config_pool,self.redis_send_pool,self.redis_log_pool)
                 if ("begin_host" in job) and ("begin_host" in job):
                     begin_host=job["begin_host"]
@@ -217,6 +215,7 @@ class JobManager():
 
                 ce.run(new_c,job["playbook"],cluster_id,begin_host,begin_line)
             except:
+                self.redis_config_client.expire(new_c,config.copy_config_expire_sec)
                 self.redis_log_client.hmset(config.prefix_sum+cluster_id,{"stop_str":"runing failed"})
                 logger_err.error("could not use playbook on %s" % c )
                 logger_err.error(format_exc())

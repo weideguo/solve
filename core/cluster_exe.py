@@ -226,6 +226,8 @@ class ClusterExecution():
  
         self.reset()
         
+        self.redis_config_client.expire(target,config.copy_config_expire_sec)
+        
         return log_cluster
 
 
