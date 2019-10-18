@@ -53,9 +53,8 @@ host_close_chech_interval=60*60     #检查是否关闭连接的时间间隔
 
 is_copy_by_link=1                   #是否使用软链接代替复制
 
-cmd_spilter="@@@@@"                 #cmd+cmd_spilter+c_uuid  用于命令与命令id之间的分隔
+cmd_spliter="@@@@@"                 #所有关键命令与uuid的分隔符   如cmd+cmd_spilter+uuid ip/cluster_Str
 
-cluster_spilter=":::"               #用于任务分发时cluster与cluster_id的分隔
 
 #######################################################################################################
 #redis_config

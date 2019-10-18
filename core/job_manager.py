@@ -182,10 +182,10 @@ class JobManager():
         
         log_cluster=[]
         for oc in job["cluster_str"].split(","):
-            c=oc.split(config.cluster_spilter)[0]
+            c=oc.split(config.cmd_spliter)[0]
             cluster_id=uuid.uuid1().hex
             try: 
-                cluster_id=oc.split(config.cluster_spilter)[1]    
+                cluster_id=oc.split(config.cmd_spliter)[1]    
             except:
                 pass
                         
