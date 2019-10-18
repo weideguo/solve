@@ -3,8 +3,8 @@
 #远端目录如果不存在 则创建一个
 #远端文件如果存在 则使用时间戳重命名远端文件
 #
-[{{host.ip}}]
+[{{realhost.ip}}]
 
-PUT:{{session.file_to_send}}:/tmp/upload_test/x
-#cat /tmp/`basename {{session.file_to_send}}`
+PUT:{{session.file_to_send}}:/tmp/upload_test/x/y
+cat /tmp/upload_test/x/`basename {{session.file_to_send}}`
 echo "xxx"

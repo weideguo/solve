@@ -28,11 +28,11 @@ class AbstractConn():
 
 
     def __init__(self,host_info,redis_send_pool,redis_log_pool):
+        self.host_info = host_info
         self.redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
         self.redis_log_client=redis.StrictRedis(connection_pool=redis_log_pool)
         self.__new_forever_run()
-        print("init")
-
+         
 
     def __new_forever_run(self):
         """
@@ -58,7 +58,7 @@ class AbstractConn():
         处理方法入口
         """
         while True:
-            config.prefix_cmd="cmx_"
+            #config.prefix_cmd="cmx_"
             if self.redis_send_client.keys(config.prefix_cmd+"*"):
                 for k in self.redis_send_client.keys(config.prefix_cmd+"*"):
                     cmd = self.redis_send_client.lpop(k)

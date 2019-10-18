@@ -106,6 +106,8 @@ venv.bak/
 logs/
 bak/
 *.bak/
+playbook/
 
 # ignore some file
 *.bak
+*.swp

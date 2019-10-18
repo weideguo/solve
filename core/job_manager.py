@@ -77,7 +77,8 @@ class JobManager():
 
         while True:
             init_host=self.redis_send_client.blpop(config.key_conn_control)
-            init_host=init_host[1]
+            init_host_list=init_host[1].split(config.cmd_spliter)
+            init_host=init_host_list[0]
             #统一一个队列顺序实现创建、关闭 
             #避免同一个主机多次创建 同时存在关闭与创建
             if re.match(config.pre_close+".*",init_host):
@@ -105,9 +106,12 @@ class JobManager():
                             h.forever_run()
                             logger.info("< %s > init success" % init_host)                    
                         except:
+                            if len(init_host_list)>1:
+                                self.redis_log_client.hset(init_host_list[1],"exit_code","init failed")
                             self.redis_send_client.set(config.prefix_initing+init_host,-1)
                             logger_err.error(format_exc())
                             logger_err.error("< %s > init failed" % init_host)
+                            
                         self.redis_send_client.expire(config.prefix_initing+init_host,config.initing_host_flag_expire_sec)
                     else:
                         logger_err.error("< %s > not shutdown clean before,will not init.please check cmd_%s" % (init_host,init_host))
@@ -190,12 +194,12 @@ class JobManager():
         
         log_cluster=[]
         for oc in job["cluster_str"].split(","):
-            c=oc.split(config.cluster_spilter)[0]
-            cluster_id=uuid.uuid1().hex
+            c=oc.split(config.cmd_spliter)[0]
+            
             try: 
-                cluster_id=oc.split(config.cluster_spilter)[1]    
+                cluster_id=oc.split(config.cmd_spliter)[1]    
             except:
-                pass
+                cluster_id=uuid.uuid1().hex
                         
             new_c=c+"_"+cluster_id
             log_cluster.append([new_c,config.prefix_log_cluster+cluster_id])
@@ -212,9 +216,7 @@ class JobManager():
                     self.redis_config_client.hset(new_c,"session",s)
                 except:
                     pass
-
-                self.redis_config_client.expire(new_c,config.copy_config_expire_sec)
-
+                
                 ce=ClusterExecution(self.redis_config_pool,self.redis_send_pool,self.redis_log_pool)
                 if ("begin_host" in job) and ("begin_host" in job):
                     begin_host=job["begin_host"]
@@ -225,6 +227,7 @@ class JobManager():
 
                 ce.run(new_c,job["playbook"],cluster_id,begin_host,begin_line)
             except:
+                self.redis_config_client.expire(new_c,config.copy_config_expire_sec)
                 self.redis_log_client.hmset(config.prefix_sum+cluster_id,{"stop_str":"runing failed"})
                 logger_err.error("could not use playbook on %s" % c )
                 logger_err.error(format_exc())

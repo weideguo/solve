@@ -5,6 +5,8 @@ command deliver server base on SSH.
 基于SSH实现的命令分发服务, 由redis存储数据，可以通过playbook存储命令集合。
 通过web服务(需要另外实现)实现可视化交互，或者直接由脚本script/solve_exe.py运行。
 
+salt support (version>=0.2x).
+使用salt分发时先预览 README_salt.md
 
 
 Running
