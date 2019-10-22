@@ -114,10 +114,14 @@ class JobManager():
                             
                         self.redis_send_client.expire(config.prefix_initing+init_host,config.initing_host_flag_expire_sec)
                     else:
-                        logger_err.error("< %s > not shutdown clean before,will not init.please check cmd_%s" % (init_host,init_host))
+                        if len(init_host_list)>1:
+                            self.redis_log_client.hset(init_host_list[1],"exit_code","cmd exist")
+                        logger_err.error("< %s > not shutdown clean before,will not init. please check cmd_%s" % (init_host,init_host))
                     
                     self.redis_send_client.delete(config.prefix_check_flag+init_host)           #连接不存在时操作完毕才释放锁 
                 else:
+                    if len(init_host_list)>1:
+                        self.redis_log_client.hset(init_host_list[1],"stdout","connect exist,init skip")        
                     logger.debug("< %s > init skipped" % init_host)
 
             else:

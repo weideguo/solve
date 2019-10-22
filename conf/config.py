@@ -63,7 +63,7 @@ put_wait=60*60                      #上传文件等待次数 如果存在其他
 
 host_check_time=1                   #检查主机连接状态的时间间隔
 host_check_wait=5*60                #检查主机连接次数 超过则终止
-host_check_success_time=10          #heart_beat时间差小于此判断连接成功
+host_check_success_time=15          #heart_beat时间差小于此判断连接成功
 #host_check_success_time=60          #使用salt时这个至应该大一些 因为更新的间隔可能大于heart_beat_interval
 
 host_close_time=8*60*60             #没有执行一段时间后则关闭连接

@@ -194,5 +194,6 @@ class SaltConn(AbstractConn):
             if r[ip]:
                 #salt-minion可以正常连接的情况
                 self.redis_send_client.set(config.prefix_heart_beat+ip,time.time())
+                self.redis_send_client.expire(config.prefix_heart_beat+ip,config.host_check_success_time)
                 logger.debug("%s heart beat" % ip)
             

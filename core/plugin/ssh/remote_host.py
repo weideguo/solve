@@ -265,6 +265,8 @@ class RemoteHost(MySSH):
         while self.is_run:
             logger.debug("%s heart beat" % self.host_info["ip"])
             self.redis_send_client.set(config.prefix_heart_beat+self.host_info["ip"],time.time())
+            #断开后key自动删除
+            self.redis_send_client.expire(config.prefix_heart_beat+self.host_info["ip"],config.host_check_success_time)
             time.sleep(config.heart_beat_interval)
 
         self.redis_send_client.delete(config.prefix_heart_beat+self.host_info["ip"])
