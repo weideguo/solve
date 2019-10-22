@@ -261,10 +261,10 @@ class ClusterExecution():
             check_reault_block=False 
             #print c_uuid,self.exe_uuid_list,self.target 
             cmd=re.sub("&\s*?$","",cmd)
-            self.redis_send_client.rpush(config.prefix_cmd+host,cmd+config.cmd_spilter+c_uuid)
+            self.redis_send_client.rpush(config.prefix_cmd+host,cmd+config.cmd_spliter+c_uuid)
             r=""
         else:        
-            self.redis_send_client.rpush(config.prefix_cmd+host,cmd+config.cmd_spilter+c_uuid)        
+            self.redis_send_client.rpush(config.prefix_cmd+host,cmd+config.cmd_spliter+c_uuid)        
             r=self.__check_result([c_uuid])[0]["stdout"].replace("\n","")   
  
         logger.debug("-------------- <%s %s> %s %s %s complete" % (self.target,self.cluster_id,host,cmd,c_uuid))        
