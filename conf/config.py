@@ -30,7 +30,6 @@ redis_config_db=15
 ###################################################################################################
 
 remote_model="core.plugin.ssh.remote_host.RemoteHost" #远端主机实现模块
-#remote_model="core.plugin.salt.salt_conn.SaltConn"     
 """
 模块的类中
 __init__(self,host_info,redis_send_pool,redis_log_pool) 接受的三个参数：主机的信息(dict) 接受命令的redis连接池 执行结果存放的redis连接池
@@ -40,9 +39,7 @@ __init__(self,host_info,redis_send_pool,redis_log_pool) 接受的三个参数：
 也可以通过判断只实例化一个对象进行命令分发协调 单例模式       使用salt分发命令时使用该方法
 
 
-core.plugin.ssh.remote_host.RemoteHost                使用ssh实现
-core.plugin.salt.salt_conn.SaltConn                   使用salt实现,首次启动前需要通过链接设置salt上传/下载目录与主机目录的映射
-                                                      #python 2.7 / salt 2018.3.3 (Oxygen)
+core.plugin.ssh.remote_host                使用ssh实现
 """
 
 ###################################################################################################
@@ -63,15 +60,14 @@ put_wait=60*60                      #上传文件等待次数 如果存在其他
 
 host_check_time=1                   #检查主机连接状态的时间间隔
 host_check_wait=5*60                #检查主机连接次数 超过则终止
-host_check_success_time=15          #heart_beat时间差小于此判断连接成功
-#host_check_success_time=60          #使用salt时这个至应该大一些 因为更新的间隔可能大于heart_beat_interval
+host_check_success_time=10          #heart_beat时间差小于此判断连接成功
 
 host_close_time=8*60*60             #没有执行一段时间后则关闭连接
 host_close_chech_interval=60*60     #检查是否关闭连接的时间间隔
 
 is_copy_by_link=1                   #是否使用软链接代替复制
 
-cmd_spliter="@@@@@"                 #所有关键命令与uuid的分隔符   如cmd+cmd_spilter+uuid ip/cluster_Str
+cmd_spliter="@@@@@"                 #所有关键命令与uuid的分隔符   如cmd+cmd_spilter+uuid ip/cluster_str
 
 
 #######################################################################################################

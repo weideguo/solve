@@ -5,7 +5,6 @@ import uuid
 import time
 import platform 
 from threading import Thread
-from traceback import format_exc
 
 from jinja2 import Template
 import redis
@@ -75,11 +74,12 @@ class ClusterExecution():
         for c in re.findall("(?<={{).+?(?=}})",cmd):
             c_r=c.replace(".","_____")                   #.被jinja2特殊使用 因此使用_____临时替代
             cmd=cmd.replace(c,c_r)
-            try: 
+            try:
+                
                 data[c_r]=self.get_value(target,c).decode('utf8')
             except:            
                 data[c_r]=self.get_value(target,c)
-        
+
         #real_cmd=Template(cmd).render(data).encode('utf8')        
         real_cmd=Template(cmd).render(data)      
         return real_cmd
@@ -122,7 +122,7 @@ class ClusterExecution():
         self.redis_log_client.hmset(stop_id,stop_info)        
 
         with open(playbook,"r") as f:
-         
+
             next_cmd=f.readline().rstrip()
             current_line=1            
             while next_cmd and self.exe_next:
@@ -159,16 +159,8 @@ class ClusterExecution():
                     self.redis_log_client.hset(self.current_uuid,"origin_cmd",cmd)
                  
                     logger.debug("origin command: %s ------------ <%s %s> %s" % (cmd,self.target,self.cluster_id,self.current_uuid))
-                    try:
-                        cmd=self.render(target,cmd)
-                    except:
-                        logger_err.error(format_exc())
-                        self.redis_log_client.hset(self.current_uuid,"exit_code","render error")
-                        self.redis_log_client.hset(self.current_uuid,"stderr","render error")
-                        self.redis_log_client.hset(self.current_uuid,"stdout","")
-                        self.exe_next=False                   
-                        break
 
+                    cmd=self.render(target,cmd)
                     cmd=cmd.strip()
                    
                     self.redis_log_client.hset(self.current_uuid,"render_cmd",cmd)
@@ -178,7 +170,6 @@ class ClusterExecution():
                     #[ip_addr] 主机切换命令 
                     if re.match("^\[.*\]$",cmd):
                         self.__host_change(cmd,self.current_uuid)                        
-                        self.__check_result([self.current_uuid])
 
                     #脚本全局变量设置
                     #elif re.match("^global\..+=",cmd):
@@ -236,8 +227,6 @@ class ClusterExecution():
  
         self.reset()
         
-        self.redis_config_client.expire(target,config.copy_config_expire_sec)
-        
         return log_cluster
 
 
@@ -271,10 +260,10 @@ class ClusterExecution():
             check_reault_block=False 
             #print c_uuid,self.exe_uuid_list,self.target 
             cmd=re.sub("&\s*?$","",cmd)
-            self.redis_send_client.rpush(config.prefix_cmd+host,cmd+config.cmd_spliter+c_uuid)
+            self.redis_send_client.rpush(config.prefix_cmd+host,cmd+config.cmd_spilter+c_uuid)
             r=""
         else:        
-            self.redis_send_client.rpush(config.prefix_cmd+host,cmd+config.cmd_spliter+c_uuid)        
+            self.redis_send_client.rpush(config.prefix_cmd+host,cmd+config.cmd_spilter+c_uuid)        
             r=self.__check_result([c_uuid])[0]["stdout"].replace("\n","")   
  
         logger.debug("-------------- <%s %s> %s %s %s complete" % (self.target,self.cluster_id,host,cmd,c_uuid))        
@@ -291,7 +280,7 @@ class ClusterExecution():
 
         if self.current_host:
             #将主机ip放入初始化队列 由其他线程后台初始化连接
-            self.redis_send_client.rpush(config.key_conn_control,self.current_host+config.cmd_spliter+current_uuid)
+            self.redis_send_client.rpush(config.key_conn_control,self.current_host)
 
             #阻塞到host启动完毕
             def get_heart_beat():
@@ -301,28 +290,23 @@ class ClusterExecution():
                 return heart_beat
 
             retry_flag=0
-            while time.time()-float(get_heart_beat())>config.host_check_success_time and retry_flag<config.host_check_wait \
-                  and self.exe_next and (not self.redis_log_client.hget(current_uuid,"exit_code")):
+            while time.time()-float(get_heart_beat())>config.host_check_success_time and retry_flag<config.host_check_wait and self.exe_next:
                 time.sleep(config.host_check_time)
                 retry_flag = retry_flag+1
                 self.redis_log_client.hset(current_uuid,"desc","ckeck:"+str(retry_flag))
 
             if retry_flag >= config.host_check_wait:
                 self.redis_log_client.hset(current_uuid,"exit_code","timeout")
-                self.exe_next=False
-            elif self.redis_log_client.hget(current_uuid,"exit_code"):
+                self.redis_log_client.hset(current_uuid,"stderr","")
                 self.exe_next=False
             else:
                 self.redis_log_client.hset(current_uuid,"exit_code","0")
+                self.redis_log_client.hset(current_uuid,"stderr","")
         else:
             self.redis_log_client.hset(current_uuid,"exit_code","host null")
-            self.exe_next=False
-        
-        if not self.redis_log_client.hget(current_uuid,"stderr"):
             self.redis_log_client.hset(current_uuid,"stderr","")
-        if not self.redis_log_client.hget(current_uuid,"stdout"):
-            self.redis_log_client.hset(current_uuid,"stdout","")
-        
+            self.exe_next=False
+    
 
     def __global_var(self,cmd,current_uuid):
         """
@@ -353,10 +337,11 @@ class ClusterExecution():
         阻塞获取命令的执行结果
         用于控制playbook执行的顺序 以及判定是否终止执行playbook
         """ 
-        
-        r_list=[] 
+
+
+        r_list=[]
+         
         for c_uuid in c_uuid_list:
-            r={}
             #是否阻塞以检查结果
             if check_result_block:
                 
@@ -368,29 +353,24 @@ class ClusterExecution():
                         continue_check=False
                         ignore_last_err=True
                         r["stdout"]=""
-                        r["stderr"]=""
-                        r["exit_code"]="kill"
                         logger.info("get kill signal in <%s %s> %s" % (self.target,self.cluster_id,c_uuid))
                     else:
                         r=self.redis_log_client.hgetall(c_uuid)
                         if "stdout" in r:
-                            
                             continue_check=False
                         else:
                             continue_check=True
-           
+             
             else:
                 ignore_last_err=True        #不检测结果 则恒忽略此步的执行结果以继续下一步操作
                 r["stdout"]=""
-                r["stderr"]=""
-                r["exit_code"]="0"
            
             r_list.append(r) 
 
         #如果此步出错，是否继续执行
         if not ignore_last_err:
             for r in r_list:
-                if r["stderr"] or str(r["exit_code"])!="0":
+                if r["stderr"] or int(r["exit_code"])!=0:
                     self.exe_next=False
         
         logger.debug("check result %s <%s %s>" % (str(r_list),self.target,self.cluster_id))

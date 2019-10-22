@@ -5,8 +5,6 @@ command deliver server base on SSH.
 基于SSH实现的命令分发服务, 由redis存储数据，可以通过playbook存储命令集合。
 通过web服务(需要另外实现)实现可视化交互，或者直接由脚本script/solve_exe.py运行。
 
-salt support (version>=0.2x).
-使用salt分发时先预览 README_salt.md
 
 
 Running
@@ -154,7 +152,7 @@ python script/solve_exe.py
 #kill_<cluster id>;由 log_job_<job id>中确定
 redis_send> set kill_<cluster id> 1
 #主机连接的建立与关闭
-redis_send> rpsuh conn_control "10.0.0.1" "close_10.0.0.1" "10.0.0.1@@@@63d07bf6f49c11e9befb000c295dd589"
+redis_send> rpsuh conn_control "10.0.0.1" "close_10.0.0.1"
 #重新执行
 #可以由原有的job重新构建，并设置begin_line与begin_host,实现断点继续运行。
 #直接对主机分发命令 必须先连接主机
