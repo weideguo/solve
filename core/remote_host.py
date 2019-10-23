@@ -381,6 +381,7 @@ class RemoteHost():
         """
 
         key=config.prefix_cmd+self.host_info["ip"]
+        cmd_spliter=config.cmd_spliter
 
         while self.is_run:
             self.thread_q.put(1)                #控制并发数
@@ -396,7 +397,7 @@ class RemoteHost():
                     allcmd=""
 
                 if allcmd:
-                    allcmd=allcmd.split(config.cmd_spliter)        
+                    allcmd=allcmd.split(cmd_spliter)        
                     cmd=allcmd[0]
                     try:
                         cmd_uuid=allcmd[1]

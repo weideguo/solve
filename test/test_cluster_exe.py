@@ -7,9 +7,9 @@ from core.cluster_manager import ClusterExecution
 
 
 if __name__=="__main__":
-    redis_config_pool=redis.ConnectionPool(host="127.0.0.1", port=6379, db=15, password="my_redis_passwd")
-    redis_send_pool=redis.ConnectionPool(host="127.0.0.1", port=6379, db=0, password="my_redis_passwd")
-    redis_log_pool=redis.ConnectionPool(host="127.0.0.1", port=6379, db=1, password="my_redis_passwd")
+    redis_config_pool=redis.ConnectionPool(host="127.0.0.1", port=6379, db=15, password="my_redis_passwd",decode_responses=True)
+    redis_send_pool=redis.ConnectionPool(host="127.0.0.1", port=6379, db=0, password="my_redis_passwd",decode_responses=True)
+    redis_log_pool=redis.ConnectionPool(host="127.0.0.1", port=6379, db=1, password="my_redis_passwd",decode_responses=True)
 
     ce=ClusterExecution(redis_config_pool,redis_send_pool,redis_log_pool)
     p="/root/test4/a.txt"
