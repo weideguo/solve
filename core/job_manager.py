@@ -92,7 +92,7 @@ class JobManager():
                 #启动 
                 #如果连接存在 则不必再创建 否则则新建连接 
                 if not self.is_host_alive(init_host):
-                    host_info=self.redis_config_client.hgetall(config.predix_realhost+init_host)
+                    host_info=self.redis_config_client.hgetall(config.prefix_realhost+init_host)
                     if not ("ip" in host_info): 
                         logger_err.error("< %s > init failed, ip not exist" % init_host)
 
@@ -216,8 +216,8 @@ class JobManager():
                 self.redis_config_client.hmset(new_c,self.redis_config_client.hgetall(c))        #运行时复制一份，以确保原数据不影响其他并发
             
                 try:
-                    s=job["session"]
-                    self.redis_config_client.hset(new_c,"session",s)
+                    s=job[config.playbook_prefix_session]
+                    self.redis_config_client.hset(new_c,config.playbook_prefix_session,s)
                 except:
                     pass
                 

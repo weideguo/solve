@@ -56,6 +56,7 @@ closing_host_flag_expire_sec=10     #closing_<ip>键的保存时间
 initing_host_flag_expire_sec=3*60   #initing_<ip>键的保存时间 防止在连接后到执行一个命令期间被关闭
 copy_config_expire_sec=60*60*24     #运行对象复制key的保存时间
 global_var_expire_sec=60*60*24      #global_ 全局变量的保存时间
+session_var_expire_sec=60*60*24     #复制的session过期的时间 每个job复制一次session
 wait_exit_code=100                  #执行wait命令时遇到终止命令的退出状态码
 
 put_wait_time=1                     #上传文件单次判断等待时间
@@ -76,16 +77,19 @@ cmd_spliter="@@@@@"                 #所有关键命令与uuid的分隔符   如
 
 #######################################################################################################
 #redis_config
+prefix_realhost="realhost_"         #用于创建连接的主机的key开头
 prefix_global="global_"             #全局变量对应的key开头
-predix_realhost="realhost_"         #用于创建连接的主机的key开头
+prefix_session="session_"           #输入变量对应的key开头
 
-playbook_prefix_global="global."    #playbook中全局变量的开头
+playbook_prefix_global="global"     #playbook中全局变量的开头 全局变量如 global.yyy
+playbook_prefix_session="session"   #playbook中输入变量的开头 输入变量如 session.xxx
 
 #redis_log
 prefix_sum="sum_"                   #每次每个执行对象所执行的汇总
 prefix_log_cluster="log_cluster_"   #每个执行对象执行命令的队列key
 prefix_log_host="log_host_"         #log_host_<host ip> 每个主机的执行信息
 prefix_put="put_"                   #put_<host ip> 存储已经上传文件的信息
+prefix_log_job="log_job_"           #每个任务的日志信息
 
 #redis_send
 prefix_kill="kill_"                 #key_<cluster id>  终止执行对象的key
@@ -98,10 +102,8 @@ prefix_closing="closing_"           #标记正在关闭 closing_<host ip>
 pre_close="close_"                  #插入key_conn_control中       关闭连接 close_<ip>  
 key_conn_control="conn_control"     #控制主机连接与断开的队列key  建立连接 <ip> 
 key_kill_host="kill_host"           #用于分发关闭主机的publish
-
+key_job_list="job_list"             #执行任务的队列
 
 #redis_job
-prefix_log_job="log_job_"           #每个任务的日志信息
 prefix_job="job_"                   #每个任务的信息 job_<job id> 插入 key_job_list 
-key_job_list="job_list"             #执行任务的队列
 

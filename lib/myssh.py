@@ -56,7 +56,7 @@ class MySSH(object):
                 
         if self.is_remote_file(ftp_client,remote_file,local_md5):
             remote_md5=local_md5
-            return remote_md5,local_md5,remote_md5==local_md5,""
+            return remote_md5,local_md5,remote_md5==local_md5,"copy same file and md5"
             
         remote_path=os.path.dirname(remote_file)
         self.remote_mkdirs(ftp_client,remote_path)    
@@ -67,7 +67,7 @@ class MySSH(object):
             ftp_client.putfo(ftp_client.open(exist_remote_file),remote_file,local_filesize,callback=set_info)
             remote_md5=self.md5_remote(ftp_client,remote_file)
         
-        return remote_md5,local_md5,remote_md5==local_md5,""
+        return remote_md5,local_md5,remote_md5==local_md5,"copy file"
     
     def put_file(self,local_file,remote_path,set_info):
         """
@@ -95,12 +95,14 @@ class MySSH(object):
         
         if self.is_remote_file(ftp_client,remote_file,local_md5):
             remote_md5=local_md5
+            msg="upload same file and md5"
         else:
             ftp_client.put(local_file,remote_file,callback=set_info)
             remote_md5=self.md5_remote(ftp_client,remote_file)
+            msg="upload file"
                     
         ftp_client.close()
-        return local_md5,remote_md5,local_md5==remote_md5,""
+        return local_md5,remote_md5,local_md5==remote_md5,msg
              
     def get_file(self,local_path,remote_file,set_info):
         """

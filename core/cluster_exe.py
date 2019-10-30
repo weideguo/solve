@@ -109,7 +109,7 @@ class ClusterExecution():
 
         logger.info("<%s %s>  %s begin" % (target,self.cluster_id,playbook)) 
 
-        self.redis_config_client.hset(target,"global",config.prefix_global+self.cluster_id)
+        self.redis_config_client.hset(target,config.playbook_prefix_global,config.prefix_global+self.cluster_id)
         
         stop_str=""          #用于标记执行结束的信息
         last_uuid=""         #最后分发的命令的uuid 用于判断playbook执行是否正常退出
@@ -182,7 +182,7 @@ class ClusterExecution():
 
                     #脚本全局变量设置
                     #elif re.match("^global\..+=",cmd):
-                    elif re.match("^"+config.playbook_prefix_global.replace(".","\.")+".+=",cmd):
+                    elif re.match("^"+config.playbook_prefix_global+"\..+=",cmd):
                         self.__global_var(cmd,self.current_uuid)
 
                     #普通命令 简单的shell命令
@@ -329,7 +329,7 @@ class ClusterExecution():
         对于如 global.xx=`${cmd_exe}` 全局参数的设置
         """
         
-        g_field=cmd.split("=")[0].lstrip(config.playbook_prefix_global).strip()         #变量名
+        g_field=cmd.split("=")[0].lstrip(config.playbook_prefix_global+".").strip()         #变量名
         #g_value=cmd.lstrip(cmd.split("=")[0]+"=")                  #变量值 会去除额外的字符
         g_value=cmd.split(cmd.split("=")[0]+"=")[1]                 #变量值
 

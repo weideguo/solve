@@ -160,20 +160,24 @@ class RemoteHost(MySSH):
                     file_flag,local_file,remote_path=cmd.split(":")
                     remote_path=remote_path.rstrip()
                     
-                    local_md5,remote_md5,is_success,err_msg=self.send_file(local_file,remote_path,exe_result["uuid"],self.set_info)
+                    local_md5,remote_md5,is_success,msg=self.send_file(local_file,remote_path,exe_result["uuid"],self.set_info)
                     
                 elif cmd_type=="GET":
                     file_flag,local_path,remote_file=cmd.split(":") 
                     remote_file=remote_file.rstrip()
                     
-                    local_md5,remote_md5,is_success,err_msg=self.get_file(local_path,remote_file,self.set_info)
+                    local_md5,remote_md5,is_success,msg=self.get_file(local_path,remote_file,self.set_info)
                 
                 exe_result["local_md5"]=local_md5
                 exe_result["remote_md5"]=remote_md5
                 exe_result["is_success"]=int(is_success)
                 
-                stdout=""
-                stderr=err_msg
+                if is_success:
+                    stdout=msg
+                    stderr=""
+                else:
+                    stdout=""
+                    stderr=msg
                 exit_code=int(not is_success) 
 
             else:

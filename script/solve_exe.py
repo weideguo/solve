@@ -6,7 +6,7 @@ import re
 import sys
 import time
 import uuid
-
+from conf import config
 
 if sys.version_info<(3,0):
     input=raw_input
@@ -24,7 +24,8 @@ def get_session_var_name(job_info):
             #存在bug 旧被获取,如          echo xxx # {{session.YYYY}}
             #但不应排除#只后的字符串 如   echo "#" {{session.YYYY}}
             if not re.match("^#",l):
-                session_vars=session_vars+re.findall("(?<={{session\.).*?(?=}})",l)
+                #session_vars=session_vars+re.findall("(?<={{session\.).*?(?=}})",l)
+                session_vars=session_vars+re.findall("(?<={{"+config.playbook_prefix_session+"\.).*?(?=}})",l)
             l=f.readline()
     return list(set(session_vars))
 
@@ -50,7 +51,7 @@ def check_job_result(r,job_id):
     fail=[]
     uncomplete=[]
 
-    log_job="log_job_"+job_id
+    log_job=config.prefix_log_job+job_id
     log_job_dict=r.hgetall(log_job)
     #print(log_job_dict)
     if log_job_dict:
@@ -100,10 +101,10 @@ if __name__=="__main__":
         exit()    
     
     job_id=uuid.uuid1().hex
-    job_name="job_"+job_id
-    session="session_"+job_id
+    job_name=config.prefix_job+job_id
+    session=config.prefix_session+job_id
     
-    job_info={"job_id":job_id,"cluster_str":cluster_str,"playbook":playbook,"session":session,"begin_time":time.time()}    
+    job_info={"job_id":job_id,"cluster_str":cluster_str,"playbook":playbook,config.playbook_prefix_session:session,"begin_time":time.time()}    
     job_info["user"]="script"
     job_info["job_type"]="test"
     job_info["comment"]="这是通过脚本运行的"
@@ -132,11 +133,12 @@ if __name__=="__main__":
         
     if session_info:
         redis_config_client.hmset(session,session_info)
+        redis_config_client.expire(new_session_name,config.session_var_expire_sec)
       
     print("--------------------------begin--------------------------"+job_name)
     
     
-    redis_send_client.rpush("job_list",job_name) 
+    redis_send_client.rpush(config.key_job_list,job_name) 
 
 
     job_result=check_job_result(redis_log_client,job_id)
