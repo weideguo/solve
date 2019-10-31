@@ -63,16 +63,12 @@ def file_row_count(file):
     """获取文件的行数,兼容大文件"""
     rownum=0   
     try:
-        thefile = open(file, 'rb')
-        while True:
-            buffer = thefile.read(8192*1024)
-            if not buffer:
-                break
+        with open(file, "r") as f:
+            buffer = f.read(8192*1024)            
             rownum += buffer.count('\n')
-        thefile.close( ) 
     except:
         rownum=0
-
+    
     return rownum
 
 

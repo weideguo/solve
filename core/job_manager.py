@@ -213,7 +213,10 @@ class JobManager():
                 continue 
 
             try:
-                self.redis_config_client.hmset(new_c,self.redis_config_client.hgetall(c))        #运行时复制一份，以确保原数据不影响其他并发
+                #运行时复制一份，以确保原数据不影响其他并发
+                self.redis_config_client.hmset(new_c,self.redis_config_client.hgetall(c))
+                #提前设置过期 防止运行到一半失败时一直占用
+                self.redis_config_client.expire(new_c,config.copy_config_expire_sec)
             
                 try:
                     s=job[config.playbook_prefix_session]
