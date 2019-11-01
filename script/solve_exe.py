@@ -133,7 +133,7 @@ if __name__=="__main__":
         
     if session_info:
         redis_config_client.hmset(session,session_info)
-        redis_config_client.expire(new_session_name,config.session_var_expire_sec)
+        redis_config_client.expire(session,config.session_var_expire_sec)
       
     print("--------------------------begin--------------------------"+job_name)
     
