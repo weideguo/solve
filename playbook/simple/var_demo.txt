@@ -1,7 +1,8 @@
 #全局变量可以跨主机引用
-#声明 global.XX=YYYY  
-#或   global.XX=`who`    可将执行命令的结果付给全局变量
+#声明 global.XX="YYYY"  
+#或   global.XX=`who`    可将在当前主机(不是solve所在的主机)执行命令的结果作为全局变量
 #引用 {{global.XX}}
+#对cluster执行
 [{{db1.host.ip}}]
 global.v1=`ifconfig | grep -oP "(?<=addr:).*?(?=  Bcast)"`
 

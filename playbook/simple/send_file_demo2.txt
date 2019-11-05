@@ -2,7 +2,7 @@
 # 本地文件绝对路径 远端目录
 #远端目录如果不存在 则创建一个
 #远端文件如果存在 则使用时间戳重命名远端文件
-#
+#选择cluster操作
 [{{db2.host.ip}}]
 global.xx=`date +%s`_$RANDOM
 PUT:{{session.file_to_send}}:/tmp/upload_test/{{site}}/x

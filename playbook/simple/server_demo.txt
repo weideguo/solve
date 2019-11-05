@@ -1,5 +1,4 @@
 #选server进行操作
-#可以使用任意深度的嵌套
 [{{host.ip}}]
 
 echo {{host.user}} > /tmp/server_demo_`date +%Y%m%d`

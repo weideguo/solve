@@ -1,6 +1,7 @@
-#对集群进行操作
 #使用const存储的常量
-[{{db1.host.ip}}]
-echo {{const.password}} > /tmp/test.tttt.20190423
+#执行的对象或关联对象 需要预先绑定对应的const对象
+#对server操作
+[{{host.ip}}]
+echo {{const.db_passwd}} > /tmp/test.tttt.20190423
 
 

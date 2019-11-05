@@ -1,24 +1,27 @@
+#选择cluster操作
 #可以使用任意深度的嵌套
-[{{db2.host.ip}}]
+[{{db1.host.ip}}]
 wait
 global.xx="xxxxxxxxxxxxx"
 global.yy=`date +%s`
-#yyyy
+#yyyy #执行失败则终止 之后的命令不再执行
 echo {{session.abc}} > /tmp/abc_20190705  #中文又何妨
 echo {{global.xx}}
+# & 之后只能有空格或者没有字符
 sleep 5 &
+echo "ssss"  #可以直接在命令后面使用#注释 但为了避免影响 注释最好单独一行
 sleep 4 &
 wait
 #yyy
 wait
 sleep 5 &
+echo "yyyy" 
 sleep 4 &
-sleep 6
+echo {{global.yy}}
 wait
+#echo {{global.mm}}    #使用未设置的变量会导致终止 之后的命令不再继续执行
 echo {{db1}}
 echo {{db1.host}}
 [{{db1.host.ip}}]
 echo {{db1.host.user}}
 echo "hhhh"
-echo {{global.xx}}
-echo {{session.abc}}

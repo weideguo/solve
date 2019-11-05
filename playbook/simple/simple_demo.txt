@@ -1,8 +1,7 @@
-#对集群进行操作
 #对不同主机分发命令
+#对cluster操作
 [{{db1.host.ip}}]
 echo "aaaa"
-
 
 [{{db2.host.ip}}]
 echo "bbbb"

@@ -1,4 +1,5 @@
 #可以实现跨主机后台运行
+#对cluster执行
 [{{db1.host.ip}}]
 echo "xxx"
 sleep 3 &

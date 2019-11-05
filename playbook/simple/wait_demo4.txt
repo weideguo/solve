@@ -1,7 +1,6 @@
-#直接对host操作
 #下载操作可以放后台运行
-#
-[{{ip}}]
+#直接对host操作
+[{{realhost.ip}}]
 GET:/tmp:{{session.file_2_get}}     &
 
 echo "download begin"
