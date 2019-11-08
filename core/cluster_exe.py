@@ -117,7 +117,7 @@ class ClusterExecution():
         stop_id=config.prefix_sum+self.cluster_id 
         stop_info={}
         stop_info["begin_timestamp"]=cluster_start_time        
-        stop_info["cluster"]=self.target        
+        stop_info["target"]=self.target        
         
         self.redis_log_client.hmset(stop_id,stop_info)        
 
@@ -143,7 +143,7 @@ class ClusterExecution():
                 
                 #logger_err.debug(begin_host+self.current_host+" "+str(current_line)+" "+str(begin_line)+" "+cmd+" "+next_cmd)                
 
-                self.redis_log_client.rpush(config.prefix_log_cluster+self.cluster_id,self.current_uuid)
+                self.redis_log_client.rpush(config.prefix_log_target+self.cluster_id,self.current_uuid)
                 """
                 每一行命令的日志id都放入日志队列 
                 根据日志队列、playbook即可获知执行到哪一行结束
@@ -228,7 +228,7 @@ class ClusterExecution():
 
         self.redis_log_client.hmset(stop_id,stop_info) 
         
-        log_cluster=config.prefix_log_cluster+self.cluster_id
+        log_target=config.prefix_log_target+self.cluster_id
         if stop_str=="done":        
             logger.info("<%s %s>  %s  done" % (target,self.cluster_id,playbook))
         else:
@@ -238,7 +238,7 @@ class ClusterExecution():
         
         self.redis_config_client.expire(target,config.copy_config_expire_sec)
         
-        return log_cluster
+        return log_target
 
 
     def __single_exe(self,host,cmd,c_uuid=""):

@@ -55,8 +55,8 @@ def check_job_result(r,job_id):
     log_job_dict=r.hgetall(log_job)
     #print(log_job_dict)
     if log_job_dict:
-        log_cluster=eval(log_job_dict["log_cluster"])
-        for lc in log_cluster:
+        log_target=eval(log_job_dict["log"])
+        for lc in log_target:
             cluster_id=lc[0].split("_")[-1]
             cluster_name=lc[0].split("_"+cluster_id)[0]
 
@@ -83,15 +83,15 @@ def pause_and_check():
 
 if __name__=="__main__":
 
-    cp=get_var_interactive(["cluster_str","playbook"])
+    cp=get_var_interactive(["target","playbook"])
 
-    #cluster_str="cluster1,cluster2,cluster3"
-    #cluster_str="cluster1"
+    #target="cluster1,cluster2,cluster3"
+    #target="cluster1"
     #playbook="/root/test4/a.txt"
-    if cp["cluster_str"]:
-        cluster_str=cp["cluster_str"]
+    if cp["target"]:
+        target=cp["target"]
     else:
-        print("cluster_str can not be null")
+        print("target can not be null")
         exit()
     
     if cp["playbook"]:
@@ -104,7 +104,7 @@ if __name__=="__main__":
     job_name=config.prefix_job+job_id
     session=config.prefix_session+job_id
     
-    job_info={"job_id":job_id,"cluster_str":cluster_str,"playbook":playbook,config.playbook_prefix_session:session,"begin_time":time.time()}    
+    job_info={"job_id":job_id,"target":target,"playbook":playbook,config.playbook_prefix_session:session,"begin_time":time.time()}    
     job_info["user"]="script"
     job_info["job_type"]="test"
     job_info["comment"]="这是通过脚本运行的"

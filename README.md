@@ -125,7 +125,7 @@ wait
 ```
 ```
 #创建job
-redis_job> hmset job_dcf3e208d47011e99464000c295dd589 "cluster_str" "server_mysql_10.0.0.1" "playbook" "/tmp/myplaybook.txt" "session" "session_dcf3e208d47011e99464000c295dd589"
+redis_job> hmset job_dcf3e208d47011e99464000c295dd589 "target" "server_mysql_10.0.0.1" "playbook" "/tmp/myplaybook.txt" "session" "session_dcf3e208d47011e99464000c295dd589"
 #设置session参数 要设置的属性由playbook使用的session参数确定
 redis_config> hmset session_dcf3e208d47011e99464000c295dd589 "my_session_test" "bbbbb" "local_file" "/tmp/abc.txt"
 #执行job
@@ -135,14 +135,14 @@ redis_log> hgetall log_job_dcf3e208d47011e99464000c295dd589
 ```
 ```
 #通过脚本模式运行
-#根据提示输入 cluster_str、playbook以及需要设置的session参数
+#根据提示输入 target、playbook以及需要设置的session参数
 python script/solve_exe.py
 ```
 ### job的参数说明 ###
 
 |   参数名    | 说明 | 必须 |
 | :---: | :----: | :--: |
-| cluster_str | 执行对象的列表，使用","分隔 | 是 |
+| target | 执行对象的列表，使用","分隔 | 是 |
 | playbook | 对应的playbook | 是 |
 | session | 如果playbook中使用session参数，则必须设置。 | - |
 | begin_line | 从第playbook的第几行开始执行。如果设置这个，必须同时设置begin_host。 | - |

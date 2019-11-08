@@ -1,7 +1,7 @@
 import uuid
 import redis
 
-from core.cluster_manager import ClusterExecution
+from core.cluster_exe import ClusterExecution
 
 
 

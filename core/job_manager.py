@@ -196,8 +196,8 @@ class JobManager():
         log_job["playbook_rownum"]=file_row_count(job["playbook"])
         log_job["playbook_md5"]=my_md5(file=job["playbook"])
         
-        log_cluster=[]
-        for oc in job["cluster_str"].split(","):
+        log_target=[]
+        for oc in job["target"].split(","):
             c=oc.split(config.cmd_spliter)[0]
             
             try: 
@@ -206,7 +206,7 @@ class JobManager():
                 cluster_id=uuid.uuid1().hex
                         
             new_c=c+"_"+cluster_id
-            log_cluster.append([new_c,config.prefix_log_cluster+cluster_id])
+            log_target.append([new_c,config.prefix_log_target+cluster_id])
 
             if not self.redis_config_client.hgetall(c):
                 self.redis_log_client.hmset(config.prefix_sum+cluster_id,{"stop_str":"not exist"})
@@ -239,7 +239,7 @@ class JobManager():
                 logger_err.error("could not use playbook on %s" % c )
                 logger_err.error(format_exc())
         
-        log_job["log_cluster"]=str(log_cluster)
+        log_job["log"]=str(log_target)
         self.redis_log_client.hmset(config.prefix_log_job+job_id.split(config.prefix_job)[1],log_job)        
  
 
@@ -248,7 +248,7 @@ class JobManager():
         监听队列持续执行任务
         任务执行 select 0;   hset job_xxxxxx;   rpush job_list job_xxx
         任务终止 select 0;   kill_xxxxxx
-        {'cluster_str': 'cluster1,cluster2,cluster3', 'job_id': 'ccc', 'playbook': '/root/test4/a.txt','session':'session_xxxx'}  
+        {'target': 'cluster1,cluster2,cluster3', 'job_id': 'ccc', 'playbook': '/root/test4/a.txt','session':'session_xxxx'}  
         session为可选
 
         """
