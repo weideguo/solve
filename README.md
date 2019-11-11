@@ -165,5 +165,7 @@ redis_log> lrange log_host_10.0.0.1 0 100
 
 ### more ###
 > 可由脚本 script/solve_exe.py 直接运行
+> 
 > 更多playbook与使用样例详见playbook目录
+> 
 > 通过web服务实现可视化交互，详见[solve-frontend](https://github.com/zouzhicun/solve-frontend)的说明
