@@ -1,16 +1,16 @@
-SOLVE - Simple cOmmand deLiver serVEr
---------------
+# SOLVE #
 
-command deliver server base on SSH. 
-基于SSH实现的命令分发服务, 由redis存储数据，可以通过playbook存储命令集合。
-通过web服务(需要另外实现)实现可视化交互，或者直接由脚本script/solve_exe.py运行。
+Simple command deliver server, base on SSH. 
 
-salt support (version>=0.2x).
-使用salt分发时先预览 README_salt.md
+基于SSH实现的命令分发服务, 由redis存储数据，playbook存储命令集合。
 
 
 Running
 --------------
+
+### dependency servers ###
+* redis (>= 2.0.0)
+* salt (使用salt分发时才必须, README_salt.md)
 
 ### version support ###
 * python 2.7
@@ -35,7 +35,6 @@ python bin/solve.py stop
 
 python bin/solve.py restart
 ```
-
 
 
 playbook
@@ -93,7 +92,6 @@ playbook
   如执行对象A为 {"a":"aaa","b":"bbb"}，则可以使用{{a}}，替换后为"aaa"
 
   如执行对象A为 {"a":"A1","b":"bbb"}，关联的对象A1为 {"a1":"a111"}，则可以使用{{a.a1}}，替换后为"a111"
-
 
 
 demo
@@ -166,6 +164,6 @@ redis_log> lrange log_host_10.0.0.1 0 100
 ```
 
 ### more ###
-更多playbook与使用样例详见playbook目录
-
-更友好的交互模式详见solve-web的说明
+> 可由脚本 script/solve_exe.py 直接运行
+> 更多playbook与使用样例详见playbook目录
+> 通过web服务实现可视化交互，详见[solve-frontend](https://github.com/zouzhicun/solve-frontend)的说明
