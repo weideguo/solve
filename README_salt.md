@@ -1,4 +1,4 @@
-solve使用salt
+solve for salt
 --------------
 
 solve使用salt分发命令
