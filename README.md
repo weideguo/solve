@@ -5,7 +5,7 @@ Simple command deliver server, base on SSH.
 基于SSH实现的命令分发服务, 由redis存储数据，playbook存储命令集合。
 
 
-Running
+running
 --------------
 
 ### dependency servers ###
