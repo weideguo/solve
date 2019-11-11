@@ -4,7 +4,7 @@ solve使用salt
 solve使用salt分发命令
 
 
-Running
+running
 --------------
 
 ### version support ###
