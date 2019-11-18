@@ -71,7 +71,7 @@ class JobManager():
     def __remot_host(self):
         """
         监听队列进行主机控制连接 与 关闭 
-        只允许干净连接? 即命令队列中不应该存在以前的旧命令 是否存在命令会被认成过期命令的情况 需要谨慎实现 
+        只允许干净连接，即命令队列中不应该存在以前的旧命令
 
         """
 
@@ -79,6 +79,11 @@ class JobManager():
             init_host=self.redis_send_client.blpop(config.key_conn_control)
             init_host_list=init_host[1].split(config.cmd_spliter)
             init_host=init_host_list[0]
+            if len(init_host_list)>1:
+                init_host_uuid=init_host_list[1]
+            else:
+                init_host_uuid=uuid.uuid1().hex
+
             #统一一个队列顺序实现创建、关闭 
             #避免同一个主机多次创建 同时存在关闭与创建
             if re.match(config.pre_close+".*",init_host):
@@ -94,7 +99,8 @@ class JobManager():
                 if not self.is_host_alive(init_host):
                     host_info=self.redis_config_client.hgetall(config.prefix_realhost+init_host)
                     if not ("ip" in host_info): 
-                        logger_err.error("< %s > init failed, ip not exist" % init_host)
+                        self.redis_log_client.hset(init_host_uuid,"exit_code","host info err")
+                        logger_err.error("< %s > init failed, host info error, ip not exist" % init_host)
 
                     elif not self.redis_send_client.llen(config.prefix_cmd+init_host):                
                             
@@ -106,22 +112,19 @@ class JobManager():
                             h.forever_run()
                             logger.info("< %s > init success" % init_host)                    
                         except:
-                            if len(init_host_list)>1:
-                                self.redis_log_client.hset(init_host_list[1],"exit_code","init failed")
+                            self.redis_log_client.hset(init_host_uuid,"exit_code","init failed")
                             self.redis_send_client.set(config.prefix_initing+init_host,-1)
                             logger_err.error(format_exc())
                             logger_err.error("< %s > init failed" % init_host)
                             
                         self.redis_send_client.expire(config.prefix_initing+init_host,config.initing_host_flag_expire_sec)
                     else:
-                        if len(init_host_list)>1:
-                            self.redis_log_client.hset(init_host_list[1],"exit_code","cmd exist")
+                        self.redis_log_client.hset(init_host_uuid,"exit_code","cmd exist")
                         logger_err.error("< %s > not shutdown clean before,will not init. please check cmd_%s" % (init_host,init_host))
                     
                     self.redis_send_client.delete(config.prefix_check_flag+init_host)           #连接不存在时操作完毕才释放锁 
                 else:
-                    if len(init_host_list)>1:
-                        self.redis_log_client.hset(init_host_list[1],"stdout","connect exist,init skip")        
+                    self.redis_log_client.hset(init_host_uuid,"stdout","connect exist,init skip")        
                     logger.debug("< %s > init skipped" % init_host)
 
             else:
