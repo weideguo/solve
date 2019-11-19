@@ -6,6 +6,7 @@ import re
 import sys
 import time
 import uuid
+import redis
 
 from conf import config
 
@@ -116,20 +117,17 @@ class SolveExe():
 
 
 if __name__=="__main__":
-
-    import redis
-    from conf.config import *
     
     #可清除以下
-    redis_send_client=redis.StrictRedis(host=redis_send_host, port=redis_send_port, \
-                                        db=redis_send_db, password=redis_send_passwd,decode_responses=True)
-    redis_log_client=redis.StrictRedis(host=redis_log_host, port=redis_log_port, \
-                                       db=redis_log_db, password=redis_log_passwd,decode_responses=True)
+    redis_send_client=redis.StrictRedis(host=config.redis_send_host, port=config.redis_send_port, \
+                                        db=config.redis_send_db, password=config.redis_send_passwd,decode_responses=True)
+    redis_log_client=redis.StrictRedis(host=config.redis_log_host, port=config.redis_log_port, \
+                                       db=config.redis_log_db, password=config.redis_log_passwd,decode_responses=True)
     #不可清除以下
-    redis_config_client=redis.StrictRedis(host=redis_config_host, port=redis_config_port, \
-                                          db=redis_config_db, password=redis_config_passwd,decode_responses=True)
-    redis_job_client=redis.StrictRedis(host=redis_job_host, port=redis_job_port, \
-                                       db=redis_job_db, password=redis_job_passwd,decode_responses=True)
+    redis_config_client=redis.StrictRedis(host=config.redis_config_host, port=config.redis_config_port, \
+                                          db=config.redis_config_db, password=config.redis_config_passwd,decode_responses=True)
+    redis_job_client=redis.StrictRedis(host=config.redis_job_host, port=config.redis_job_port, \
+                                       db=config.redis_job_db, password=config.redis_job_passwd,decode_responses=True)
   
 
 
@@ -152,19 +150,14 @@ if __name__=="__main__":
         if input("input [yes] to continue: ") != "yes":
             print("process abort,bye!")
             exit()
-
-
+    
     new_info=get_var_interactive(["target","playbook"])
 
-    if not new_info["target"]:
-        print("target can not be null")
-        exit()
-    
-    if not new_info["playbook"]:
-        print("playbook can not be null")
-        exit()    
-    
-
+    for k in new_info:
+        if not new_info["target"]:
+            print("%s can not be null" % k)
+            exit()
+     
     se=SolveExe(redis_send_client,redis_log_client,redis_config_client,redis_job_client,new_info)
     
     print("--------------------------init--------------------------"+se.job_name) 
@@ -184,10 +177,10 @@ if __name__=="__main__":
     job_result=se.check_job_result()
     while job_result["uncomplete"] or (not job_result["complete"] and not job_result["uncomplete"] and not job_result["fail"]):
         print(job_result)
-        job_result=se.check_job_result()
         time.sleep(1)
+        job_result=se.check_job_result()
+    
     print(job_result)
-
     
     se.key_expire()  
 

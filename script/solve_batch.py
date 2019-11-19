@@ -114,6 +114,7 @@ if __name__=="__main__":
         exit()
 
     #ip_str="192.168.59.111,192.168.59.131,192.168.59.132,192.168.59.199"
+    #分发的命令可以使用solve的扩展 PUT/GET 以实现上传与下载
     #cmd="who"
 
     tl=[]
@@ -124,9 +125,28 @@ if __name__=="__main__":
     sb.conn(tl)
     p=sb.exe(tl,cmd)
     
-    #可能单次获取结果不全 可以多次获取
+    #可能单次获取结果执行未完成 可以多次获取
     print("----------------------------result------------------------------------")
-    for r in sb.get_result(tl,p,True):
-        print(r)
+    
+    not_done=True
+    while not_done:
+        status_list=[]
+        for r in sb.get_result(tl,p,True):
+            print(r)
+            
+            result_info=r[1]
+            
+            if (("exit_code" in result_info) and result_info["exit_code"] !="0") or \
+               ("exit_code" in result_info and result_info["exit_code"] == "0" and ("stdout" in result_info)):
+                status_list.append(True)
+            else:
+                status_list.append(False)
+        
+        if not (False in status_list):
+           not_done=False
+        else:
+            time.sleep(1)
+            print("----------------------------result------------------------------------")
+
 
     
