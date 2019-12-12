@@ -61,8 +61,13 @@ class MySSH(object):
         remote_path=os.path.dirname(remote_file)
         self.remote_mkdirs(ftp_client,remote_path)    
         if is_copy_by_link:
-            ftp_client.symlink(exist_remote_file,remote_file)
-            remote_md5=local_md5
+            try:
+                ftp_client.symlink(exist_remote_file,remote_file)
+                remote_md5=local_md5
+            except:
+                #windows服务器不支持创建链接，使用复制代替
+                ftp_client.putfo(ftp_client.open(exist_remote_file),remote_file,local_filesize,callback=set_info)
+                remote_md5=self.md5_remote(ftp_client,remote_file)
         else:
             ftp_client.putfo(ftp_client.open(exist_remote_file),remote_file,local_filesize,callback=set_info)
             remote_md5=self.md5_remote(ftp_client,remote_file)
