@@ -163,6 +163,11 @@ redis_send> rpsuh cmd_10.0.0.1 "whoami@@@@@9d21376cd47911e99464000c295dd589"
 redis_log> lrange log_host_10.0.0.1 0 100
 ```
 
+### 系统支持 ###
+> 要分发命令的目标主机
+* linux 启动ssh服务，同时stfp可以使用。
+* windows 安装ssh，启动ssh同时stfp可以使用。
+
 ### more ###
 > 可由脚本 script/solve_exe.py 直接运行
 > 
