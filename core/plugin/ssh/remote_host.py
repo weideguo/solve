@@ -52,7 +52,6 @@ class RemoteHost(MySSH):
         self.redis_send_client=redis.StrictRedis(connection_pool=self.redis_send_pool)
         self.redis_log_client=redis.StrictRedis(connection_pool=self.redis_log_pool)
         self.is_run=True
-        self.cmd_uuid=""
             
     
     def send_file(self,local_file,remote_path,c_uuid,set_info):
@@ -121,13 +120,15 @@ class RemoteHost(MySSH):
         else:
             return "","",0,"some thing error in upload"
     
-    
-    def set_info(self,current_size,total_size):
-        """
-        上传下载的回调函数 只能同时存在一个上传或下载操作 否则回调调用出错
-        """
-        self.redis_log_client.hset(self.cmd_uuid,"current_size",current_size)
-        self.redis_log_client.hset(self.cmd_uuid,"total_size",total_size) 
+    def set_info_gen(self,cmd_uuid):
+        #函数生成
+        def set_info(current_size,total_size):
+            """
+            上传下载的回调函数 只能同时存在一个上传或下载操作 否则回调调用出错
+            """
+            self.redis_log_client.hset(cmd_uuid,"current_size",current_size)
+            self.redis_log_client.hset(cmd_uuid,"total_size",total_size)
+        return set_info
 
     
     def __single_run(self,cmd,cmd_uuid):
@@ -144,7 +145,6 @@ class RemoteHost(MySSH):
         exe_result["uuid"]=cmd_uuid
         exe_result["exe_host"]=self.host_info["ip"]
         exe_result["from_host"]=get_host_ip(self.host_info["ip"])
-        self.cmd_uuid=cmd_uuid
         
         logger.debug(str(exe_result)+" begin")
         
@@ -160,13 +160,13 @@ class RemoteHost(MySSH):
                     file_flag,local_file,remote_path=cmd.split(":")
                     remote_path=remote_path.rstrip()
                     
-                    local_md5,remote_md5,is_success,msg=self.send_file(local_file,remote_path,exe_result["uuid"],self.set_info)
+                    local_md5,remote_md5,is_success,msg=self.send_file(local_file,remote_path,exe_result["uuid"],self.set_info_gen(cmd_uuid))
                     
                 elif cmd_type=="GET":
                     file_flag,local_path,remote_file=cmd.split(":") 
                     remote_file=remote_file.rstrip()
                     
-                    local_md5,remote_md5,is_success,msg=self.get_file(local_path,remote_file,self.set_info)
+                    local_md5,remote_md5,is_success,msg=self.get_file(local_path,remote_file,self.set_info_gen(cmd_uuid))
                 
                 exe_result["local_md5"]=local_md5
                 exe_result["remote_md5"]=remote_md5
