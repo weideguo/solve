@@ -14,17 +14,20 @@ from core.job_manager import JobManager
 
 if __name__=="__main__":
     from conf import config
+    #decode_responses=True      将结果自动编码为unicode格式，否则对于python3结果格式为 b'xxx'
+    #encoding_errors='ignore'   decode的选项，编码出错时的处理方式，可选 strict ignore replace 默认为strict 
     #可清除以下
     redis_send_pool=redis.ConnectionPool(host=config.redis_send_host, port=config.redis_send_port,\
-                    db=config.redis_send_db, password=config.redis_send_passwd,decode_responses=True)
+                    db=config.redis_send_db, password=config.redis_send_passwd,decode_responses=True,encoding_errors='ignore')
     redis_log_pool=redis.ConnectionPool(host=config.redis_log_host, port=config.redis_log_port,\
-                    db=config.redis_log_db, password=config.redis_log_passwd,decode_responses=True)
+                    db=config.redis_log_db, password=config.redis_log_passwd,decode_responses=True,encoding_errors='ignore')
     
     #不可清除以下
     redis_config_pool=redis.ConnectionPool(host=config.redis_config_host, port=config.redis_config_port,\
-                        db=config.redis_config_db, password=config.redis_config_passwd,decode_responses=True)
+                        db=config.redis_config_db, password=config.redis_config_passwd,decode_responses=True,\
+                        encoding_errors='ignore')
     redis_job_pool=redis.ConnectionPool(host=config.redis_job_host, port=config.redis_job_port,\
-                        db=config.redis_job_db, password=config.redis_job_passwd,decode_responses=True)
+                        db=config.redis_job_db, password=config.redis_job_passwd,decode_responses=True,encoding_errors='ignore')
 
     jm=JobManager(redis_send_pool,redis_log_pool,redis_job_pool,redis_config_pool)
 
