@@ -292,6 +292,7 @@ class ClusterExecution():
         if self.current_host:
             #将主机ip放入初始化队列 由其他线程后台初始化连接
             self.redis_send_client.rpush(config.key_conn_control,self.current_host+config.cmd_spliter+current_uuid)
+            self.redis_log_client.hset(current_uuid,"uuid",current_uuid)
 
             #阻塞到host启动完毕
             def get_heart_beat():
