@@ -1,0 +1,7 @@
+#
+[{{db1.host.ip}}]
+echo {{session.eee}}
+echo {{session.aaa}}
+echo {{session.ccc}}
+echo {{session.ddd}}
+echo {{session.bbb}}

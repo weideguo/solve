@@ -1,0 +1,26 @@
+#测试在首部添加session说明
+#CONTENT-BEGIN
+#session:
+#  -
+#    key: aaa
+#    comment: 请输入aaa
+#    type: input
+#    constrict: (^\S.*\S$)|(^\S$)
+#  -
+#    key: 请输入bbb
+#    comment: please select
+#    type: select 
+#    constrict: 
+#        - 111
+#        - 222
+#        - 333
+#  -
+#    key: 请输入ccc
+#    comment: please upload file
+#    type: upload
+#CONTENT-END
+#
+[{{db1.host.ip}}]
+echo {{session.aaa}}
+echo {{session.bbb}}
+echo {{session.ccc}}
