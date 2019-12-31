@@ -143,8 +143,7 @@ python script/solve_exe.py
 | target | 执行对象的列表，使用","分隔 | 是 |
 | playbook | 对应的playbook | 是 |
 | session | 如果playbook中使用session参数，则必须设置。 | - |
-| begin_line | 从第playbook的第几行开始执行。如果设置这个，必须同时设置begin_host。 | - |
-| begin_host | 初始连接主机的ip。因为跳过一些playbook的行，可能导致没有主机跳转语句。 | - |
+| begin_line | 从第playbook的第几行开始执行。 | - |
 
 ### 高级用法 ###
 ```
@@ -154,7 +153,7 @@ redis_send> set kill_<cluster id> 1
 #主机连接的建立与关闭
 redis_send> rpsuh conn_control "10.0.0.1" "close_10.0.0.1" "10.0.0.1@@@@63d07bf6f49c11e9befb000c295dd589"
 #重新执行
-#可以由原有的job重新构建，并设置begin_line与begin_host,实现断点继续运行。
+#可以由原有的job重新构建，并设置begin_line,实现断点继续运行。
 #直接对主机分发命令 必须先连接主机
 redis_send> rpsuh cmd_10.0.0.1 "whoami"
 #分发命令时设置命令的id

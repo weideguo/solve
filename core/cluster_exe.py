@@ -84,16 +84,16 @@ class ClusterExecution():
         real_cmd=Template(cmd).render(data)      
         return real_cmd
         
-    def run(self,target,playbook,cluster_id,begin_host,begin_line):
+    def run(self,target,playbook,cluster_id,begin_line):
         """
         后台运行
         """
         self.target=target
-        t=Thread(target=self.exe,args=(target,playbook,cluster_id,begin_host,begin_line))
+        t=Thread(target=self.exe,args=(target,playbook,cluster_id,begin_line))
         t.start()
 
 
-    def exe(self,target,playbook,cluster_id="",begin_host="",begin_line=0):
+    def exe(self,target,playbook,cluster_id="",begin_line=0):
         """
         playbook执行入口 线程不安全 如果多线程需要每次都创建对象
         """        
@@ -103,8 +103,8 @@ class ClusterExecution():
         if not self.cluster_id:
             self.cluster_id=uuid.uuid1().hex
         
-        if begin_host:
-            self.current_host=begin_host        
+        #if begin_host:
+        #    self.current_host=begin_host        
 
 
         logger.info("<%s %s>  %s begin" % (target,self.cluster_id,playbook)) 
@@ -129,8 +129,13 @@ class ClusterExecution():
                  
                 self.current_uuid=uuid.uuid1().hex
                 if current_line < begin_line:
-                    if current_line == 1:
-                        cmd="[%s]" % begin_host
+                    #if current_line == 1:
+                    #    cmd="[%s]" % begin_host
+                    #else:
+                    #    cmd=""
+                    #主机切换的命令正常运行
+                    if re.match("^\[.*\]$",next_cmd):
+                        cmd=next_cmd
                     else:
                         cmd=""
                 else:

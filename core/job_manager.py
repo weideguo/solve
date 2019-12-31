@@ -228,14 +228,20 @@ class JobManager():
                     pass
                 
                 ce=ClusterExecution(self.redis_config_pool,self.redis_send_pool,self.redis_log_pool)
-                if ("begin_host" in job) and ("begin_host" in job):
-                    begin_host=job["begin_host"]
+                #if ("begin_host" in job) and ("begin_line" in job):
+                #    begin_host=job["begin_host"]
+                #    begin_line=int(job["begin_line"])
+                #else:
+                #    begin_host=""
+                #    begin_line=0
+                #
+                #ce.run(new_c,job["playbook"],cluster_id,begin_host,begin_line)
+                if "begin_line" in job:
                     begin_line=int(job["begin_line"])
                 else:
-                    begin_host=""
                     begin_line=0
-
-                ce.run(new_c,job["playbook"],cluster_id,begin_host,begin_line)
+                
+                ce.run(new_c,job["playbook"],cluster_id,begin_line)
             except:
                 self.redis_config_client.expire(new_c,config.copy_config_expire_sec)
                 self.redis_log_client.hmset(config.prefix_sum+cluster_id,{"stop_str":"runing failed"})
