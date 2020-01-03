@@ -22,6 +22,6 @@ wait
 #echo {{global.mm}}    #使用未设置的变量会导致终止 之后的命令不再继续执行
 echo {{db1}}
 echo {{db1.host}}
-[{{db1.host.ip}}]
-echo {{db1.host.user}}
+[{{db2.host.ip}}]
+echo {{db2.host.user}}
 echo "hhhh"
