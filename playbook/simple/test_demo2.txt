@@ -7,16 +7,16 @@
 #    type: input
 #    constrict: (^\S.*\S$)|(^\S$)
 #  -
-#    key: 请输入bbb
-#    comment: please select
+#    key: bbb
+#    comment: 请输入bbb
 #    type: select 
 #    constrict: 
 #        - 111
 #        - 222
 #        - 333
 #  -
-#    key: 请输入ccc
-#    comment: please upload file
+#    key: ccc
+#    comment: 请输入ccc
 #    type: upload
 #CONTENT-END
 #
