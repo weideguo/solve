@@ -21,6 +21,8 @@ if __name__=="__main__":
                     db=config.redis_send_db, password=config.redis_send_passwd,decode_responses=True,encoding_errors='ignore')
     redis_log_pool=redis.ConnectionPool(host=config.redis_log_host, port=config.redis_log_port,\
                     db=config.redis_log_db, password=config.redis_log_passwd,decode_responses=True,encoding_errors='ignore')
+    redis_tmp_pool=redis.ConnectionPool(host=config.redis_tmp_host, port=config.redis_tmp_port,\
+                    db=config.redis_tmp_db, password=config.redis_tmp_passwd,decode_responses=True,encoding_errors='ignore')
     
     #不可清除以下
     redis_config_pool=redis.ConnectionPool(host=config.redis_config_host, port=config.redis_config_port,\
@@ -29,7 +31,7 @@ if __name__=="__main__":
     redis_job_pool=redis.ConnectionPool(host=config.redis_job_host, port=config.redis_job_port,\
                         db=config.redis_job_db, password=config.redis_job_passwd,decode_responses=True,encoding_errors='ignore')
 
-    jm=JobManager(redis_send_pool,redis_log_pool,redis_job_pool,redis_config_pool)
+    jm=JobManager(redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool)
 
     
     log_path=os.path.join(os.path.dirname(os.path.abspath(__file__)),"../logs")

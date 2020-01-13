@@ -12,14 +12,17 @@ redis_log_port=6379
 redis_log_passwd="my_redis_passwd"
 redis_log_db=1
 
+#redis_tmp
+redis_tmp_host="127.0.0.1"
+redis_tmp_port=6379
+redis_tmp_passwd="my_redis_passwd"
+redis_tmp_db=2
 
 #redis_job
 redis_job_host="127.0.0.1"
 redis_job_port=6379
 redis_job_passwd="my_redis_passwd"
 redis_job_db=14
-
-
 
 #redis_config
 redis_config_host="127.0.0.1"
@@ -54,9 +57,9 @@ cmd_log_expire_sec=60*60*24         #单条命令日志的保存时间 默认时
 kill_cluster_expire_sec=60          #kill_<cluster id>键的保存时间
 closing_host_flag_expire_sec=10     #closing_<ip>键的保存时间
 initing_host_flag_expire_sec=3*60   #initing_<ip>键的保存时间 防止在连接后到执行一个命令期间被关闭
-copy_config_expire_sec=60*60*24     #运行对象复制key的保存时间
-global_var_expire_sec=60*60*24      #global_ 全局变量的保存时间
-session_var_expire_sec=60*60*24     #复制的session过期的时间 每个job复制一次session
+tmp_config_expire_sec=60*60*24      #运行对象复制 globa_ session_ key的保存时间
+#global_var_expire_sec=60*60*24      #global_ 全局变量的保存时间
+#session_var_expire_sec=60*60*24     #复制的session过期的时间 每个job复制一次session
 wait_exit_code=100                  #执行wait命令时遇到终止命令的退出状态码
 
 put_wait_time=1                     #上传文件单次判断等待时间

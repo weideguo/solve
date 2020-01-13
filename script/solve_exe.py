@@ -35,10 +35,10 @@ class SolveExe():
     job_info["begin_host"]=""                   #存在跳过时开始执行命令的主机
     
     
-    def __init__(self,redis_send_client,redis_log_client,redis_config_client,redis_job_client,job_info={}):
+    def __init__(self,redis_send_client,redis_log_client,redis_tmp_client,redis_job_client,job_info={}):
         self.redis_send_client    = redis_send_client
         self.redis_log_client     = redis_log_client
-        self.redis_config_client  = redis_config_client
+        self.redis_tmp_client  = redis_tmp_client
         self.redis_job_client     = redis_job_client
     
         for k in job_info:
@@ -68,8 +68,8 @@ class SolveExe():
         设置session
         """
         if session_info:
-            self.redis_config_client.hmset(self.session,session_info)
-            self.redis_config_client.expire(self.session,config.session_var_expire_sec)
+            self.redis_tmp_client.hmset(self.session,session_info)
+            self.redis_tmp_client.expire(self.session,config.session_var_expire_sec)
     
     
     def exe(self):
@@ -112,7 +112,7 @@ class SolveExe():
         return result_sum
 
     def key_expire(self):
-        self.redis_config_client.expire(self.session,config.session_var_expire_sec) 
+        self.redis_tmp_client.expire(self.session,config.tmp_config_expire_sec) 
 
 
 
@@ -124,8 +124,8 @@ if __name__=="__main__":
     redis_log_client=redis.StrictRedis(host=config.redis_log_host, port=config.redis_log_port, \
                                        db=config.redis_log_db, password=config.redis_log_passwd,decode_responses=True)
     #不可清除以下
-    redis_config_client=redis.StrictRedis(host=config.redis_config_host, port=config.redis_config_port, \
-                                          db=config.redis_config_db, password=config.redis_config_passwd,decode_responses=True)
+    redis_tmp_client=redis.StrictRedis(host=config.redis_tmp_host, port=config.redis_tmp_port, \
+                                          db=config.redis_tmp_db, password=config.redis_tmp_passwd,decode_responses=True)
     redis_job_client=redis.StrictRedis(host=config.redis_job_host, port=config.redis_job_port, \
                                        db=config.redis_job_db, password=config.redis_job_passwd,decode_responses=True)
   
@@ -158,7 +158,7 @@ if __name__=="__main__":
             print("%s can not be null" % k)
             exit()
      
-    se=SolveExe(redis_send_client,redis_log_client,redis_config_client,redis_job_client,new_info)
+    se=SolveExe(redis_send_client,redis_log_client,redis_tmp_client,redis_job_client,new_info)
     
     print("--------------------------init--------------------------"+se.job_name) 
     

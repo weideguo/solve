@@ -28,28 +28,40 @@ class ClusterExecution():
     cluster_id=""                 #全局uuid 用于标记cluster的日志 global变量的存储
     target=""
     
-    def __init__(self,redis_config_pool,redis_send_pool,redis_log_pool):
+    def __init__(self,redis_send_pool,redis_log_pool,redis_tmp_pool,redis_config_pool):
         """
         每一次执行创建一个对象，运行完毕后销毁
         对多个集群执行时，创建多个对象
         多个集群多次需要创建多个对象
 
         """
-        self.redis_config_client=redis.StrictRedis(connection_pool=redis_config_pool)     #主机 集群等执行对象配置信息的redis客户端
-        self.redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)                   #执行命令 返回值等执行过程信息的redis客户端
-        self.redis_log_client=redis.StrictRedis(connection_pool=redis_log_pool)
+        self.redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)         #执行命令 返回值等执行过程信息
+        self.redis_log_client=redis.StrictRedis(connection_pool=redis_log_pool)           #执行日志
+        self.redis_tmp_client=redis.StrictRedis(connection_pool=redis_tmp_pool)           #执行对象 global session 的临时数据
+        self.redis_config_client=redis.StrictRedis(connection_pool=redis_config_pool)     #执行对象原始数据
+        
         self.exe_uuid_list=[]
         
 
-    def get_value(self,cluster_name,name_str):
+    def get_value(self,target_name,name_str):
         """
         如 db1.host.ip 获取参数值
         """
 
-        key_name=cluster_name
-
+        key_name=target_name
+        pattern='^(%s|%s)\..*' % (config.playbook_prefix_global,config.playbook_prefix_session)
+        
+        if re.match(pattern,name_str):
+            change=False
+        else:
+            change=True
+        i=0
         for n in name_str.split(".") :
-            key_name=self.redis_config_client.hgetall(key_name)[n]
+            if i and change:
+                key_name=self.redis_config_client.hgetall(key_name)[n]
+            else:
+                key_name=self.redis_tmp_client.hgetall(key_name)[n]
+                i = i+1
 
         return key_name
 
@@ -58,7 +70,7 @@ class ClusterExecution():
         """
         重置变量实现类复用
         """
-        self.redis_config_client.expire(config.prefix_global+self.cluster_id,config.global_var_expire_sec)
+        self.redis_tmp_client.expire(config.prefix_global+self.cluster_id,config.tmp_config_expire_sec)
 
         self.current_host=""
         self.exe_next=True
@@ -109,7 +121,7 @@ class ClusterExecution():
 
         logger.info("<%s %s>  %s begin" % (target,self.cluster_id,playbook)) 
 
-        self.redis_config_client.hset(target,config.playbook_prefix_global,config.prefix_global+self.cluster_id)
+        self.redis_tmp_client.hset(target,config.playbook_prefix_global,config.prefix_global+self.cluster_id)
         
         stop_str=""          #用于标记执行结束的信息
         last_uuid=""         #最后分发的命令的uuid 用于判断playbook执行是否正常退出
@@ -241,7 +253,7 @@ class ClusterExecution():
  
         self.reset()
         
-        self.redis_config_client.expire(target,config.copy_config_expire_sec)
+        self.redis_tmp_client.expire(target,config.tmp_config_expire_sec)
         
         return log_target
 
@@ -351,7 +363,7 @@ class ClusterExecution():
             g_value=self.__single_exe(self.current_host,tmp_cmd,current_uuid)
    
         #脚本全局变量保存 可以在执行脚本结束后清空        
-        self.redis_config_client.hset(g_name,g_field,g_value)
+        self.redis_tmp_client.hset(g_name,g_field,g_value)
 
 
     def __check_result(self,c_uuid_list,check_result_block=True,ignore_last_err=False):

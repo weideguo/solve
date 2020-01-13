@@ -32,17 +32,20 @@ class JobManager():
     """    
 
 
-    def __init__(self,redis_send_pool,redis_log_pool,redis_job_pool,redis_config_pool):
+    def __init__(self,redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool):
 
-        self.redis_config_pool=redis_config_pool
         self.redis_send_pool=redis_send_pool
         self.redis_log_pool=redis_log_pool
+        self.redis_tmp_pool=redis_tmp_pool
         self.redis_job_pool=redis_job_pool        
+        self.redis_config_pool=redis_config_pool
 
-        self.redis_config_client=redis.StrictRedis(connection_pool=redis_config_pool)
+        
         self.redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)    
         self.redis_log_client=redis.StrictRedis(connection_pool=redis_log_pool)
         self.redis_job_client=redis.StrictRedis(connection_pool=redis_job_pool)
+        self.redis_tmp_client=redis.StrictRedis(connection_pool=redis_tmp_pool)
+        self.redis_config_client=redis.StrictRedis(connection_pool=redis_config_pool)
 
 
     def is_host_alive(self,ip):
@@ -216,26 +219,19 @@ class JobManager():
                 continue 
 
             try:
-                #运行时复制一份，以确保原数据不影响其他并发
-                self.redis_config_client.hmset(new_c,self.redis_config_client.hgetall(c))
+                #执行对象 session运行时复制一份，以确保原数据不影响其他并发
                 #提前设置过期 防止运行到一半失败时一直占用
-                self.redis_config_client.expire(new_c,config.copy_config_expire_sec)
+                self.redis_tmp_client.hmset(new_c,self.redis_config_client.hgetall(c))
+                self.redis_tmp_client.expire(new_c,config.tmp_config_expire_sec)
             
                 try:
                     s=job[config.playbook_prefix_session]
-                    self.redis_config_client.hset(new_c,config.playbook_prefix_session,s)
+                    self.redis_tmp_client.hset(new_c,config.playbook_prefix_session,s)
                 except:
                     pass
                 
-                ce=ClusterExecution(self.redis_config_pool,self.redis_send_pool,self.redis_log_pool)
-                #if ("begin_host" in job) and ("begin_line" in job):
-                #    begin_host=job["begin_host"]
-                #    begin_line=int(job["begin_line"])
-                #else:
-                #    begin_host=""
-                #    begin_line=0
-                #
-                #ce.run(new_c,job["playbook"],cluster_id,begin_host,begin_line)
+                ce=ClusterExecution(self.redis_send_pool,self.redis_log_pool,self.redis_tmp_pool,self.redis_config_pool)
+                
                 if "begin_line" in job:
                     begin_line=int(job["begin_line"])
                 else:
@@ -243,7 +239,7 @@ class JobManager():
                 
                 ce.run(new_c,job["playbook"],cluster_id,begin_line)
             except:
-                self.redis_config_client.expire(new_c,config.copy_config_expire_sec)
+                self.redis_tmp_client.expire(new_c,config.tmp_config_expire_sec)
                 self.redis_log_client.hmset(config.prefix_sum+cluster_id,{"stop_str":"runing failed"})
                 logger_err.error("could not use playbook on %s" % c )
                 logger_err.error(format_exc())
