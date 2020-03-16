@@ -5,3 +5,4 @@ echo {{session.aaa}}
 echo {{session.ccc}}
 echo {{session.ddd}}
 echo {{session.bbb}}
+echo {{session.fff}}
