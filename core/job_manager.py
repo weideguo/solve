@@ -210,25 +210,38 @@ class JobManager():
                 cluster_id=oc.split(config.cmd_spliter)[1]    
             except:
                 cluster_id=uuid.uuid1().hex
-                        
+            
             new_c=c+"_"+cluster_id
-            log_target.append([new_c,config.prefix_log_target+cluster_id])
-
-            if not self.redis_config_client.hgetall(c):
-                self.redis_log_client.hmset(config.prefix_sum+cluster_id,{"stop_str":"not exist"})
-                continue 
-
-            try:
-                #执行对象 session运行时复制一份，以确保原数据不影响其他并发
-                #提前设置过期 防止运行到一半失败时一直占用
+            
+            if self.redis_tmp_client.hgetall(c):
+                #在tmp库存在要执行的对象，则不必再从config库复制,且不为重复运行
+                cluster_id=c.split('_')[-1]
+                new_c=c
+                log_target.append([new_c,config.prefix_log_target+cluster_id])
+            elif self.redis_tmp_client.hgetall(new_c):    
+                #在tmp库存在要执行的对象，则不必再从config库复制,且不为重复运行
+                log_target.append([new_c,config.prefix_log_target+cluster_id])
+            else:
+                #需要复制但在config库中不存在，则跳到下一个循环
+                log_target.append([new_c,config.prefix_log_target+cluster_id])
+                if not self.redis_config_client.hgetall(c):
+                    self.redis_log_client.hmset(config.prefix_sum+cluster_id,{"stop_str":"not exist"})
+                    continue 
+                
+                #执行运行时对象复制一份，以确保原数据不影响其他并发
+                #提前设置过期 防止运行到一半失败时一直占用 
                 self.redis_tmp_client.hmset(new_c,self.redis_config_client.hgetall(c))
                 self.redis_tmp_client.expire(new_c,config.tmp_config_expire_sec)
+           
+            #session在生成job时已经放入tmp库
+            #有些任务可能没有session
+            try:
+                s=job[config.playbook_prefix_session]
+                self.redis_tmp_client.hset(new_c,config.playbook_prefix_session,s)
+            except:
+                pass
             
-                try:
-                    s=job[config.playbook_prefix_session]
-                    self.redis_tmp_client.hset(new_c,config.playbook_prefix_session,s)
-                except:
-                    pass
+            try:
                 
                 ce=ClusterExecution(self.redis_send_pool,self.redis_log_pool,self.redis_tmp_pool,self.redis_config_pool)
                 
