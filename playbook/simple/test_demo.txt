@@ -6,3 +6,4 @@ echo {{session.ccc}}
 echo {{session.ddd}}
 echo {{session.bbb}}
 echo {{session.fff}}
+echo "{{session.ggg}}"
