@@ -73,17 +73,17 @@ host_close_chech_interval=60*60     #检查是否关闭连接的时间间隔
 
 is_copy_by_link=1                   #是否使用软链接代替复制
 
-cmd_spliter="@@@@@"                 #所有关键命令与uuid的分隔符   如cmd+cmd_spilter+uuid ip/cluster_Str
+spliter="@@@@@"                     #所有与uuid的分隔符   如cmd+spliter+uuid 日志 target
 
 
 #######################################################################################################
 #redis_config
 prefix_realhost="realhost_"         #用于创建连接的主机的key开头
-prefix_global="global_"             #全局变量对应的key开头
-prefix_session="session_"           #输入变量对应的key开头
+prefix_global="global"              #全局变量对应的key开头 playbook中全局变量的开头 全局变量如 global.yyy
+prefix_session="session"            #输入变量对应的key开头 playbook中全局变量的开头 全局变量如 global.yyy
 
-playbook_prefix_global="global"     #playbook中全局变量的开头 全局变量如 global.yyy
-playbook_prefix_session="session"   #playbook中输入变量的开头 输入变量如 session.xxx
+#playbook_prefix_global="global"     #playbook中全局变量的开头 全局变量如 global.yyy
+#playbook_prefix_session="session"   #playbook中全局变量的开头 全局变量如 global.yyy
 
 #redis_log
 prefix_sum="sum_"                   #每次每个执行对象所执行的汇总
@@ -94,7 +94,7 @@ prefix_log_job="log_job_"           #每个任务的日志信息
 
 #redis_send
 prefix_kill="kill_"                 #key_<cluster id>  终止执行对象的key
-prefix_cmd="cmd_"                   #cmd_<host ip>   对主机分发的命令 cmd+cmd_spilter+c_uuid     
+prefix_cmd="cmd_"                   #cmd_<host ip>   对主机分发的命令 cmd+spliter+c_uuid     
 prefix_heart_beat="heart_beat_"     #heart_beat_<host ip>  主机心跳的key
 prefix_check_flag="check_flag_"     #check_flag_<host ip>  是否可以检查存在连接  已经存在则不可再次检查
 prefix_initing="initing_"           #正在创建连接的标识

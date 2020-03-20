@@ -20,12 +20,12 @@ class SolveExe():
     
     job_id=uuid.uuid1().hex
     job_name=config.prefix_job+job_id
-    session=config.prefix_session+job_id
+    session=config.prefix_session+config.spliter+job_id
     
     job_info["job_id"]=job_id  
     job_info["target"]=""                       #必须在初始时设置 cluter1,cluter2,cluter3
     job_info["playbook"]=""                     #必须在初始时设置 文件路径
-    job_info[config.playbook_prefix_session]=session
+    job_info[config.prefix_session]=session
     job_info["begin_time"]=time.time()   
     job_info["user"]="script"
     job_info["job_type"]="test"
@@ -58,7 +58,7 @@ class SolveExe():
                 #但不应排除#只后的字符串 如   echo "#" {{session.YYYY}}
                 if not re.match("^#",l):
                     #session_vars=session_vars+re.findall("(?<={{session\.).*?(?=}})",l)
-                    session_vars=session_vars+re.findall("(?<={{"+config.playbook_prefix_session+"\.).*?(?=}})",l)
+                    session_vars=session_vars+re.findall("(?<={{"+config.prefix_session+"\.).*?(?=}})",l)
                 l=f.readline()
         return list(set(session_vars))
     
@@ -69,7 +69,7 @@ class SolveExe():
         """
         if session_info:
             self.redis_tmp_client.hmset(self.session,session_info)
-            self.redis_tmp_client.expire(self.session,config.session_var_expire_sec)
+            self.redis_tmp_client.expire(self.session,config.tmp_config_expire_sec)
     
     
     def exe(self):
@@ -95,8 +95,10 @@ class SolveExe():
         if log_job_dict:
             log_target=eval(log_job_dict["log"])
             for lc in log_target:
-                cluster_id=lc[0].split("_")[-1]
-                cluster_name=lc[0].split("_"+cluster_id)[0]
+                #cluster_id=lc[0].split("_")[-1]
+                #cluster_name=lc[0].split("_"+cluster_id)[0]
+                cluster_id=lc[0].split(config.spliter)[-1]
+                cluster_name=lc[0].split(config.spliter+cluster_id)[0]
     
                 cluster_log_last_info=self.redis_log_client.hgetall("sum_"+cluster_id)                              #获取最后一个命令的日志
                 #print(cluster_log_last_info)

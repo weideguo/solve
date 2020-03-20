@@ -24,7 +24,7 @@ class SolveBatch():
         发送连接信息 
         """
         for target in target_list:
-            self.redis_send_client.rpush(config.key_conn_control,target[0]+config.cmd_spliter+target[1])    
+            self.redis_send_client.rpush(config.key_conn_control,target[0]+config.spliter+target[1])    
     
         
     def connect_check(self,target_list):
@@ -62,7 +62,7 @@ class SolveBatch():
         对已经存在连接主机执行命令
         """
         for target in self.connect_check(target_list):
-            self.redis_send_client.rpush(config.prefix_cmd+target[0],cmd+config.cmd_spliter+target[1])
+            self.redis_send_client.rpush(config.prefix_cmd+target[0],cmd+config.spliter+target[1])
     
     
     def exe(self,target_list,cmd):

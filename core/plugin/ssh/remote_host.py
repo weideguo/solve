@@ -239,7 +239,7 @@ class RemoteHost(MySSH):
                     allcmd=""
 
                 if allcmd:
-                    allcmd=allcmd.split(config.cmd_spliter)        
+                    allcmd=allcmd.split(config.spliter)        
                     cmd=allcmd[0]
                     if len(allcmd)>1:
                         cmd_uuid=allcmd[1]

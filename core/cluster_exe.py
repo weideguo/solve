@@ -49,7 +49,7 @@ class ClusterExecution():
         """
 
         key_name=target_name
-        pattern='^(%s|%s)\..*' % (config.playbook_prefix_global,config.playbook_prefix_session)
+        pattern='^(%s|%s)\..*' % (config.prefix_global,config.prefix_session)
         
         if re.match(pattern,name_str):
             change=False
@@ -70,7 +70,7 @@ class ClusterExecution():
         """
         重置变量实现类复用
         """
-        self.redis_tmp_client.expire(config.prefix_global+self.cluster_id,config.tmp_config_expire_sec)
+        self.redis_tmp_client.expire(config.prefix_global+config.spliter+self.cluster_id,config.tmp_config_expire_sec)
 
         self.current_host=""
         self.exe_next=True
@@ -121,7 +121,7 @@ class ClusterExecution():
 
         logger.info("<%s %s>  %s begin" % (target,self.cluster_id,playbook)) 
 
-        self.redis_tmp_client.hset(target,config.playbook_prefix_global,config.prefix_global+self.cluster_id)
+        self.redis_tmp_client.hset(target,config.prefix_global,config.prefix_global+config.spliter+self.cluster_id)
         
         stop_str=""          #用于标记执行结束的信息
         last_uuid=""         #最后分发的命令的uuid 用于判断playbook执行是否正常退出
@@ -199,7 +199,7 @@ class ClusterExecution():
 
                     #脚本全局变量设置
                     #elif re.match("^global\..+=",cmd):
-                    elif re.match("^"+config.playbook_prefix_global+"\..+=",cmd):
+                    elif re.match("^"+config.prefix_global+"\..+=",cmd):
                         self.__global_var(cmd,self.current_uuid)
 
                     #普通命令 简单的shell命令
@@ -288,10 +288,10 @@ class ClusterExecution():
             check_reault_block=False 
             #print c_uuid,self.exe_uuid_list,self.target 
             cmd=re.sub("&\s*?$","",cmd)
-            self.redis_send_client.rpush(config.prefix_cmd+host,cmd+config.cmd_spliter+c_uuid)
+            self.redis_send_client.rpush(config.prefix_cmd+host,cmd+config.spliter+c_uuid)
             r=""
         else:        
-            self.redis_send_client.rpush(config.prefix_cmd+host,cmd+config.cmd_spliter+c_uuid)        
+            self.redis_send_client.rpush(config.prefix_cmd+host,cmd+config.spliter+c_uuid)        
             r=self.__check_result([c_uuid])[0]["stdout"].replace("\n","")   
  
         logger.debug("-------------- <%s %s> %s %s %s complete" % (self.target,self.cluster_id,host,cmd,c_uuid))        
@@ -308,7 +308,7 @@ class ClusterExecution():
 
         if self.current_host:
             #将主机ip放入初始化队列 由其他线程后台初始化连接
-            self.redis_send_client.rpush(config.key_conn_control,self.current_host+config.cmd_spliter+current_uuid)
+            self.redis_send_client.rpush(config.key_conn_control,self.current_host+config.spliter+current_uuid)
             self.redis_log_client.hset(current_uuid,"uuid",current_uuid)
 
             #阻塞到host启动完毕
@@ -347,11 +347,11 @@ class ClusterExecution():
         对于如 global.xx=`${cmd_exe}` 全局参数的设置
         """
         
-        g_field=cmd.split("=")[0].lstrip(config.playbook_prefix_global+".").strip()         #变量名
+        g_field=cmd.split("=")[0].lstrip(config.prefix_global+".").strip()         #变量名
         #g_value=cmd.lstrip(cmd.split("=")[0]+"=")                  #变量值 会去除额外的字符
         g_value=cmd.split(cmd.split("=")[0]+"=")[1]                 #变量值
 
-        g_name=config.prefix_global+self.cluster_id
+        g_name=config.prefix_global+config.spliter+self.cluster_id
 
         os_type = platform.system()
 

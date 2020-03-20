@@ -117,7 +117,7 @@ class SaltConn(AbstractConn):
         可以为阻塞式实行，即可以等执行完毕并获取到结果
         """
         #print("execute by salt %s %s" % (ip,allcmd))
-        allcmd=allcmd.split(config.cmd_spliter)
+        allcmd=allcmd.split(config.spliter)
         cmd=allcmd[0]
         try:
             cmd_uuid=allcmd[1]

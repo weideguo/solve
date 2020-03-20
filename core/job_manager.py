@@ -80,7 +80,7 @@ class JobManager():
 
         while True:
             init_host=self.redis_send_client.blpop(config.key_conn_control)
-            init_host_list=init_host[1].split(config.cmd_spliter)
+            init_host_list=init_host[1].split(config.spliter)
             init_host=init_host_list[0]
             if len(init_host_list)>1:
                 init_host_uuid=init_host_list[1]
@@ -204,22 +204,17 @@ class JobManager():
         
         log_target=[]
         for oc in job["target"].split(","):
-            c=oc.split(config.cmd_spliter)[0]
+            c=oc.split(config.spliter)[0]
             
             try: 
-                cluster_id=oc.split(config.cmd_spliter)[1]    
+                cluster_id=oc.split(config.spliter)[1]    
             except:
                 cluster_id=uuid.uuid1().hex
             
-            new_c=c+"_"+cluster_id
+            new_c=c+config.spliter+cluster_id
             
-            if self.redis_tmp_client.hgetall(c):
-                #在tmp库存在要执行的对象，则不必再从config库复制,且不为重复运行
-                cluster_id=c.split('_')[-1]
-                new_c=c
-                log_target.append([new_c,config.prefix_log_target+cluster_id])
-            elif self.redis_tmp_client.hgetall(new_c):    
-                #在tmp库存在要执行的对象，则不必再从config库复制,且不为重复运行
+            if self.redis_tmp_client.hgetall(new_c):    
+                #在tmp库存在要执行的对象，则不必再从config库复制
                 log_target.append([new_c,config.prefix_log_target+cluster_id])
             else:
                 #需要复制但在config库中不存在，则跳到下一个循环
@@ -236,8 +231,8 @@ class JobManager():
             #session在生成job时已经放入tmp库
             #有些任务可能没有session
             try:
-                s=job[config.playbook_prefix_session]
-                self.redis_tmp_client.hset(new_c,config.playbook_prefix_session,s)
+                s=job[config.prefix_session]
+                self.redis_tmp_client.hset(new_c,config.prefix_session,s)
             except:
                 pass
             
