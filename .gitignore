@@ -110,4 +110,3 @@ bak/
 # ignore some file
 *.bak
 *.swp
-playbook/*
