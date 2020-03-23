@@ -2,12 +2,14 @@
 #coding:utf8
 #execute job by this script
 
+import os
 import re
 import sys
 import time
 import uuid
 import redis
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from conf import config
 
 

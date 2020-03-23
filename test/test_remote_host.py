@@ -1,4 +1,9 @@
+#coding:utf8
+import os
+import sys
 import redis
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.plugin.ssh.remote_host import RemoteHost
 
 if __name__=="__main__":

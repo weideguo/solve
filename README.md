@@ -23,7 +23,7 @@ vim conf/config.py
 #install dependency
 pip install -r requirement.tx
 #set env
-export PYTHONPATH=$PYTHONPATH:`pwd`
+#export PYTHONPATH=$PYTHONPATH:`pwd`
 export LC_ALL=en_US.UTF-8
 ```
 

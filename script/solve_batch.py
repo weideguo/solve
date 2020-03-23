@@ -1,11 +1,14 @@
 #coding:utf8
 #用于单次命令分发
+import os
+import sys
 import uuid
 import time
 import redis
 
 from multiprocessing import Process
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from conf import config
 
 

@@ -9,6 +9,9 @@ import sys
 import time
 
 import redis
+
+base_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(base_dir)
 from core.job_manager import JobManager
 
 
@@ -34,7 +37,7 @@ if __name__=="__main__":
     jm=JobManager(redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool)
 
     
-    log_path=os.path.join(os.path.dirname(os.path.abspath(__file__)),"../logs")
+    log_path=os.path.join(base_dir,"./logs")
     if not os.path.exists(log_path):
         os.makedirs(log_path)
     
