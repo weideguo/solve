@@ -135,7 +135,7 @@ class ClusterExecution():
 
         with open(playbook,"r") as f:
          
-            next_cmd=f.readline().rstrip()
+            next_cmd=f.readline().strip()
             current_line=1            
             while next_cmd and self.exe_next:
                  
