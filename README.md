@@ -100,7 +100,10 @@ demo
 redis_send redis_log redis_job redis_config为配置文件conf/config.py中设置的redis
 
 ```
-#创建连接主机 名字必须为 realhost_<ip>
+#playbook命令样例
+#跳转语句 左右只允许存在空格
+[10.0.0.1]
+[{{ip}}]
 #全局参数
 global.my_global_test=`date +%s`abc
 #使用全局参数
@@ -109,23 +112,42 @@ echo {{global.my_global_test}}
 echo {{session.my_session_test}}
 #单行命令
 mysql -u{{const.db_user}} -p{{const.db_passwd}} -h127.0.0.1 -P{{db_port}} -e"show databases"
-#上传文件
+#上传文件 远端目录不存在则创建 文件名跟本地一样 
+#通过md5判断是否一致 远端文件存但md5不一样则被重命令
 PUT:/tmp/my_local_file:/tmp
 PUT:{{session.local_file}}:{{session.remote_path}}
-下载文件
+#上传也可以后台运行
+PUT:{{session.local_file}}:{{session.remote_path}} &
+#下载文件 本地目录不存在则创建 文件名跟远端的一样 本地文件存在则被重命令
 GET:/tmp:/tmp/my_remote_file
 GET:{{session.local_path}}:{{session.remote_file}}
-#后台运行 可以跨多个主机后台运行，即发生主机跳转也可以
+#下载也可以后台运行
+GET:{{session.local_path}}:{{session.remote_file}} &
+#后台运行 &之后只允许存在空格
+#可以跨多个主机后台运行，即发生主机跳转也可以
 echo "111" ; sleep 15 &
-echo "222" ; sleep 13 &
-echo "333" ; sleep 14 &
+echo "222" && sleep 13 &
+echo "333" && sleep 14 &
+#等待所有后台运行的结束 左右只允许存在空格
 wait
 ```
 ```
 #创建job
-redis_job> hmset job_dcf3e208d47011e99464000c295dd589 "target" "server_mysql_10.0.0.1" "playbook" "/tmp/myplaybook.txt" "session" "session_dcf3e208d47011e99464000c295dd589"
+cat > /tmp/myplaybook.txt <<EOF
+[{{ip}}]
+echo {{ip}}
+echo {{port}}
+EOF
+
+#以下操作要在redis操作
+#创建连接主机 名字必须为 realhost_<ip> 格式固定
+redis_config> hmset realhost_10.0.0.1 ip 10.0.0.1 user root ssh_port 22 passwd my_ssh_passwd
+#设置执行对象
+redis_config> hmset server_mysql_10.0.0.1 ip 10.0.0.1 port 3306
 #设置session参数 要设置的属性由playbook使用的session参数确定
-redis_config> hmset session_dcf3e208d47011e99464000c295dd589 "my_session_test" "bbbbb" "local_file" "/tmp/abc.txt"
+redis_tmp> hmset session_dcf3e208d47011e99464000c295dd589 "my_session_test" "bbbbb" "local_file" "/tmp/abc.txt"
+#创建job
+redis_job> hmset job_dcf3e208d47011e99464000c295dd589 "target" "server_mysql_10.0.0.1" "playbook" "/tmp/myplaybook.txt" "session" "session_dcf3e208d47011e99464000c295dd589"
 #执行job
 redis_send> rpush job_list job_dcf3e208d47011e99464000c295dd589
 #查看执行结果
