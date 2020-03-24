@@ -281,7 +281,7 @@ class ClusterExecution():
             #self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
             self.exe_uuid_list=[]
             r=""
-        elif re.match(".* &$",cmd.strip()):
+        elif re.match(".*&$",cmd.strip()):
             #特殊处理如   shell command &   
             #print self.exe_uuid_list
             self.exe_uuid_list.append(c_uuid)
