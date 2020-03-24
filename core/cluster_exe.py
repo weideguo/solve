@@ -47,16 +47,17 @@ class ClusterExecution():
         """
         如 db1.host.ip 获取参数值
         """
-
+        name_str=name_str.strip()
         key_name=target_name
-        pattern='^(%s|%s)\..*' % (config.prefix_global,config.prefix_session)
+        pattern='^(%s|%s)\s*\..*' % (config.prefix_global,config.prefix_session)
         
         if re.match(pattern,name_str):
             change=False
         else:
             change=True
         i=0
-        for n in name_str.split(".") :
+        for n in name_str.split("."):
+            n=n.strip()
             if i and change:
                 key_name=self.redis_config_client.hgetall(key_name)[n]
             else:
@@ -81,13 +82,17 @@ class ClusterExecution():
 
     def render(self,target,cmd):
         """
-        使用jinja2模板方法替换命令中的变量
+        使用jinja2模板方法替换命令中的变量 
+        变量存在左右空格不影响，会被清除
+        变量中间不能存在空格
         """
         data={}
         for c in re.findall("(?<={{).+?(?=}})",cmd):
-            c_r=c.replace(".","_____")                   #.被jinja2特殊使用 因此使用_____临时替代
+            #c_r=c.replace(".","_____")                   #.被jinja2特殊使用 因此使用_____临时替代
+            c_r=re.sub("\s*\.\s*","_____",c).strip()      #去除字符串的左右空格 以及.左右的空格
             cmd=cmd.replace(c,c_r)
-            try: 
+            try:
+                # python2转成uincode; python3直接为unicode，不需转换
                 data[c_r]=self.get_value(target,c).decode('utf8')
             except:            
                 data[c_r]=self.get_value(target,c)
