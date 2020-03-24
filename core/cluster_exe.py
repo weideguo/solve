@@ -139,17 +139,19 @@ class ClusterExecution():
         self.redis_log_client.hmset(stop_id,stop_info)        
 
         with open(playbook,"r") as f:
-         
-            next_cmd=f.readline().strip()
+            
+            next_cmd=f.readline()
             current_line=1            
             while next_cmd and self.exe_next:
-                 
+                #去除所有命令的左右空格以及换行符，并转换成unicode格式
+                next_cmd=next_cmd.strip()
+                try:
+                    next_cmd=next_cmd.decode("utf8")
+                except:
+                    next_cmd=next_cmd
+                
                 self.current_uuid=uuid.uuid1().hex
                 if current_line < begin_line:
-                    #if current_line == 1:
-                    #    cmd="[%s]" % begin_host
-                    #else:
-                    #    cmd=""
                     #主机切换的命令正常运行
                     if re.match("^\[.*\]$",next_cmd):
                         cmd=next_cmd
@@ -158,13 +160,6 @@ class ClusterExecution():
                 else:
                     cmd=next_cmd
                 
-                try:
-                    cmd=cmd.decode("utf8")
-                except:
-                    cmd=cmd
-                
-                #logger_err.debug(begin_host+self.current_host+" "+str(current_line)+" "+str(begin_line)+" "+cmd+" "+next_cmd)                
-
                 self.redis_log_client.rpush(config.prefix_log_target+self.cluster_id,self.current_uuid)
                 """
                 每一行命令的日志id都放入日志队列 
@@ -172,9 +167,9 @@ class ClusterExecution():
                 以及每一行的执行结果
                 """
                 
-                #去除注释以及空白行
                 if re.match("^#",cmd) or re.match("^$",cmd):
-                    logger.debug("origin command: %s ---- <%s %s> will not execute" % (cmd,self.target,self.cluster_id))
+                    #跳过注释以及空白行
+                    logger.debug("origin command: %s ---- <%s %s> will not execute" % (next_cmd,self.target,self.cluster_id))
                     
                 else:
                     self.redis_log_client.hset(self.current_uuid,"start_timestamp",time.time())       
