@@ -33,6 +33,12 @@ class RemoteHost(MySSH):
         #super(RemoteHost, self).__init__(host_info)
         super(RemoteHost, self).__init__(host_info)       
  
+        self.ip=host_info["ip"]
+        if "tag" in host_info:
+            self.tag=host_info["tag"]
+        else:
+            self.tag=self.ip
+ 
         self.redis_send_pool=redis_send_pool
         self.redis_log_pool=redis_log_pool
         self.redis_send_client=None
@@ -70,11 +76,11 @@ class RemoteHost(MySSH):
         local_filesize=os.path.getsize(local_file)
         
         put_flag = False
-        if self.redis_log_client.hexists(config.prefix_put+self.host_info["ip"],local_md5):
+        if self.redis_log_client.hexists(config.prefix_put+self.tag,local_md5):
             #已经存在其他上传操作的情况
             wait_flag = 1 
             while wait_flag:
-                exist_remote_file = self.redis_log_client.hget(config.prefix_put+self.host_info["ip"],local_md5)
+                exist_remote_file = self.redis_log_client.hget(config.prefix_put+self.tag,local_md5)
                 if exist_remote_file:
                     wait_flag = 0
                     try:
@@ -104,17 +110,17 @@ class RemoteHost(MySSH):
             put_flag = True
 
         if put_flag:
-            self.redis_log_client.hset(config.prefix_put+self.host_info["ip"],local_md5,"")
+            self.redis_log_client.hset(config.prefix_put+self.tag,local_md5,"")
             try:
                 local_md5,remote_md5,is_success,error_msg=self.put_file(local_file,remote_path,set_info)
                 if is_success:
-                    self.redis_log_client.hset(config.prefix_put+self.host_info["ip"],local_md5,remote_file)
+                    self.redis_log_client.hset(config.prefix_put+self.tag,local_md5,remote_file)
                 else:
-                    self.redis_log_client.hdel(config.prefix_put+self.host_info["ip"],local_md5)
+                    self.redis_log_client.hdel(config.prefix_put+self.tag,local_md5)
                     
                 return local_md5,remote_md5,is_success,error_msg
             except:
-                self.redis_log_client.hdel(config.prefix_put+self.host_info["ip"],local_md5)
+                self.redis_log_client.hdel(config.prefix_put+self.tag,local_md5)
                 logger_err.error(format_exc())
                 return "","",0,"upload failed"
         else:
@@ -143,8 +149,8 @@ class RemoteHost(MySSH):
         exe_result["begin_timestamp"]=begin_timestamp
         exe_result["cmd"]=cmd
         exe_result["uuid"]=cmd_uuid
-        exe_result["exe_host"]=self.host_info["ip"]
-        exe_result["from_host"]=get_host_ip(self.host_info["ip"])
+        exe_result["exe_host"]=self.tag
+        exe_result["from_host"]=get_host_ip(self.ip)
         
         logger.debug(str(exe_result)+" begin")
         
@@ -213,7 +219,7 @@ class RemoteHost(MySSH):
         if is_update:
             self.redis_log_client.expire(log_uuid,config.cmd_log_expire_sec)      #获取返回值后设置日志过期时间
         else:
-            self.redis_log_client.rpush(config.prefix_log_host+self.host_info["ip"],log_uuid)
+            self.redis_log_client.rpush(config.prefix_log_host+self.tag,log_uuid)
         self.redis_log_client.hmset(log_uuid,exe_result)
 
    
@@ -223,7 +229,7 @@ class RemoteHost(MySSH):
         通过线程开启并发操作 
         """
 
-        key=config.prefix_cmd+self.host_info["ip"]
+        key=config.prefix_cmd+self.tag
 
         while self.is_run:
             self.thread_q.put(1)                #控制并发数
@@ -267,13 +273,13 @@ class RemoteHost(MySSH):
         定时更新连接信息
         """
         while self.is_run:
-            logger.debug("%s heart beat" % self.host_info["ip"])
-            self.redis_send_client.set(config.prefix_heart_beat+self.host_info["ip"],time.time())
+            logger.debug("%s heart beat" % self.tag)
+            self.redis_send_client.set(config.prefix_heart_beat+self.tag,time.time())
             #断开后key自动删除
-            self.redis_send_client.expire(config.prefix_heart_beat+self.host_info["ip"],config.host_check_success_time)
+            self.redis_send_client.expire(config.prefix_heart_beat+self.tag,config.host_check_success_time)
             time.sleep(config.heart_beat_interval)
 
-        self.redis_send_client.delete(config.prefix_heart_beat+self.host_info["ip"])
+        self.redis_send_client.delete(config.prefix_heart_beat+self.tag)
         
     
     def __close_conn(self):
@@ -286,11 +292,11 @@ class RemoteHost(MySSH):
         while True:             
             pub.listen()
             kill_info=pub.parse_response(block=True)     #阻塞获取
-            kill_ip=kill_info[-1]
+            kill_tag=kill_info[-1]
 
-            if kill_ip==self.host_info["ip"]:            
+            if kill_tag==self.tag:            
                 self.is_run=False
-                self.redis_send_client.set(config.prefix_closing+self.host_info["ip"],time.time())    #标记host处于关闭状态，不再执行新命令
+                self.redis_send_client.set(config.prefix_closing+self.tag,time.time())    #标记host处于关闭状态，不再执行新命令
                 #正在运行的并发运行完毕后再退出
                 while not self.t_thread_q.empty():
                     t=self.t_thread_q.get()
@@ -299,8 +305,8 @@ class RemoteHost(MySSH):
                 self.close()
                 break
 
-        self.redis_send_client.delete(config.prefix_heart_beat+self.host_info["ip"])
-        self.redis_send_client.expire(config.prefix_closing+self.host_info["ip"],config.closing_host_flag_expire_sec)      #关闭已经完成  
+        self.redis_send_client.delete(config.prefix_heart_beat+self.tag)
+        self.redis_send_client.expire(config.prefix_closing+self.tag,config.closing_host_flag_expire_sec)      #关闭已经完成  
     
 
     def close(self):
@@ -313,7 +319,7 @@ class RemoteHost(MySSH):
         #self.redis_send_client=None            #不重置以确保redis还能用于重置命令队列 
         #self.redis_log_client=None        
 
-        logger.info("%s is closed" % self.host_info["ip"])
+        logger.info("%s is closed" % self.tag)
 
 
 
