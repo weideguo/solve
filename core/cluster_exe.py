@@ -196,7 +196,15 @@ class ClusterExecution():
                     if re.match("^\[.*\]$",cmd):
                         self.__host_change(cmd,self.current_uuid)                        
                         self.__check_result([self.current_uuid])
-
+                    
+                    #没有预先切换主机则终止
+                    elif not self.current_host:
+                        self.redis_log_client.hset(self.current_uuid,"exit_code","current_host null")
+                        self.redis_log_client.hset(self.current_uuid,"stderr","should execute [<ip>] before any command")
+                        self.redis_log_client.hset(self.current_uuid,"stdout","")
+                        self.exe_next=False                   
+                        break
+                    
                     #脚本全局变量设置
                     #elif re.match("^global\..+=",cmd):
                     elif re.match("^"+config.prefix_global+"\..+=",cmd):
@@ -304,7 +312,7 @@ class ClusterExecution():
         将连接信息插入队列 控制主机的连接 并切换当前接受命令的主机        
         """
 
-        self.current_host=cmd.replace("[","").replace("]","")
+        self.current_host=cmd.replace("[","").replace("]","").strip()
 
         if self.current_host:
             #将主机ip放入初始化队列 由其他线程后台初始化连接
