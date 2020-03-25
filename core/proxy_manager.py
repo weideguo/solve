@@ -17,7 +17,7 @@ class ProxyManager(JobManager):
     与master使用的文件目录（playbook、上传目录）要通过rsync实时同步，且存放位置一致
     """
     
-    def __init__(self,redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool,redis_proxy_pool):
+    def __init__(self,redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool):
         """
         self.redis_send_pool=redis_send_pool
         self.redis_log_pool=redis_log_pool
@@ -32,8 +32,8 @@ class ProxyManager(JobManager):
         self.redis_tmp_client=redis.StrictRedis(connection_pool=redis_tmp_pool)
         self.redis_config_client=redis.StrictRedis(connection_pool=redis_config_pool)
         """
-        self.redis_proxy_pool=redis_proxy_pool
-        self.redis_proxy_client=redis.StrictRedis(connection_pool=redis_proxy_pool)
+        super(ProxyManager, self).__init__(redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool))   
+        
 
         self.proxy_tag="PROXY:"+get_host_ip()
 
