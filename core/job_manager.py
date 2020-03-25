@@ -150,6 +150,8 @@ class JobManager():
             elif re.match("^PROXY:"+".*",init_host.upper()):
                 # PROXY 如 PROXY:10.0.0.1:192.168.16.1  不分大小写
                 # 不在本地创建连接，由其他proxy创建链接
+                # 广播让其他proxy接收
+                self.redis_send_client.publish(config.proxy_tag,init_host) 
                 logger.debug("< %s > will init connect by proxy, not here" % init_host)
             
             elif (init_host in config.local_ip_list):
