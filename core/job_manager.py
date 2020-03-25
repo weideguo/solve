@@ -32,7 +32,6 @@ class JobManager():
     SSH连接与关闭的控制
     """    
 
-
     def __init__(self,redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool):
 
         self.redis_send_pool=redis_send_pool
@@ -40,7 +39,6 @@ class JobManager():
         self.redis_tmp_pool=redis_tmp_pool
         self.redis_job_pool=redis_job_pool        
         self.redis_config_pool=redis_config_pool
-
         
         self.redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)    
         self.redis_log_client=redis.StrictRedis(connection_pool=redis_log_pool)
@@ -48,11 +46,13 @@ class JobManager():
         self.redis_tmp_client=redis.StrictRedis(connection_pool=redis_tmp_pool)
         self.redis_config_client=redis.StrictRedis(connection_pool=redis_config_pool)
 
+    
     def is_listen_tag_clean(self,listen_tag=config.local_ip_list):
         #启动本地时检查是否已经存在旧的命令
         for init_host in listen_tag:
             if self.redis_send_client.llen(config.prefix_cmd+init_host):
                 raise Exception("%s should be null" % (config.prefix_cmd+init_host))
+    
     
     def conn_localhost(self,listen_tag=config.local_ip_list,check=False):
         """
@@ -216,9 +216,8 @@ class JobManager():
 
 
             time.sleep(config.host_close_chech_interval)   
-  
-               
-
+    
+    
     def __real_job_exe(self,job_id):
         """
         单个任务的执行
@@ -285,8 +284,8 @@ class JobManager():
         
         log_job["log"]=str(log_target)
         self.redis_log_client.hmset(config.prefix_log_job+job_id.split(config.prefix_job)[1],log_job)        
- 
-
+    
+    
     def __job_exe(self):
         """
         监听队列持续执行任务
@@ -301,8 +300,8 @@ class JobManager():
             job_id=job_id[1]
             t=Thread(target=self.__real_job_exe,args=(job_id,))
             t.start()
-
-
+    
+    
     def run_forever(self):
         """
         后台执行
@@ -322,5 +321,3 @@ class JobManager():
         
         t4=Thread(target=self.conn_localhost)
         t4.start()
-
-

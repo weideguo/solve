@@ -12,7 +12,9 @@ if __name__=="__main__":
     
     redis_send_pool=redis.ConnectionPool(host="127.0.0.1", port=6379, db=0, password="my_redis_passwd",decode_responses=True)        
     redis_log_pool=redis.ConnectionPool(host="127.0.0.1", port=6379, db=1, password="my_redis_passwd",decode_responses=True)        
-    listen_tag=["127.0.0.1","localhost"]        
+    #listen_tag=["127.0.0.1","localhost"]        
+    
+    listen_tag=["proxy:192.168.153.128:127.0.0.1"]
     
     lh=LocalHost(redis_send_pool,redis_log_pool,listen_tag) 
     lh.forever_run()
