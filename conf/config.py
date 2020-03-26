@@ -52,6 +52,7 @@ core.plugin.salt.salt_conn.SaltConn                   使用salt实现,首次启
 #是否为proxy模式 不设置默认为master
 #PROXY=True
 proxy_tag="proxy"                   #用于标记主机为proxy以及proxy广播用的key
+proxy_ip=""                         #处于多网卡环境时可能需要设置proxy监听的ip
 
 ###################################################################################################
 

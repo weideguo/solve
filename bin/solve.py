@@ -13,7 +13,7 @@ import redis
 base_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
 from core.job_manager import JobManager
-
+from core.proxy_manager import ProxyManager
 
 if __name__=="__main__":
     from conf import config
@@ -33,9 +33,43 @@ if __name__=="__main__":
                         encoding_errors='ignore')
     redis_job_pool=redis.ConnectionPool(host=config.redis_job_host, port=config.redis_job_port,\
                         db=config.redis_job_db, password=config.redis_job_passwd,decode_responses=True,encoding_errors='ignore')
-
-    jm=JobManager(redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool)
     
+    mode=["master","proxy"]
+    try:
+        #如果命令行存在输入 则以命令行优先
+        try:
+            start_mode=sys.argv[2].strip()
+        except:
+            start_mode=None
+        
+        #如果命令行获取失败 则以配置文件为准
+        if not start_mode:    
+            if config.PROXY:
+                start_mode=mode[1]
+    except:
+        pass
+        
+    #默认为master模式    
+    if not start_mode in mode:        
+        start_mode=mode[0]
+        
+    if start_mode==mode[0]:
+        Manager=JobManager
+    elif start_mode==mode[1]:
+        Manager=ProxyManager
+    
+    try:
+        opt=sys.argv[1].strip()
+        if opt != "stop":
+            print('%s mode \033[1;32m %s \033[0m' % (opt,start_mode))
+        else:
+            print('%s \033[1;32m success \033[0m' % opt) 
+         
+    except:
+        pass
+            
+    
+    manager=Manager(redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool)
     
     log_path=os.path.join(base_dir,"./logs")
     if not os.path.exists(log_path):
@@ -58,7 +92,7 @@ if __name__=="__main__":
         pidfile_timeout = pidfile_timeout
 
         def run(self):
-            jm.run_forever()
+            manager.run_forever()
 
 
     from lib.logger import logger
@@ -111,9 +145,9 @@ if __name__=="__main__":
     
     #start restart   
     #logger.info(sys.argv[1])
-    if sys.argv[1] != "stop":
+    if opt != "stop":
         #写日志
-        logger.info(sys.argv[1])
+        logger.info(opt)
         
         #清除相关key
         if config.clear_start:
