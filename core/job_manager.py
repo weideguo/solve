@@ -59,7 +59,7 @@ class JobManager():
         对本地的操作不需要再使用连接
         """
         
-        logger.debug("localhost start")
+        logger.debug("localhost start, listen on: %s" % str(listen_tag))
         lh=LocalHost(self.redis_send_pool,self.redis_log_pool,listen_tag) 
         lh.forever_run() 
         #阻塞运行，以下操作不应该被运行
