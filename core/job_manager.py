@@ -342,6 +342,12 @@ class JobManager():
         p1.start()
         p2.start()
         
+        #获取当前进程的pid
+        #os.getpid()
+        #使用redis保存子进程的pid
+        for pid in [p1.pid,p2.pid]:
+            self.redis_send_client.rpush("__pid__",pid)
+        
         p1.join()
         p2.join()
         

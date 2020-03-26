@@ -46,6 +46,8 @@ if __name__=="__main__":
     stderr_path =  os.path.join(log_path, "solve.err")
     pidfile_path =  os.path.join(log_path, "solve.pid")    
     pidfile_timeout = 5
+    
+    pid_key = "__pid__"
 
     class Solve(object):
 
@@ -91,6 +93,12 @@ if __name__=="__main__":
             #super()._terminate_daemon_process()  
             super(MyDaemonRunner,self)._terminate_daemon_process()  
             
+            #杀死子进程
+            pid=redis_send_client.lpop(pid_key)
+            while pid:
+                os.kill(int(pid), signal.SIGTERM)
+                pid=redis_send_client.lpop(pid_key)
+            
             #由于使用-9 需要自行删除pid文件
             try:
                 os.remove(pidfile_path)
@@ -104,9 +112,10 @@ if __name__=="__main__":
     #start restart   
     #logger.info(sys.argv[1])
     if sys.argv[1] != "stop":
-        
         #写日志
         logger.info(sys.argv[1])
+        #清除存储pid的key
+        redis_send_client.delete(pid_key)
         #清除相关key
         if config.clear_start:
             redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
