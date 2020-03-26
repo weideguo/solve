@@ -305,24 +305,6 @@ class JobManager(object):
             t.start()
     
     
-    def __remote_host_manage(self):
-        """
-        用于ssh连接的后台管理进程
-        
-        """
-        t1=Thread(target=self.__remot_host)
-        t2=Thread(target=self.__job_exe)
-        t3=Thread(target=self.__close_host)
-        
-        t1.start()
-        t2.start()
-        t3.start()
-        
-        t1.join()
-        t2.join()
-        t3.join() 
-        
-    
     def run_forever(self):
         """
         使用多进程
@@ -358,6 +340,7 @@ class JobManager(object):
         #os.getpid()
         #使用redis保存子进程的pid
         if redis_client:
+            redis_client.delete(pid_key)
             for p in p_list:
                 redis_client.rpush(pid_key,p.pid)
         

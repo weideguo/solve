@@ -114,8 +114,7 @@ if __name__=="__main__":
     if sys.argv[1] != "stop":
         #写日志
         logger.info(sys.argv[1])
-        #清除存储pid的key
-        redis_send_client.delete(pid_key)
+        
         #清除相关key
         if config.clear_start:
             redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
