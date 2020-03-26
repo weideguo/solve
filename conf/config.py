@@ -75,7 +75,7 @@ host_check_success_time=15          #heart_beat时间差小于此判断连接成
 #host_check_success_time=60          #使用salt时这个至应该大一些 因为更新的间隔可能大于heart_beat_interval
 
 host_close_time=8*60*60             #没有执行一段时间后则关闭连接
-host_close_chech_interval=60*60     #检查是否关闭连接的时间间隔
+host_close_check_interval=60*60     #检查是否关闭连接的时间间隔
 
 is_copy_by_link=1                   #是否使用软链接代替复制
 
