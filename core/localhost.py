@@ -85,10 +85,16 @@ class LocalHost():
         """
         无限接收命令
         """
+        t_list=[]
         for k in self.listen_tag:
             key = config.prefix_cmd + k
             t=Thread(target=self.__real_forever_run,args=(key,k))
             t.start()
+            t_list.append(t)
+        
+        for t in t_list:
+            t.join()
+    
     
     def __real_forever_run(self,key,tag):
         while True:
@@ -132,10 +138,8 @@ class LocalHost():
     
     
     def forever_run(self):
-        self.__forever_run()
         t1=Thread(target=self.__heart_beat)
         t1.start()
+        self.__forever_run()
         
-        
-        
-        
+    

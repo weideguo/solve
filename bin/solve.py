@@ -35,7 +35,7 @@ if __name__=="__main__":
                         db=config.redis_job_db, password=config.redis_job_passwd,decode_responses=True,encoding_errors='ignore')
 
     jm=JobManager(redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool)
-
+    
     
     log_path=os.path.join(base_dir,"./logs")
     if not os.path.exists(log_path):
@@ -104,6 +104,7 @@ if __name__=="__main__":
     #start restart   
     #logger.info(sys.argv[1])
     if sys.argv[1] != "stop":
+        
         #写日志
         logger.info(sys.argv[1])
         #清除相关key

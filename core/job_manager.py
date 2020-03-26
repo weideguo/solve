@@ -45,7 +45,7 @@ class JobManager():
         self.redis_job_client=redis.StrictRedis(connection_pool=redis_job_pool)
         self.redis_tmp_client=redis.StrictRedis(connection_pool=redis_tmp_pool)
         self.redis_config_client=redis.StrictRedis(connection_pool=redis_config_pool)
-
+        
     
     def is_listen_tag_clean(self,listen_tag=config.local_ip_list):
         #启动本地时检查是否已经存在旧的命令
@@ -58,12 +58,16 @@ class JobManager():
         """
         对本地的操作不需要再使用连接
         """
+        
         if check:
             self.is_listen_tag_clean()
         
+        logger.debug("localhost start")
         lh=LocalHost(self.redis_send_pool,self.redis_log_pool,listen_tag) 
-        lh.forever_run()        
-            
+        lh.forever_run() 
+        #阻塞运行，以下操作不应该被运行
+        logger_err.error("localhost should not end, something error!")
+        
 
     def is_host_alive(self,ip):
         """
@@ -217,7 +221,7 @@ class JobManager():
                         logger.debug("< %s > will not close auto." % ip)
 
 
-            time.sleep(config.host_close_chech_interval)   
+            time.sleep(config.host_close_check_interval)   
     
     
     def __real_job_exe(self,job_id):
@@ -304,22 +308,41 @@ class JobManager():
             t.start()
     
     
-    def run_forever(self):
+    def __remote_host_manage(self):
         """
-        后台执行
+        用于ssh连接的后台管理进程
         __remot_host 远程连接创建
         __job_exe    执行任务 创建ClusterExecution实例，循环监听队列，运行playbook
         __close_host 判定是否自动关闭远程连接
         """
-        self.is_listen_tag_clean()
-        
         t1=Thread(target=self.__remot_host)
         t2=Thread(target=self.__job_exe)
         t3=Thread(target=self.__close_host)
         
         t1.start()
         t2.start()
-        t3.start()  
+        t3.start()
         
-        t4=Thread(target=self.conn_localhost)
-        t4.start()
+        t1.join()
+        t2.join()
+        t3.join() 
+        
+    
+    def run_forever(self):
+        """
+        使用多进程
+        一个进程用于ssh 任务管理等
+        一个进程用于本地执行
+        """
+        self.is_listen_tag_clean()
+        
+        p1=Process(target=self.__remote_host_manage)
+        p2=Process(target=self.conn_localhost)
+        
+        p1.start()
+        p2.start()
+        
+        p1.join()
+        p2.join()
+        
+        
