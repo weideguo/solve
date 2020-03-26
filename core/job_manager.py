@@ -344,14 +344,22 @@ class JobManager():
         p_list.append(p3)
         p_list.append(p4)
         
+        self.process_run(p_list,redis_client=self.redis_send_client)
+        
+    
+    def process_run(self,p_list,redis_client=None,pid_key="__pid__"):
+        """
+        运行进程
+        """
         for p in p_list:
             p.start()
         
         #获取当前进程的pid
         #os.getpid()
         #使用redis保存子进程的pid
-        for p in p_list:
-            self.redis_send_client.rpush("__pid__",p.pid)
+        if redis_client:
+            for p in p_list:
+                redis_client.rpush(pid_key,p.pid)
         
         for p in p_list:
             p.join()
