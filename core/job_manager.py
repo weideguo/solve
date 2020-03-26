@@ -54,13 +54,10 @@ class JobManager():
                 raise Exception("%s should be null" % (config.prefix_cmd+init_host))
     
     
-    def conn_localhost(self,listen_tag=config.local_ip_list,check=False):
+    def conn_localhost(self,listen_tag=config.local_ip_list):
         """
         对本地的操作不需要再使用连接
         """
-        
-        if check:
-            self.is_listen_tag_clean()
         
         logger.debug("localhost start")
         lh=LocalHost(self.redis_send_pool,self.redis_log_pool,listen_tag) 
