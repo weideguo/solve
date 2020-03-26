@@ -25,7 +25,7 @@ mod = importlib.import_module(module_name)
 RemoteHost = getattr(mod, class_name)
 
 
-class JobManager():
+class JobManager(object):
     """
     任务执行管理类
     持续监听redis队列获取任务并执行
