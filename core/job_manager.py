@@ -311,9 +311,7 @@ class JobManager():
     def __remote_host_manage(self):
         """
         用于ssh连接的后台管理进程
-        __remot_host 远程连接创建
-        __job_exe    执行任务 创建ClusterExecution实例，循环监听队列，运行playbook
-        __close_host 判定是否自动关闭远程连接
+        
         """
         t1=Thread(target=self.__remot_host)
         t2=Thread(target=self.__job_exe)
@@ -331,24 +329,34 @@ class JobManager():
     def run_forever(self):
         """
         使用多进程
-        一个进程用于ssh 任务管理等
-        一个进程用于本地执行
+        conn_localhost 本地执行
+        __remot_host 远程连接创建
+        __job_exe    执行任务 创建ClusterExecution实例，循环监听队列，运行playbook
+        __close_host 判定是否自动关闭远程连接
         """
         self.is_listen_tag_clean()
+        p_list=[]
         
-        p1=Process(target=self.__remote_host_manage)
-        p2=Process(target=self.conn_localhost)
+        p1=Process(target=self.conn_localhost)
+        p2=Process(target=self.__remot_host)
+        p3=Process(target=self.__job_exe)
+        p4=Process(target=self.__close_host)
         
-        p1.start()
-        p2.start()
+        p_list.append(p1)
+        p_list.append(p2)
+        p_list.append(p3)
+        p_list.append(p4)
+        
+        for p in p_list:
+            p.start()
         
         #获取当前进程的pid
         #os.getpid()
         #使用redis保存子进程的pid
-        for pid in [p1.pid,p2.pid]:
-            self.redis_send_client.rpush("__pid__",pid)
+        for p in p_list:
+            self.redis_send_client.rpush("__pid__",p.pid)
         
-        p1.join()
-        p2.join()
-        
+        for p in p_list:
+            p.join()
+            
         
