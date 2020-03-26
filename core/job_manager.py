@@ -89,39 +89,54 @@ class JobManager(object):
         return is_alive
     
     
-    def conn_host(self,init_host,init_host_uuid):
-        #如果连接存在 则不必再创建 否则则新建连接 
-        if not self.is_host_alive(init_host):
-            host_info=self.redis_config_client.hgetall(config.prefix_realhost+init_host)
-            if not ("ip" in host_info): 
-                self.redis_log_client.hset(init_host_uuid,"exit_code","host info err")
-                logger_err.error("< %s > init failed, host info error, ip not exist" % init_host)
-
-            elif not self.redis_send_client.llen(config.prefix_cmd+init_host):                
-                    
-                logger.debug("init host info %s" % str(host_info))
-        
-                try:
-                    self.redis_send_client.set(config.prefix_initing+init_host,time.time())
-                    h=RemoteHost(host_info,self.redis_send_pool,self.redis_log_pool)
-                    h.forever_run()
-                    logger.info("< %s > init success" % init_host)                    
-                except:
-                    self.redis_log_client.hset(init_host_uuid,"exit_code","init failed")
-                    self.redis_send_client.set(config.prefix_initing+init_host,-1)
-                    logger_err.error(format_exc())
-                    logger_err.error("< %s > init failed" % init_host)
-                    
-                self.redis_send_client.expire(config.prefix_initing+init_host,config.initing_host_flag_expire_sec)
-            else:
-                self.redis_log_client.hset(init_host_uuid,"exit_code","cmd exist")
-                logger_err.error("< %s > not shutdown clean before,will not init. please check cmd_%s" % (init_host,init_host))
+    def conn_host(self,init_host,init_host_uuid,proxy_mode=False):
+        try:
+            #如果连接存在 则不必再创建 否则则新建连接 
+            if not self.is_host_alive(init_host):
+                host_info=self.redis_config_client.hgetall(config.prefix_realhost+init_host)
+                if proxy_mode:
+                    try:
+                        #当为proxy模式时，只接受如下格式的主机
+                        #proxy:proxy_ip:remote_ip
+                        host_info["ip"]=init_host.split(":")[2]           
+                        host_info["tag"]=init_host
+                    except:
+                        self.redis_log_client.hset(init_host_uuid,"exit_code","init failed")
+                        self.redis_log_client.hset(init_host_uuid,"stderr","proxy host error: %s" % init_host)
+                        
+                if not ("ip" in host_info): 
+                    self.redis_log_client.hset(init_host_uuid,"exit_code","host info err")
+                    logger_err.error("< %s > init failed, host info error, ip not exist" % init_host)
+    
+                elif not self.redis_send_client.llen(config.prefix_cmd+init_host):                
+                        
+                    logger.debug("init host info %s" % str(host_info))
             
-            self.redis_send_client.delete(config.prefix_check_flag+init_host)           #连接不存在时操作完毕才释放锁 
-        else:
-            self.redis_log_client.hset(init_host_uuid,"stdout","connect exist,init skip")        
-            logger.debug("< %s > init skipped" % init_host)    
-  
+                    try:
+                        self.redis_send_client.set(config.prefix_initing+init_host,time.time())
+                        h=RemoteHost(host_info,self.redis_send_pool,self.redis_log_pool)
+                        h.forever_run()
+                        logger.info("< %s > init success" % init_host)                    
+                    except:
+                        self.redis_log_client.hset(init_host_uuid,"exit_code","init failed")
+                        self.redis_log_client.hset(init_host_uuid,"stderr",format_exc())
+                        self.redis_send_client.set(config.prefix_initing+init_host,-1)
+                        logger_err.error(format_exc())
+                        logger_err.error("< %s > init failed" % init_host)
+                        
+                    self.redis_send_client.expire(config.prefix_initing+init_host,config.initing_host_flag_expire_sec)
+                else:
+                    self.redis_log_client.hset(init_host_uuid,"exit_code","cmd exist")
+                    logger_err.error("< %s > not shutdown clean before,will not init. please check cmd_%s" % (init_host,init_host))
+                
+                self.redis_send_client.delete(config.prefix_check_flag+init_host)           #连接不存在时操作完毕才释放锁 
+            else:
+                self.redis_log_client.hset(init_host_uuid,"stdout","connect exist,init skip")        
+                logger.debug("< %s > init skipped" % init_host)    
+        except:
+            self.redis_log_client.hset(init_host_uuid,"exit_code","init failed")
+            self.redis_log_client.hset(init_host_uuid,"stderr",format_exc())
+            logger_err.error(format_exc())
   
     def __remot_host(self):
         """
@@ -163,7 +178,7 @@ class JobManager(object):
             elif init_host:
                 #启动 
                 self.conn_host(init_host,init_host_uuid)
-
+                
             else:
                 logger_err.error("do nothing on %s" % init_host)
     
@@ -216,8 +231,7 @@ class JobManager(object):
                         self.redis_send_client.rpush(config.key_conn_control,config.pre_close+ip)
                     else:
                         logger.debug("< %s > will not close auto." % ip)
-
-
+            
             time.sleep(config.host_close_check_interval)   
     
     
