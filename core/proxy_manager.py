@@ -30,14 +30,15 @@ class ProxyManager(JobManager):
         
         super(ProxyManager, self).__init__(redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool) 
         
+        #优先从配置文件获取，获取失败，则使用ip地址
         try:
-            self.current_proxy_ip = config.proxy_ip
-            if not self.current_proxy_ip:
+            self.proxy_mark = config.proxy_mark
+            if not self.proxy_mark:
                 raise
         except:
-            self.current_proxy_ip = get_host_ip()
+            self.proxy_mark = get_host_ip()
         
-        self.proxy_tag="%s:%s:" % (config.proxy_tag,self.current_proxy_ip)
+        self.proxy_tag="%s:%s:" % (config.proxy_tag,self.proxy_mark)
         self.listen_tag=[]
         for l in config.local_ip_list:
             self.listen_tag.append(self.proxy_tag+l)
@@ -77,7 +78,7 @@ class ProxyManager(JobManager):
             if init_host in self.listen_tag:
                 #为proxy的本地，不需要创建连接
                 logger.debug("< %s > run in local mode" % init_host)
-            elif re.match(self.proxy_tag+".*",init_host):
+            elif re.match((self.proxy_tag).lower()+".*",init_host.lower()):
                 #只有匹配的改proxy的才会创建连接
                 self.conn_host(init_host,init_host_uuid,proxy_mode=True)
                 

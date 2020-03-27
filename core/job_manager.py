@@ -163,7 +163,7 @@ class JobManager(object):
                 logger.debug("< %s > begin closing" % close_tag) 
                 self.redis_send_client.publish(config.key_kill_host,close_tag) 
 
-            elif re.match("^PROXY:"+".*",init_host.upper()):
+            elif re.match("^"+(config.proxy_tag).lower()+":.*",init_host.lower()):
                 # PROXY 如 PROXY:10.0.0.1:192.168.16.1  不分大小写
                 # 不在本地创建连接，由其他proxy创建链接
                 # 广播让其他proxy接收

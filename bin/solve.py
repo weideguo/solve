@@ -58,19 +58,18 @@ if __name__=="__main__":
     elif start_mode==mode[1]:
         Manager=ProxyManager
     
+    manager=Manager(redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool)
+    
     try:
         opt=sys.argv[1].strip()
         if opt != "stop":
             print('%s mode \033[1;32m %s \033[0m' % (opt,start_mode))
+            try:
+                print("proxy tag  \033[1;32m %s \033[0m" % manager.proxy_tag[:-1])
+            except:
+                pass
         else:
             print('%s \033[1;32m success \033[0m' % opt) 
-         
-    except:
-        pass
-    
-    manager=Manager(redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool)
-    try:
-        print("proxy tag  \033[1;32m %s \033[0m" % manager.proxy_tag[:-1])
     except:
         pass
     

@@ -196,8 +196,8 @@ proxy模式用于作为master的代理管理主机连接，适用于多机房模
   2.修改配置文件conf/config.py的PROXY  
 * proxy与master的通信通过redis实现  
 * 默认启动的模式为master模式，不需要与其他节点有关联  
-* 指定主机使用proxy管理，则则格式如 realhost_proxy:10.0.0.1:192.168.16.1 ip proxy:10.0.0.1:192.168.16.1  
-* porxy:&lt;proxy_ip&gt;&lt;host_ip&gt;  
+* 指定主机使用proxy管理，则格式如 realhost_proxy:10.0.0.1:192.168.16.1 ip proxy:10.0.0.1:192.168.16.1  
+* porxy:&lt;proxy_mark&gt;&lt;host_ip&gt;  
 * proxy与master文件的同步尚未实现，需要额外的文件同步之后（如使用rsync），才能对proxy管理的主机执行文件上传操作  
 
 ### more ###
