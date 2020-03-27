@@ -190,18 +190,25 @@ redis_log> lrange log_host_10.0.0.1 0 100
 * windows 安装ssh，启动ssh同时stfp可以使用。
 
 ### proxy模式 ###
-proxy模式用于作为master的代理管理主机连接，适用于多机房模式，一个机房使用一个proxy，整体任务协调均由master发起  
+proxy模式用于作为master的代理管理主机连接。整体任务协调均由master发起。 
+适用于多机房模式，一个机房使用一个proxy；或者使用多个proxy减少master发起大量ssh连接的压力。  
+
 * proxy启动方式:  
   1.命令行中 python bin/solve.py start proxy  
   2.修改配置文件conf/config.py的PROXY  
 * proxy与master的通信通过redis实现  
 * 默认启动的模式为master模式，不需要与其他节点有关联  
 * 指定主机使用proxy管理，则格式如 realhost_proxy:10.0.0.1:192.168.16.1 ip proxy:10.0.0.1:192.168.16.1  
-* porxy:&lt;proxy_mark&gt;&lt;host_ip&gt;  
+* porxy:&lt;proxy_mark&gt;:&lt;host_ip&gt;  
 * proxy与master文件的同步尚未实现，需要额外的文件同步之后（如使用rsync），才能对proxy管理的主机执行文件上传操作  
 
+### 本地执行 ###
+修改配置文件conf/config.py的local_ip_list，发往该ip列表的地址将不会使用ssh模式运行，而是直接在本地运行。  
+对于proxy模式，则格式如：proxy:&lt;proxy_mark&gt;:127.0.0.1，对该主机执行时直接在proxy执行，而不是在proxy上通过ssh执行。  
+127.0.0.1或者proxy:&lt;proxy_mark&gt;:127.0.0.1不需要预先设置realhost。  
+
 ### more ###
-> 可由脚本 script/solve_exe.py 直接运行
+> 可由脚本 script/solve_exe.py 直接运行job
 > 
 > 更多playbook与使用样例详见playbook目录
 > 

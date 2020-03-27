@@ -1,0 +1,5 @@
+#对proxy的本地执行
+#本地执行不能使用PUT/GET命令用于文件上传下载
+#需要启动一个proxy且设置conf/config.py的proxy_mark="AAA"
+[proxy:AAA:127.0.0.1]
+date

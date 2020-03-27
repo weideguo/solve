@@ -1,0 +1,21 @@
+#使用proxy上传文件给远端主机
+#由于proxy与master的文件没有同步机制，要在proxy执行文件上传命令前需要先确保文件在proxy存在
+#可以主动从master上传文件到proxy
+#需要启动一个proxy且设置conf/config.py的proxy_mark="192.168.253.128"
+#其设置realhost_192.168.253.128
+#web表单控制
+#CONTENT-BEGIN
+#session:
+#  -
+#    key: file
+#    comment: 请输入file
+#    type: upload
+#CONTENT-END
+#master传文件到proxy
+[192.168.253.128]
+PUT:{{session.file}}:/tmp/a/
+#proxy传文件到远端主机
+[proxy:192.168.253.128:192.168.253.128]
+global.filename=`basename {{session.file}}`
+#PUT命令中只允许变量替换，不能放入shell命令
+PUT:/tmp/a/{{global.filename}}:/tmp

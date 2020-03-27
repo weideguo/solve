@@ -1,0 +1,6 @@
+#在本地执行
+#不需要在经过ssh分发命令
+#本地执行不能使用PUT/GET命令用于文件上传下载
+#在conf/config.py的local_ip_list设置哪些ip应视为本地ip
+[127.0.0.1]
+date
