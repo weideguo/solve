@@ -67,9 +67,12 @@ if __name__=="__main__":
          
     except:
         pass
-            
     
     manager=Manager(redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool)
+    try:
+        print("proxy tag  \033[1;32m %s \033[0m" % manager.proxy_tag[:-1])
+    except:
+        pass
     
     log_path=os.path.join(base_dir,"./logs")
     if not os.path.exists(log_path):

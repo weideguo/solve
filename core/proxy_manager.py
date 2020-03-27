@@ -17,8 +17,9 @@ class ProxyManager(JobManager):
     """
     作为proxy执行时的主机管理
     proxy与master的通信使用redis实现
-    文件需要与master存放位置一致playbook、上传目录）
+    上传目录需要与master一致
         尚未实现，思路：
+        0 web服务实现
         1 要通过rsync实时同步
         2 使用ssh命令传输
             proxy本地文件不存在时主动去master拉取
