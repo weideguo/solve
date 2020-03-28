@@ -10,9 +10,11 @@ import time
 from multiprocessing import Process
 
 import redis
-
+from daemon.runner import DaemonRunner
+    
 base_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
+from lib.logger import logger
 from core.job_manager import JobManager
 from core.proxy_manager import ProxyManager
 
@@ -37,7 +39,8 @@ if __name__=="__main__":
     
     redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
     
-    #
+
+    #是否启用文件管理模块
     try:
         is_start_fileserver=config.fileserver
     except:
@@ -83,6 +86,26 @@ if __name__=="__main__":
             print('%s \033[1;32m success \033[0m' % opt) 
     except:
         pass
+
+    #启动前对redis的清理
+    def init_set():
+        #start restart   
+        if opt != "stop":
+            #写日志
+            logger.info(opt)
+            #清除存储的pid
+            redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
+            redis_send_client.delete(pid_key)
+            
+            #清除相关key
+            if config.clear_start:
+                redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
+                k_list=[]
+                for k_pattern in [config.key_conn_control,config.prefix_cmd,config.prefix_heart_beat]:
+                    k_list +=redis_send_client.keys(k_pattern+"*")
+                for k in k_list:
+                    redis_send_client.delete(k)
+    
     
     log_path=os.path.join(base_dir,"./logs")
     if not os.path.exists(log_path):
@@ -96,8 +119,6 @@ if __name__=="__main__":
     
     pid_key = "__pid__"
     
-    p_fileserver=None
-
     class Solve(object):
 
         stdin_path =  stdin_path
@@ -116,19 +137,17 @@ if __name__=="__main__":
                 port=config.port
                 origin=config.origin
                 
-                p_fileserver=Process(target=fileserver.start, args=(bind,port,log_path,origin))
-                p_fileserver.start()
-                
-         
+                p=Process(target=fileserver.start, args=(bind,port,log_path,origin))
+                p.start()
+                redis_send_client.rpush(pid_key,p.pid)
+        
+        
         def run(self):
+            init_set()
             self.__start_fileserver()
             manager.run_forever()
-         
-
-
-    from lib.logger import logger
-    from daemon.runner import DaemonRunner
-
+    
+    
     class MyDaemonRunner(DaemonRunner):
         """
         重载以下方法
@@ -170,29 +189,10 @@ if __name__=="__main__":
             except:
                 pass
 
-
+    
     run = MyDaemonRunner(Solve())
     run.do_action()
+    #在此之后的所有操作会被跳过
+    #不要放任何操作在此之后
+
     
-    #start restart   
-    #logger.info(sys.argv[1])
-    if opt != "stop":
-        #写日志
-        logger.info(opt)
-        redis_send_client.delete(pid_key)
-        if p_fileserver:
-            redis_send_client.rpush(pid_key,p_fileserver.pid)
-       
-        
-        
-        #清除相关key
-        if config.clear_start:
-            redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
-            k_list=[]
-            for k_pattern in [config.key_conn_control,config.prefix_cmd,config.prefix_heart_beat]:
-                k_list +=redis_send_client.keys(k_pattern+"*")
-            for k in k_list:
-                redis_send_client.delete(k)
-
-        redis_send_client.rpush("aaa","dsvadf")
-
