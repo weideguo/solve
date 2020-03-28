@@ -51,7 +51,7 @@ core.plugin.salt.salt_conn.SaltConn                   使用salt实现,首次启
 ###################################################################################################
 #是否为proxy模式 不设置默认为master 
 #在启动时可以在命令行指定为proxy或master，优先级为：命令行>配置文件>master模式
-#PROXY=True
+PROXY=False
 proxy_tag="proxy"                   #用于标记主机为proxy以及proxy广播用的key
 proxy_mark=""                       #默认使用proxy的ip，处于多网卡环境时可能需要手动设置
 #proxy_mark="AAA"                   #不一使用ip，确保每个proxy不同即可，用于标记唯一proxy
@@ -59,6 +59,14 @@ proxy_mark=""                       #默认使用proxy的ip，处于多网卡环
 #使用proxy管理的主机
 #<proxy_tag>:<proxy_mark>:<host_ip>
 ###################################################################################################
+#web服务没有安全认证机制，请不要对外网开放
+fileserver=True           #是否启动web服务提供文件管理，服务位于 core.fileserver
+bind="0.0.0.0"            #web服务监听的网络 
+port=9000                 #web服务监听的端口
+origin="*"                #Access-Control-Allow-Origin 允许访问的域，前后端分离时必须要设置
+
+###################################################################################################
+
 
 
 clear_start=1                       #启动时清除 连接队列 未执行命令 心跳

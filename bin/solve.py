@@ -7,6 +7,7 @@
 import os
 import sys
 import time
+from multiprocessing import Process
 
 import redis
 
@@ -33,6 +34,14 @@ if __name__=="__main__":
                         encoding_errors='ignore')
     redis_job_pool=redis.ConnectionPool(host=config.redis_job_host, port=config.redis_job_port,\
                         db=config.redis_job_db, password=config.redis_job_passwd,decode_responses=True,encoding_errors='ignore')
+    
+    redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
+    
+    #
+    try:
+        is_start_fileserver=config.fileserver
+    except:
+        is_start_fileserver=False
     
     mode=["master","proxy"]
     try:
@@ -68,6 +77,8 @@ if __name__=="__main__":
                 print("proxy tag  \033[1;32m %s \033[0m" % manager.proxy_tag[:-1])
             except:
                 pass
+            if is_start_fileserver:
+                print("fileserver listen on  \033[1;32m %s:%d \033[0m" % (config.bind,config.port))
         else:
             print('%s \033[1;32m success \033[0m' % opt) 
     except:
@@ -84,6 +95,8 @@ if __name__=="__main__":
     pidfile_timeout = 5
     
     pid_key = "__pid__"
+    
+    p_fileserver=None
 
     class Solve(object):
 
@@ -93,8 +106,24 @@ if __name__=="__main__":
         pidfile_path = pidfile_path
         pidfile_timeout = pidfile_timeout
 
+        def __start_fileserver(self):
+            """
+            web服务用于文件管理
+            """
+            if is_start_fileserver:
+                from core.fileserver import fileserver
+                bind=config.bind
+                port=config.port
+                origin=config.origin
+                
+                p_fileserver=Process(target=fileserver.start, args=(bind,port,log_path,origin))
+                p_fileserver.start()
+                
+         
         def run(self):
+            self.__start_fileserver()
             manager.run_forever()
+         
 
 
     from lib.logger import logger
@@ -114,7 +143,7 @@ if __name__=="__main__":
         def _terminate_daemon_process(self):
             #结束进程时
             #清理心跳包
-            redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
+            
             hbs=redis_send_client.keys(config.prefix_heart_beat+"*")
             for h in hbs:
                 redis_send_client.delete(h)
@@ -150,6 +179,11 @@ if __name__=="__main__":
     if opt != "stop":
         #写日志
         logger.info(opt)
+        redis_send_client.delete(pid_key)
+        if p_fileserver:
+            redis_send_client.rpush(pid_key,p_fileserver.pid)
+       
+        
         
         #清除相关key
         if config.clear_start:
@@ -160,5 +194,5 @@ if __name__=="__main__":
             for k in k_list:
                 redis_send_client.delete(k)
 
-
+        redis_send_client.rpush("aaa","dsvadf")
 

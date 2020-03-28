@@ -354,7 +354,6 @@ class JobManager(object):
         #os.getpid()
         #使用redis保存子进程的pid
         if redis_client:
-            redis_client.delete(pid_key)
             for p in p_list:
                 redis_client.rpush(pid_key,p.pid)
         
