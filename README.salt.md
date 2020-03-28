@@ -17,7 +17,7 @@ running
 #set config    #按照提示修改使用的命令分发模块为salt
 vim conf/config.py
 #install dependency
-pip install -r requirement2.7.salt.tx
+pip install -r requirements2.7.salt.tx
 #set env
 export PYTHONPATH=$PYTHONPATH:`pwd`
 export LC_ALL=en_US.UTF-8

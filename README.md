@@ -21,7 +21,7 @@ running
 #set config
 vim conf/config.py
 #install dependency
-pip install -r requirement.tx
+pip install -r requirements.tx
 #set env
 #export PYTHONPATH=$PYTHONPATH:`pwd`
 export LC_ALL=en_US.UTF-8
