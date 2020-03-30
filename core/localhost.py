@@ -75,6 +75,10 @@ class LocalHost():
                 #循环更新stdout stderr
                 for new_log in iter(out.readline, ""):
                     old_log=self.redis_log_client.hget(cmd_uuid,tag)
+                    try:
+                        new_log=str(new_log,encoding="utf8")
+                    except:
+                        pass
                     self.redis_log_client.hset(cmd_uuid,tag,old_log+new_log)
                     if subprocess.Popen.poll(popen) != None:
                         break
