@@ -7,8 +7,6 @@ from traceback import format_exc
 
 from conf import config
 from .job_manager import JobManager
-from .job_manager import RemoteHost
-from .localhost import LocalHost
 from lib.utils import get_host_ip
 from lib.logger import logger,logger_err
 

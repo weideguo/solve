@@ -60,7 +60,7 @@ class JobManager(object):
         """
         
         logger.debug("localhost start, listen on: %s" % str(listen_tag))
-        lh=LocalHost(self.redis_send_pool,self.redis_log_pool,listen_tag) 
+        lh=LocalHost(self.redis_send_pool,self.redis_log_pool,listen_tag,config.max_localhost_thread) 
         lh.forever_run() 
         #阻塞运行，以下操作不应该被运行
         logger_err.error("localhost should not end, something error!")
