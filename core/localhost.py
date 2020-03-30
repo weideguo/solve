@@ -61,11 +61,37 @@ class LocalHost():
         exe_result["cmd_type"]="CMD"
         self.set_log(tag,exe_result,is_update=False)
         logger.debug(str(exe_result)+" begin")
-        
+        stdout,stderr="",""
         try:
+            """
             c=subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             stdout,stderr=c.communicate()
             exit_code=c.returncode
+            """
+            p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
+            
+            def update_log(popen,out,tag):
+                self.redis_log_client.hset(cmd_uuid,tag,"")
+                #循环更新stdout stderr
+                for new_log in iter(out.readline, ""):
+                    old_log=self.redis_log_client.hget(cmd_uuid,tag)
+                    self.redis_log_client.hset(cmd_uuid,tag,old_log+new_log)
+                    if subprocess.Popen.poll(popen) != None:
+                        break
+                time.sleep(1)
+            
+            t1=Thread(target=update_log,args=(p,p.stdout,"stdout"))
+            t2=Thread(target=update_log,args=(p,p.stderr,"stderr"))
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+            
+            p.communicate()
+            exit_code=p.returncode
+            
+            stdout=self.redis_log_client.hget(cmd_uuid,"stdout")
+            stderr=self.redis_log_client.hget(cmd_uuid,"stderr")
         except:
             logger_err.error(format_exc())
             stdout, stderr, exit_code="","some error happen when execute,please check the log",1

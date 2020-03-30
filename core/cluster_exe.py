@@ -389,6 +389,7 @@ class ClusterExecution():
                 continue_check=True
                 while continue_check:
                     if self.redis_send_client.get(config.prefix_kill+self.cluster_id):
+                        #可能存在kill操作
                         self.redis_send_client.expire(config.prefix_kill+self.cluster_id,config.kill_cluster_expire_sec)
                         self.exe_next=False
                         continue_check=False
@@ -399,7 +400,8 @@ class ClusterExecution():
                         logger.info("get kill signal in <%s %s> %s" % (self.target,self.cluster_id,c_uuid))
                     else:
                         r=self.redis_log_client.hgetall(c_uuid)
-                        if "stdout" in r:
+                        #有退出码则认为命令执行结束
+                        if "exit_code" in r:
                             
                             continue_check=False
                         else:
