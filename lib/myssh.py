@@ -249,9 +249,15 @@ class MySSH(object):
         try:
             # 在远端计算MD5值，不必将文件读取到本地再计算，但有可能出现错误
             md5_raw,err,exit_code =self.exe_cmd("md5sum "+fullname)
+            try:
+                md5_raw=str(md5_raw,encoding="utf8")
+            except:
+                pass
             md5=md5_raw.split(" ")[0]
             
         except:
+            from traceback import format_exc
+            print(format_exc())
             exit_code=-100        
         
         if exit_code != 0:

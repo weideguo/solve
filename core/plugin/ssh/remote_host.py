@@ -60,17 +60,17 @@ class RemoteHost(MySSH):
         self.is_run=True
     
     
-    def gen_set_step(self,c_uuid,name="step"):
+    def gen_set_step(self,cmd_uuid,name="step"):
         """
         生成设置步骤记录的函数
         如操作中可能有多个步骤，可以任意记录
         """
         def set_step(step="",name=name):
-            self.redis_log_client.hset(c_uuid,name,step)
+            self.redis_log_client.hset(cmd_uuid,name,step)
         return set_step
     
-    
-    def send_file(self,local_file,remote_path,c_uuid,set_info):
+    #def send_file(self,local_file,remote_path,c_uuid,set_info,set_step):
+    def send_file(self,local_file,remote_path,set_info,set_step):
         """
         从本地上传文件到远端 文件名不变
         远端目录如果不存在 则创建一个
@@ -81,8 +81,7 @@ class RemoteHost(MySSH):
 
         file_name=os.path.basename(local_file)
         remote_file=os.path.join(remote_path,file_name)
-
-        set_step=self.gen_set_step(c_uuid)
+        
         set_step("calculate local md5 begin")
         local_md5=my_md5(file=local_file)
         set_step("calculate local md5 done")
@@ -97,14 +96,16 @@ class RemoteHost(MySSH):
                 if exist_remote_file:
                     wait_flag = 0
                     try:
-                        self.redis_log_client.hset(c_uuid,"remote_md5","copying")
+                        #self.redis_log_client.hset(c_uuid,"remote_md5","copying")
+                        set_step("copying","remote_md5")
                         remote_md5,local_md5,is_success,error_msg=self.copy_file(exist_remote_file,remote_file,set_info,local_md5,\
-                                                                                local_filesize,config.is_copy_by_link,self.gen_set_step(c_uuid))
+                                                                                local_filesize,config.is_copy_by_link,set_step)
                         if is_success:
                             return remote_md5,local_md5,is_success,error_msg
                         else:
                             logger_err.debug("copy but faild:  %s %s %s %s" % (remote_md5,local_md5,is_success,error_msg))   
-                            self.redis_log_client.hset(c_uuid,"remote_md5",error_msg+", copy failed, will upload")
+                            #self.redis_log_client.hset(c_uuid,"remote_md5",error_msg+", copy failed, will upload")
+                            set_step(error_msg+", copy failed, will upload","remote_md5")
                             put_flag = True
                     except:
                         logger_err.debug(format_exc())
@@ -112,7 +113,8 @@ class RemoteHost(MySSH):
                     
                 else:
                     #如果其他上传还在进行 则等待后再检查
-                    self.redis_log_client.hset(c_uuid,"remote_md5","waiting others complete:"+str(wait_flag))
+                    #self.redis_log_client.hset(c_uuid,"remote_md5","waiting others complete:"+str(wait_flag))
+                    set_step("waiting others complete:"+str(wait_flag),"remote_md5")
                     time.sleep(config.put_wait_time)
                     #超时检查
                     wait_flag = wait_flag+1                                       
@@ -126,7 +128,7 @@ class RemoteHost(MySSH):
         if put_flag:
             self.redis_log_client.hset(config.prefix_put+self.tag,local_md5,"")
             try:
-                local_md5,remote_md5,is_success,error_msg=self.put_file(local_md5,local_file,remote_path,set_info,self.gen_set_step(c_uuid))
+                local_md5,remote_md5,is_success,error_msg=self.put_file(local_md5,local_file,remote_path,set_info,set_step)
                 if is_success:
                     self.redis_log_client.hset(config.prefix_put+self.tag,local_md5,remote_file)
                 else:
@@ -225,13 +227,13 @@ class RemoteHost(MySSH):
                     file_flag,local_file,remote_path=cmd.split(":")
                     remote_path=remote_path.rstrip()
                     
-                    local_md5,remote_md5,is_success,msg=self.send_file(local_file,remote_path,exe_result["uuid"],self.gen_set_info(cmd_uuid))
+                    local_md5,remote_md5,is_success,msg=self.send_file(local_file,remote_path,self.gen_set_info(cmd_uuid),self.gen_set_step(cmd_uuid))
                     
                 elif cmd_type=="GET":
                     file_flag,local_path,remote_file=cmd.split(":") 
                     remote_file=remote_file.rstrip()
                     
-                    local_md5,remote_md5,is_success,msg=self.get_file(local_path,remote_file,self.gen_set_info(cmd_uuid))
+                    local_md5,remote_md5,is_success,msg=self.get_file(local_path,remote_file,self.gen_set_info(cmd_uuid),self.gen_set_step(cmd_uuid))
                 
                 exe_result["local_md5"]=local_md5
                 exe_result["remote_md5"]=remote_md5
