@@ -1,4 +1,4 @@
-[简体中文](./README.en.md) | English
+[简体中文](./README.md) | English
 
 # SOLVE #
 
