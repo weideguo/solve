@@ -186,6 +186,16 @@ redis_send> rpsuh cmd_10.0.0.1 "whoami@@@@@9d21376cd47911e99464000c295dd589"
 redis_log> lrange log_host_10.0.0.1 0 100
 ```
 
+### more ###
+> 可由脚本 script/solve_exe.py 直接运行job
+> 
+> 更多playbook与使用样例详见playbook目录
+> 
+> 通过web服务实现可视化交互，详见[solve-frontend](https://github.com/zouzhicun/solve-frontend)的说明
+
+
+extend
+--------------
 ### 系统支持 ###
 > 要分发命令的目标主机
 * linux 启动ssh服务，同时stfp可以使用。
@@ -208,14 +218,5 @@ proxy模式用于作为master的代理管理主机连接。整体任务协调均
 修改配置文件conf/config.py的local_ip_list，发往该ip列表的地址将不会使用ssh模式运行，而是直接在本地运行。  
 对于proxy模式，则格式如：proxy:&lt;proxy_mark&gt;:127.0.0.1，对该主机执行时直接在proxy执行，而不是在proxy上通过ssh执行。  
 127.0.0.1或者proxy:&lt;proxy_mark&gt;:127.0.0.1不需要预先设置realhost。  
-
-### more ###
-> 可由脚本 script/solve_exe.py 直接运行job
-> 
-> 更多playbook与使用样例详见playbook目录
-> 
-> 通过web服务实现可视化交互，详见[solve-frontend](https://github.com/zouzhicun/solve-frontend)的说明
-
-
 
 
