@@ -257,7 +257,8 @@ class MySSH(object):
             
         except:
             from traceback import format_exc
-            print(format_exc())
+            #向stderr输出
+            sys.stderr.write(format_exc())
             exit_code=-100        
         
         if exit_code != 0:

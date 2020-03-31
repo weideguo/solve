@@ -103,7 +103,7 @@ class RemoteHost(MySSH):
                         if is_success:
                             return remote_md5,local_md5,is_success,error_msg
                         else:
-                            logger_err.debug("copy but faild:  %s %s %s %s" % (remote_md5,local_md5,is_success,error_msg))   
+                            logger.debug("copy but faild:  %s %s %s %s" % (remote_md5,local_md5,is_success,error_msg))   
                             #self.redis_log_client.hset(c_uuid,"remote_md5",error_msg+", copy failed, will upload")
                             set_step(error_msg+", copy failed, will upload","remote_md5")
                             put_flag = True
