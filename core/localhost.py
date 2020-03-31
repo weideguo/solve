@@ -71,8 +71,10 @@ class LocalHost():
             p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
             
             def update_log(popen,out,tag):
+                #防止获取到None
                 self.redis_log_client.hset(cmd_uuid,tag,"")
                 #循环更新stdout stderr
+                #单行读取输出，取不到值会阻塞，但读取结束后不会阻塞
                 for new_log in iter(out.readline, ""):
                     old_log=self.redis_log_client.hget(cmd_uuid,tag)
                     try:
@@ -80,9 +82,10 @@ class LocalHost():
                     except:
                         pass
                     self.redis_log_client.hset(cmd_uuid,tag,old_log+new_log)
-                    if subprocess.Popen.poll(popen) != None:
+                    # 单行读取，每一行至少为"\n"
+                    if subprocess.Popen.poll(popen) != None or not new_log:
                         break
-                time.sleep(1)
+                    
             
             t1=Thread(target=update_log,args=(p,p.stdout,"stdout"))
             t2=Thread(target=update_log,args=(p,p.stderr,"stderr"))
@@ -96,6 +99,11 @@ class LocalHost():
             
             stdout=self.redis_log_client.hget(cmd_uuid,"stdout")
             stderr=self.redis_log_client.hget(cmd_uuid,"stderr")
+            #如果线程运行失败，处理None
+            if not stdout:
+                stdout = ""
+            if not stderr:
+                stderr = ""
         except:
             logger_err.error(format_exc())
             stdout, stderr, exit_code="","some error happen when execute,please check the log",1
