@@ -35,14 +35,19 @@ class MySSH(object):
 
         self.ssh_client=client
          
-    def exe_cmd(self,cmd):
+    def exe_cmd(self,cmd,background_log_set=None):
         """
         执行命令
         """
         stdin, stdout, stderr = self.ssh_client.exec_command(cmd)
-
-        out=stdout.read()
-        err=stderr.read()
+        
+        if background_log_set:
+            #使用传入的函数动态处理stdout stderr
+            out,err=background_log_set(stdout, stderr)
+        else:
+            out=stdout.read()
+            err=stderr.read()
+        
         exit_code=stdout.channel.recv_exit_status()
         return out,err,exit_code
         

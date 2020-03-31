@@ -126,8 +126,9 @@ class RemoteHost(MySSH):
         else:
             return "","",0,"some thing error in upload"
     
+    
     def set_info_gen(self,cmd_uuid):
-        #函数生成
+        """生成用于上传时设置日志的函数"""
         def set_info(current_size,total_size):
             """
             上传下载的回调函数 只能同时存在一个上传或下载操作 否则回调调用出错
@@ -135,7 +136,51 @@ class RemoteHost(MySSH):
             self.redis_log_client.hset(cmd_uuid,"current_size",current_size)
             self.redis_log_client.hset(cmd_uuid,"total_size",total_size)
         return set_info
-
+    
+    
+    def gen_background_log_set(self,cmd_uuid):
+        """生成执行命令时设置日志的函数"""
+        def background_log_set(stdout, stderr):
+            def update_log(out,tag):
+                """真实用于设置日志的后台函数"""
+                #防止获取到None
+                self.redis_log_client.hset(cmd_uuid,tag,"")
+                while True:
+                    #单行读取，读取不到阻塞，但读取结束后不会阻塞
+                    new_log=out.readline()
+                    try:
+                        new_log=str(new_log,encoding="utf8")
+                    except:
+                        pass
+                    old_log=self.redis_log_client.hget(cmd_uuid,tag)
+                    self.redis_log_client.hset(cmd_uuid,tag,old_log+new_log)
+                    
+                    if not new_log:
+                        break
+                    
+                    #time.sleep(1)
+            
+            #需要开线程同时处理stdout stderr            
+            t1=Thread(target=update_log,args=(stdout,"stdout"))
+            t2=Thread(target=update_log,args=(stderr,"stderr"))
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+            
+            
+            sout=self.redis_log_client.hget(cmd_uuid,"stdout")
+            serr=self.redis_log_client.hget(cmd_uuid,"stderr")
+            
+            #如果线程运行失败，处理None
+            if not sout:
+                sout = ""
+            if not serr:
+                serr = ""
+            return sout,serr
+            
+        return background_log_set
+    
     
     def __single_run(self,cmd,cmd_uuid):
         """
@@ -191,7 +236,7 @@ class RemoteHost(MySSH):
                 exe_result["cmd_type"]=cmd_type
                 self.set_log(exe_result,is_update=False)      #命令执行前                   
 
-                stdout, stderr, exit_code=self.exe_cmd(cmd)
+                stdout, stderr, exit_code=self.exe_cmd(cmd,background_log_set=self.gen_background_log_set(cmd_uuid))
         except:
             logger_err.error(format_exc())
             stdout, stderr, exit_code="","some error happen when execute,please check the log",1
@@ -208,9 +253,8 @@ class RemoteHost(MySSH):
         #logger.debug("----------------------------------")
 
         self.thread_q.get()                                   #停止阻塞下一个线程            
-            
+        
  
-
     def set_log(self,exe_result,is_update=True):
         """
         设置日志
@@ -267,7 +311,8 @@ class RemoteHost(MySSH):
             else:
                 #命令为空时释放队列
                 self.thread_q.get()
-
+    
+    
     def __heart_beat(self):
         """
         定时更新连接信息
@@ -320,7 +365,6 @@ class RemoteHost(MySSH):
         #self.redis_log_client=None        
 
         logger.info("%s is closed" % self.tag)
-
 
 
     def forever_run(self):
