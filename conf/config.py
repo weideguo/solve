@@ -30,6 +30,12 @@ redis_config_port=6379
 redis_config_passwd="my_redis_passwd"
 redis_config_db=15
 
+
+
+###################################################################################################
+#设置根路径
+import os
+base_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ###################################################################################################
 
 remote_model="core.plugin.ssh.remote_host.RemoteHost" #远端主机实现模块

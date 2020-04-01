@@ -1,5 +1,5 @@
 #coding:utf8
-
+import os
 import re
 import time
 import uuid
@@ -246,8 +246,13 @@ class JobManager(object):
         log_job={}
         log_job["begin_timestamp"]=time.time()
         log_job["playbook"]=job["playbook"]
-        log_job["playbook_rownum"]=file_row_count(job["playbook"])
-        log_job["playbook_md5"]=my_md5(file=job["playbook"])
+        playbook=job["playbook"]
+        # 不为绝对路径时，以playbook目录为根目录
+        # 在windows部署时只能使用相对路径
+        #if not re.match("^/.*",playbook):
+        playbook=os.path.join(config.base_dir,"playbook",playbook)
+        log_job["playbook_rownum"]=file_row_count(playbook)
+        log_job["playbook_md5"]=my_md5(file=playbook)
         
         log_target=[]
         for oc in job["target"].split(","):
@@ -292,7 +297,7 @@ class JobManager(object):
                 else:
                     begin_line=0
                 
-                ce.run(new_c,job["playbook"],cluster_id,begin_line)
+                ce.run(new_c,playbook,cluster_id,begin_line)
             except:
                 self.redis_tmp_client.expire(new_c,config.tmp_config_expire_sec)
                 self.redis_log_client.hmset(config.prefix_sum+cluster_id,{"stop_str":"runing failed"})

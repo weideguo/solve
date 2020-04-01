@@ -53,6 +53,8 @@ class SolveExe():
         """
         playbook=self.job_info["playbook"]
         session_vars=[]
+        
+        playbook=os.path.join(config.base_dir,"playbook",playbook)
         with open(playbook,"r") as f:
             l=f.readline()
             while l:
