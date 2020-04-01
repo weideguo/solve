@@ -87,19 +87,30 @@ if __name__=="__main__":
     except:
         pass
 
-    #启动前对redis的清理
+    #启动前对redis的清理与设置
     def init_set():
         #start restart   
         if opt != "stop":
             #写日志
             logger.info(opt)
+            #redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
+            
+            redis_send_client.hset(config_key,"base_dir",config.base_dir)
+            if is_start_fileserver:
+                listen_host=config.bind
+                if config.bind == "0.0.0.0":
+                    #监听"0.0.0.0"则取一个本地ip
+                    from lib.utils import get_host_ip
+                    listen_host=get_host_ip()
+                    
+                redis_send_client.hset(config_key,"fileserver_bind",listen_host)
+                redis_send_client.hset(config_key,"fileserver_port",config.port)
             #清除存储的pid
-            redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
             redis_send_client.delete(pid_key)
             
             #清除相关key
             if config.clear_start:
-                redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
+                #redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
                 k_list=[]
                 for k_pattern in [config.key_conn_control,config.prefix_cmd,config.prefix_heart_beat]:
                     k_list +=redis_send_client.keys(k_pattern+"*")
@@ -117,7 +128,12 @@ if __name__=="__main__":
     pidfile_path =  os.path.join(log_path, "solve.pid")    
     pidfile_timeout = 5
     
+    # 存储pid
     pid_key = "__pid__"
+    # 存储运行时的一些配置，如：
+    # playbook的根目录
+    # fileserver的ip以及端口
+    config_key = "__solve__"
     
     class Solve(object):
 
