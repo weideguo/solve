@@ -8,7 +8,7 @@ from functools import wraps
 from traceback import format_exc
 from logging.config import dictConfig
 
-from flask import Flask,jsonify,request,send_from_directory,abort
+from flask import Flask,jsonify,request,send_from_directory,abort,make_response
 app=Flask(__name__)
 
 """
@@ -108,7 +108,8 @@ def file_manage(args):
             return send_from_directory(dir,fname,as_attachment=True)
         else:
             #return jsonify({"status":-1,"file":filename,"msg":"路径不为文件"})
-            return jsonify({"status":-1,"file":filename,"msg":"arg file is not a file"})
+            r=jsonify({"status":-1,"file":filename,"msg":"arg file is not a file"})
+            return make_response(r,404)
     
     if args == "list":
         root_path = request.args.get("path")
