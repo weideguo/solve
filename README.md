@@ -214,6 +214,11 @@ proxy模式用于作为master的代理管理主机连接。整体任务协调均
 * porxy:&lt;proxy_mark&gt;:&lt;host_ip&gt;  
 * proxy与master文件的同步尚未实现，需要额外的文件同步之后（如使用rsync），才能对proxy管理的主机执行文件上传操作  
 
+### fileserver ###
+提供简单的文件管理restful接口，可以实现文件上传、下载、文件查看、目录创建，文件内容查看。  
+当solve与web服务处于不同主机时，可以启用fileserver以实现文件的管理。  
+conf/config的fileserver参数控制是否启用。  
+
 ### 本地执行 ###
 修改配置文件conf/config.py的local_ip_list，发往该ip列表的地址将不会使用ssh模式运行，而是直接在本地运行。  
 对于proxy模式，则格式如：proxy:&lt;proxy_mark&gt;:127.0.0.1，对该主机执行时直接在proxy执行，而不是在proxy上通过ssh执行。  
