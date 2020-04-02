@@ -218,6 +218,7 @@ proxy模式用于作为master的代理管理主机连接。整体任务协调均
 提供简单的文件管理restful接口，可以实现文件上传、下载、文件查看、目录创建，文件内容查看。  
 当solve与web服务处于不同主机时，可以启用fileserver以实现文件的管理。  
 conf/config的fileserver参数控制是否启用。  
+不带权限验证，启用时请务必确保网络安全。如只监听本地地址，防火墙+nginx+https。  
 
 ### 本地执行 ###
 修改配置文件conf/config.py的local_ip_list，发往该ip列表的地址将不会使用ssh模式运行，而是直接在本地运行。  
