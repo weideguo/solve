@@ -156,10 +156,15 @@ class JobManager(object):
 
             #统一一个队列顺序实现创建、关闭 
             #避免同一个主机多次创建 同时存在关闭与创建
-            if re.match(config.pre_close+".*",init_host):
+            try:
+                #lstrip存在bug如 close_localhost
+                close_tag=re.search("(?<=^"+config.pre_close+").*",init_host).group()
+            except:
+                close_tag=""
+            if close_tag:
                 #关闭
                 #如 close_192.168.1.1 close_PROXY:10.0.0.1:192.168.16.1
-                close_tag=init_host.lstrip(config.pre_close)                
+                #close_tag=init_host.lstrip(config.pre_close)                
                 logger.debug("< %s > begin closing" % close_tag) 
                 self.redis_send_client.publish(config.key_kill_host,close_tag) 
 
@@ -220,7 +225,7 @@ class JobManager(object):
                             close_flag=True
                             logger.debug("< %s > last log is empty,will close" % ip)
                         else:
-                            #后的执行时间距离现在没有超过指定时间或者还没有返回时间，不可关闭
+                            #最后的执行时间距离现在没有超过指定时间或者还没有返回时间，不可关闭
                             close_flag=False
                     else:
                         #log_host_<ip>不存在，可关闭
