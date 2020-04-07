@@ -2,7 +2,7 @@
 #一些函数的封装
 from threading import Thread
 
-def gen_background_log_set(cmd_uuid,redis_client):
+def gen_background_log_set(cmd_uuid,redis_client,len=0):
     """生成执行命令时设置日志的函数"""
     def background_log_set(stdout, stderr):
         def update_log(out,tag):
@@ -12,7 +12,10 @@ def gen_background_log_set(cmd_uuid,redis_client):
             while True:
                 #单行读取，读取不到阻塞，但读取结束后不会阻塞
                 #readline(1) read(1) 作用类似，只获取一个字符，但更新太频繁，消耗太大，在其他更高实时性场景使用
-                new_log=out.readline()
+                if len:
+                    new_log=out.readline(len)
+                else
+                    new_log=out.readline()
                 try:
                     new_log=str(new_log,encoding="utf8")
                 except:

@@ -66,8 +66,8 @@ proxy_mark=""                       #默认使用proxy的ip，处于多网卡环
 #<proxy_tag>:<proxy_mark>:<host_ip>
 ###################################################################################################
 #web服务没有安全认证机制，请不要对外网开放
-fileserver=True           #是否启动web服务提供文件管理，服务位于 core.fileserver
-bind="0.0.0.0"            #web服务监听的网络 
+#fileserver=True           #是否启动web服务提供文件管理，服务位于 core.fileserver
+bind="127.0.0.1"            #web服务监听的网络 
 port=9000                 #web服务监听的端口
 origin="*"                #Access-Control-Allow-Origin 允许访问的域，前后端分离时必须要设置
 
