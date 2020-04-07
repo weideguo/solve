@@ -39,7 +39,24 @@ if __name__=="__main__":
     
     redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
     
+    log_path=os.path.join(base_dir,"./logs")
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+    
+    stdin_path = "/dev/null"
+    stdout_path = os.path.join(log_path, "solve.out")
+    stderr_path =  os.path.join(log_path, "solve.err")
+    pidfile_path =  os.path.join(log_path, "solve.pid")    
+    pidfile_timeout = 5
+    
+    # 存储pid
+    pid_key = "__pid__"
+    # 存储运行时的一些配置，如：
+    # playbook的根目录
+    # fileserver的ip以及端口
+    config_key = "__solve__"    
 
+    
     #是否启用文件管理模块
     try:
         is_start_fileserver=config.fileserver
@@ -87,53 +104,48 @@ if __name__=="__main__":
     except:
         pass
 
+    
     #启动前对redis的清理与设置
+    #start restart 才使用
     def init_set():
-        #start restart   
-        if opt != "stop":
-            #写日志
-            logger.info(opt)
+        #写日志
+        logger.info(opt)
+        
+        redis_send_client.hset(config_key,"base_dir",config.base_dir)
+        if is_start_fileserver:
+            listen_host=config.bind
+            if config.bind == "0.0.0.0":
+                #监听"0.0.0.0"则取一个本地ip
+                from lib.utils import get_host_ip
+                listen_host=get_host_ip()
+                
+            redis_send_client.hset(config_key,"fileserver_bind",listen_host)
+            redis_send_client.hset(config_key,"fileserver_port",config.port)
+        #清除存储的pid
+        redis_send_client.delete(pid_key)
+        
+        #清除相关key
+        if config.clear_start:
             #redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
+            k_list=[]
+            for k_pattern in [config.key_conn_control,config.prefix_cmd,config.prefix_heart_beat]:
+                k_list +=redis_send_client.keys(k_pattern+"*")
+            for k in k_list:
+                redis_send_client.delete(k)
+
+    def start_fileserver():
+        """
+        web服务用于文件管理
+        """
+        if is_start_fileserver:
+            from core.fileserver import fileserver
+            bind=config.bind
+            port=config.port
+            origin=config.origin
             
-            redis_send_client.hset(config_key,"base_dir",config.base_dir)
-            if is_start_fileserver:
-                listen_host=config.bind
-                if config.bind == "0.0.0.0":
-                    #监听"0.0.0.0"则取一个本地ip
-                    from lib.utils import get_host_ip
-                    listen_host=get_host_ip()
-                    
-                redis_send_client.hset(config_key,"fileserver_bind",listen_host)
-                redis_send_client.hset(config_key,"fileserver_port",config.port)
-            #清除存储的pid
-            redis_send_client.delete(pid_key)
-            
-            #清除相关key
-            if config.clear_start:
-                #redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
-                k_list=[]
-                for k_pattern in [config.key_conn_control,config.prefix_cmd,config.prefix_heart_beat]:
-                    k_list +=redis_send_client.keys(k_pattern+"*")
-                for k in k_list:
-                    redis_send_client.delete(k)
-    
-    
-    log_path=os.path.join(base_dir,"./logs")
-    if not os.path.exists(log_path):
-        os.makedirs(log_path)
-    
-    stdin_path = "/dev/null"
-    stdout_path = os.path.join(log_path, "solve.out")
-    stderr_path =  os.path.join(log_path, "solve.err")
-    pidfile_path =  os.path.join(log_path, "solve.pid")    
-    pidfile_timeout = 5
-    
-    # 存储pid
-    pid_key = "__pid__"
-    # 存储运行时的一些配置，如：
-    # playbook的根目录
-    # fileserver的ip以及端口
-    config_key = "__solve__"
+            p=Process(target=fileserver.start, args=(bind,port,log_path,origin))
+            p.start()
+            redis_send_client.rpush(pid_key,p.pid)    
     
     class Solve(object):
 
@@ -142,25 +154,10 @@ if __name__=="__main__":
         stderr_path = stderr_path 
         pidfile_path = pidfile_path
         pidfile_timeout = pidfile_timeout
-
-        def __start_fileserver(self):
-            """
-            web服务用于文件管理
-            """
-            if is_start_fileserver:
-                from core.fileserver import fileserver
-                bind=config.bind
-                port=config.port
-                origin=config.origin
-                
-                p=Process(target=fileserver.start, args=(bind,port,log_path,origin))
-                p.start()
-                redis_send_client.rpush(pid_key,p.pid)
-        
         
         def run(self):
             init_set()
-            self.__start_fileserver()
+            start_fileserver()
             manager.run_forever()
     
     
