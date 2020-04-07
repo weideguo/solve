@@ -11,6 +11,7 @@ import subprocess
 from traceback import format_exc
 import redis
 
+from lib.wrapper import gen_background_log_set
 from lib.logger import logger,logger_err
 from lib.utils import get_host_ip
 from conf import config
@@ -70,40 +71,12 @@ class LocalHost():
             """
             p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
             
-            def update_log(popen,out,tag):
-                #防止获取到None
-                self.redis_log_client.hset(cmd_uuid,tag,"")
-                #循环更新stdout stderr
-                #单行读取输出，取不到值会阻塞，但读取结束后不会阻塞
-                for new_log in iter(out.readline, ""):
-                    old_log=self.redis_log_client.hget(cmd_uuid,tag)
-                    try:
-                        new_log=str(new_log,encoding="utf8")
-                    except:
-                        pass
-                    self.redis_log_client.hset(cmd_uuid,tag,old_log+new_log)
-                    # 单行读取，每一行至少为"\n"
-                    if subprocess.Popen.poll(popen) != None or not new_log:
-                        break
-                    
-            
-            t1=Thread(target=update_log,args=(p,p.stdout,"stdout"))
-            t2=Thread(target=update_log,args=(p,p.stderr,"stderr"))
-            t1.start()
-            t2.start()
-            t1.join()
-            t2.join()
+            background_log_set=gen_background_log_set(cmd_uuid,self.redis_log_client)
+            stdout,stderr = background_log_set(p.stdout,p.stderr)
             
             p.communicate()
             exit_code=p.returncode
             
-            stdout=self.redis_log_client.hget(cmd_uuid,"stdout")
-            stderr=self.redis_log_client.hget(cmd_uuid,"stderr")
-            #如果线程运行失败，处理None
-            if not stdout:
-                stdout = ""
-            if not stderr:
-                stderr = ""
         except:
             logger_err.error(format_exc())
             stdout, stderr, exit_code="","some error happen when execute,please check the log",1

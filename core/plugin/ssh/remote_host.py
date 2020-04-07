@@ -13,6 +13,7 @@ from traceback import format_exc
 
 import redis
 
+from lib.wrapper import gen_background_log_set
 from lib.logger import logger,logger_err
 from lib.utils import my_md5,get_host_ip
 from lib.myssh import MySSH
@@ -154,50 +155,6 @@ class RemoteHost(MySSH):
         return set_info
     
     
-    def gen_background_log_set(self,cmd_uuid):
-        """生成执行命令时设置日志的函数"""
-        def background_log_set(stdout, stderr):
-            def update_log(out,tag):
-                """真实用于设置日志的后台函数"""
-                #防止获取到None
-                self.redis_log_client.hset(cmd_uuid,tag,"")
-                while True:
-                    #单行读取，读取不到阻塞，但读取结束后不会阻塞
-                    new_log=out.readline()
-                    try:
-                        new_log=str(new_log,encoding="utf8")
-                    except:
-                        pass
-                    old_log=self.redis_log_client.hget(cmd_uuid,tag)
-                    self.redis_log_client.hset(cmd_uuid,tag,old_log+new_log)
-                    
-                    if not new_log:
-                        break
-                    
-                    #time.sleep(1)
-            
-            #需要开线程同时处理stdout stderr            
-            t1=Thread(target=update_log,args=(stdout,"stdout"))
-            t2=Thread(target=update_log,args=(stderr,"stderr"))
-            t1.start()
-            t2.start()
-            t1.join()
-            t2.join()
-            
-            
-            sout=self.redis_log_client.hget(cmd_uuid,"stdout")
-            serr=self.redis_log_client.hget(cmd_uuid,"stderr")
-            
-            #如果线程运行失败，处理None
-            if not sout:
-                sout = ""
-            if not serr:
-                serr = ""
-            return sout,serr
-            
-        return background_log_set
-    
-    
     def __single_run(self,cmd,cmd_uuid):
         """
         单个命令的执行
@@ -252,7 +209,7 @@ class RemoteHost(MySSH):
                 exe_result["cmd_type"]=cmd_type
                 self.set_log(exe_result,is_update=False)      #命令执行前                   
 
-                stdout, stderr, exit_code=self.exe_cmd(cmd,background_log_set=self.gen_background_log_set(cmd_uuid))
+                stdout, stderr, exit_code=self.exe_cmd(cmd,background_log_set=gen_background_log_set(cmd_uuid,self.redis_log_client))
         except:
             logger_err.error(format_exc())
             stdout, stderr, exit_code="","some error happen when execute,please check the log",1
