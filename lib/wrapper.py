@@ -14,7 +14,7 @@ def gen_background_log_set(cmd_uuid,redis_client,len=0):
                 #readline(1) read(1) 作用类似，只获取一个字符，但更新太频繁，消耗太大，在其他更高实时性场景使用
                 if len:
                     new_log=out.readline(len)
-                else
+                else:
                     new_log=out.readline()
                 try:
                     new_log=str(new_log,encoding="utf8")
