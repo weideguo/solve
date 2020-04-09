@@ -213,6 +213,7 @@ proxy模式用于作为master的代理管理主机连接。整体任务协调均
 * 指定主机使用proxy管理，则格式如 realhost_proxy:10.0.0.1:192.168.16.1 ip proxy:10.0.0.1:192.168.16.1  
 * porxy:&lt;proxy_mark&gt;:&lt;host_ip&gt;  
 * proxy与master文件的同步尚未实现，需要额外的文件同步之后（如使用rsync），才能对proxy管理的主机执行文件上传操作  
+* 主机也可以通过proxy字段设置使用的代理，但优先使用ip字段，格式如 realhost_192.168.16.1 proxy 10.0.0.1 ...
 
 ### fileserver ###
 提供简单的文件管理restful接口，可以实现文件上传、下载、文件查看、目录创建，文件内容查看。  

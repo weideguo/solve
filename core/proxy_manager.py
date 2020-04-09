@@ -36,12 +36,22 @@ class ProxyManager(JobManager):
         except:
             self.proxy_mark = get_host_ip()
         
-        self.proxy_tag="%s:%s:" % (config.proxy_tag,self.proxy_mark)
+        self.proxy_tag="%s:%s" % (config.proxy_tag,self.proxy_mark)
         self.listen_tag=[]
         for l in config.local_ip_list:
-            self.listen_tag.append(self.proxy_tag+l)
+            self.listen_tag.append(self.proxy_tag+":"+l)
         
-        
+        self.listen_tag += config.local_ip_list
+        #为proxy时，在proxy本地不监听 127.0.0.1 localhost
+        #监听如 proxy:AAA:10.0.0.1 10.0.0.1
+        try:
+            self.listen_tag.remove("127.0.0.1")
+        except:
+            pass
+        try:
+            self.listen_tag.remove("localhost")
+        except:
+            pass
 
     def __localhost(self):
         """
@@ -55,15 +65,12 @@ class ProxyManager(JobManager):
         """
         符合proxy的则启动ssh连接
         """
-        #init_host要通过接受广播获取，因为同时存在很多个proxy
         #init_str='proxy:10.0.0.1:192.168.16.1'
         #init_str='proxy:10.0.0.1:192.168.16.1@@@@@ba8d8c646e6711ea8d01000c295dd589'
         
-        pub=self.redis_send_client.pubsub()
-        pub.psubscribe(config.proxy_tag)
-        
         while True:
-            _init=pub.parse_response(block=True)     #阻塞获取
+            #_init=pub.parse_response(block=True)     
+            _init=self.redis_send_client.blpop(self.proxy_tag)           #阻塞获取
             init_str = str(_init[-1])
             
             init_host_list=init_str.split(config.spliter)
@@ -76,10 +83,9 @@ class ProxyManager(JobManager):
             if init_host in self.listen_tag:
                 #为proxy的本地，不需要创建连接
                 logger.debug("< %s > run in local mode" % init_host)
-            elif re.match((self.proxy_tag).lower()+".*",init_host.lower()):
-                #只有匹配的改proxy的才会创建连接
+            else:
                 self.conn_host(init_host,init_host_uuid,proxy_mode=True)
-                
+            
 
     def run_forever(self):
         """

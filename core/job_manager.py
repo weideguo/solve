@@ -95,14 +95,17 @@ class JobManager(object):
             if not self.is_host_alive(init_host):
                 host_info=self.redis_config_client.hgetall(config.prefix_realhost+init_host)
                 if proxy_mode:
+                    #为proxy模式时，当ip/proxy字段都存在时，有限使用ip字段
                     try:
-                        #当为proxy模式时，只接受如下格式的主机
+                        #接受如下格式的主机
                         #proxy:proxy_ip:remote_ip
                         host_info["ip"]=init_host.split(":")[2]           
                         host_info["tag"]=init_host
                     except:
-                        self.redis_log_client.hset(init_host_uuid,"exit_code","init failed")
-                        self.redis_log_client.hset(init_host_uuid,"stderr","proxy host error: %s" % init_host)
+                        #主机中带有proxy字段的常规格式也可以接受，proxy字段不能为空
+                        if not ("proxy" in host_info and host_info["proxy"].strip()):
+                            self.redis_log_client.hset(init_host_uuid,"exit_code","init failed")
+                            self.redis_log_client.hset(init_host_uuid,"stderr","proxy host error: %s" % init_host)
                         
                 if not ("ip" in host_info): 
                     self.redis_log_client.hset(init_host_uuid,"exit_code","host info err")
@@ -161,6 +164,7 @@ class JobManager(object):
                 close_tag=re.search("(?<=^"+config.pre_close+").*",init_host).group()
             except:
                 close_tag=""
+            host_info=self.redis_config_client.hgetall(config.prefix_realhost+init_host)
             if close_tag:
                 #关闭
                 #如 close_192.168.1.1 close_PROXY:10.0.0.1:192.168.16.1
@@ -168,13 +172,17 @@ class JobManager(object):
                 logger.debug("< %s > begin closing" % close_tag) 
                 self.redis_send_client.publish(config.key_kill_host,close_tag) 
 
-            elif re.match("^"+(config.proxy_tag).lower()+":.*",init_host.lower()):
-                # PROXY 如 PROXY:10.0.0.1:192.168.16.1  不分大小写
-                # 不在本地创建连接，由其他proxy创建链接
-                # 广播让其他proxy接收
-                self.redis_send_client.publish(config.proxy_tag,init_host) 
+            elif re.match("^"+config.proxy_tag+":.*",init_host.lower()):
+                # PROXY 如 PROXY:10.0.0.1:192.168.16.1  可以存在空格
+                # 或者存在"proxy"字段
+                # 使用队列更可靠
+                proxy_list_name=config.proxy_tag+":"+init_host.split(":")[1].strip()
+                self.redis_send_client.rpush(proxy_list_name,init_host)
                 logger.debug("< %s > will init connect by proxy, not here" % init_host)
-            
+            elif "proxy" in host_info and host_info["proxy"].strip():
+                proxy_list_name=config.proxy_tag+":"+host_info["proxy"].strip()
+                self.redis_send_client.rpush(proxy_list_name,init_host)
+                logger.debug("< %s > will init connect by proxy, not here" % init_host)
             elif (init_host in config.local_ip_list):
                 # 为localhost 或 127.0.0.1
                 # 不在创建连接，由本地执行策略执行
