@@ -60,7 +60,7 @@ core.plugin.salt.salt_conn.SaltConn                   使用salt实现,首次启
 #PROXY=False
 proxy_tag="proxy"                   #用于标记主机为proxy以及proxy广播用的key
 proxy_mark=""                       #默认使用proxy的ip，处于多网卡环境时可能需要手动设置
-#proxy_mark="AAA"                   #不一使用ip，确保每个proxy不同即可，用于标记唯一proxy
+#proxy_mark="AAA"                   #不一定使用ip，最好每个proxy唯一，如果相同则竞争处理（这是正常的）
 
 #使用proxy管理的主机
 #<proxy_tag>:<proxy_mark>:<host_ip>

@@ -94,7 +94,7 @@ if __name__=="__main__":
         if opt != "stop":
             print('%s mode \033[1;32m %s \033[0m' % (opt,start_mode))
             try:
-                print("proxy tag  \033[1;32m %s \033[0m" % manager.proxy_tag[:-1])
+                print("proxy tag  \033[1;32m %s \033[0m" % manager.proxy_tag)
             except:
                 pass
             if is_start_fileserver:
