@@ -15,7 +15,7 @@ app=Flask(__name__)
 实现简单的文件服务管理
 #查看目录的内容
 #中文不要使用curl测试
-crul "http://127.0.0.1:9000/file/list?path=/tmp"
+curl "http://127.0.0.1:9000/file/list?path=/tmp"
 
 #创建目录
 curl "http://127.0.0.1:9000/file/create?path=/tmp/a"
