@@ -20,22 +20,22 @@ from core.proxy_manager import ProxyManager
 
 if __name__=="__main__":
     from conf import config
-    #decode_responses=True      将结果自动编码为unicode格式，否则对于python3结果格式为 b'xxx'
-    #encoding_errors='ignore'   decode的选项，编码出错时的处理方式，可选 strict ignore replace 默认为strict 
+    #decode_responses=True      将结果自动编码为unicode格式，否则对于python3结果格式为 b"xxx"
+    #encoding_errors="ignore"   decode的选项，编码出错时的处理方式，可选 strict ignore replace 默认为strict 
     #可清除以下
     redis_send_pool=redis.ConnectionPool(host=config.redis_send_host, port=config.redis_send_port,\
-                    db=config.redis_send_db, password=config.redis_send_passwd,decode_responses=True,encoding_errors='ignore')
+                    db=config.redis_send_db, password=config.redis_send_passwd,decode_responses=True,encoding_errors="ignore")
     redis_log_pool=redis.ConnectionPool(host=config.redis_log_host, port=config.redis_log_port,\
-                    db=config.redis_log_db, password=config.redis_log_passwd,decode_responses=True,encoding_errors='ignore')
+                    db=config.redis_log_db, password=config.redis_log_passwd,decode_responses=True,encoding_errors="ignore")
     redis_tmp_pool=redis.ConnectionPool(host=config.redis_tmp_host, port=config.redis_tmp_port,\
-                    db=config.redis_tmp_db, password=config.redis_tmp_passwd,decode_responses=True,encoding_errors='ignore')
+                    db=config.redis_tmp_db, password=config.redis_tmp_passwd,decode_responses=True,encoding_errors="ignore")
     
     #不可清除以下
     redis_config_pool=redis.ConnectionPool(host=config.redis_config_host, port=config.redis_config_port,\
                         db=config.redis_config_db, password=config.redis_config_passwd,decode_responses=True,\
-                        encoding_errors='ignore')
+                        encoding_errors="ignore")
     redis_job_pool=redis.ConnectionPool(host=config.redis_job_host, port=config.redis_job_port,\
-                        db=config.redis_job_db, password=config.redis_job_passwd,decode_responses=True,encoding_errors='ignore')
+                        db=config.redis_job_db, password=config.redis_job_passwd,decode_responses=True,encoding_errors="ignore")
     
     redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
     
@@ -49,8 +49,6 @@ if __name__=="__main__":
     pidfile_path =  os.path.join(log_path, "solve.pid")    
     pidfile_timeout = 5
     
-    # 存储pid
-    pid_key = "__pid__"
     # 存储运行时的一些配置，如：
     # playbook的根目录
     # fileserver的ip以及端口
@@ -92,15 +90,17 @@ if __name__=="__main__":
     try:
         opt=sys.argv[1].strip()
         if opt != "stop":
-            print('%s mode \033[1;32m %s \033[0m' % (opt,start_mode))
+            print("%s mode \033[1;32m %s \033[0m" % (opt,start_mode))
             try:
+                #for proxy mode
                 print("proxy tag  \033[1;32m %s \033[0m" % manager.proxy_tag)
+                config_key=config_key+manager.proxy_mark
             except:
                 pass
             if is_start_fileserver:
                 print("fileserver listen on  \033[1;32m %s:%d \033[0m" % (config.bind,config.port))
         else:
-            print('%s \033[1;32m success \033[0m' % opt) 
+            print("%s \033[1;32m success \033[0m" % opt) 
     except:
         pass
 
@@ -110,7 +110,9 @@ if __name__=="__main__":
     def init_set():
         #写日志
         logger.info(opt)
-        
+        #启动时清除旧数据
+        redis_send_client.delete(config_key)
+        #重新设置新数据
         redis_send_client.hset(config_key,"base_dir",config.base_dir)
         if is_start_fileserver:
             listen_host=config.bind
@@ -121,8 +123,6 @@ if __name__=="__main__":
                 
             redis_send_client.hset(config_key,"fileserver_bind",listen_host)
             redis_send_client.hset(config_key,"fileserver_port",config.port)
-        #清除存储的pid
-        redis_send_client.delete(pid_key)
         
         #清除相关key
         if config.clear_start:
@@ -145,7 +145,9 @@ if __name__=="__main__":
             
             p=Process(target=fileserver.start, args=(bind,port,log_path,origin))
             p.start()
-            redis_send_client.rpush(pid_key,p.pid)    
+        else:
+            p=None
+        return p
     
     class Solve(object):
 
@@ -157,8 +159,15 @@ if __name__=="__main__":
         
         def run(self):
             init_set()
-            start_fileserver()
-            manager.run_forever()
+            p_list=manager.run_forever()
+            p=start_fileserver()
+            if p:
+                redis_send_client.rpush(manager.pid_key,p.pid)  
+                p_list.append(p)
+            
+            #等待所有子进程
+            for p in p_list:
+                p.join()
     
     
     class MyDaemonRunner(DaemonRunner):
@@ -168,9 +177,9 @@ if __name__=="__main__":
         """
 
         def _open_streams_from_app_stream_paths(self, app):
-            self.daemon_context.stdin = open(app.stdin_path, 'r')
-            self.daemon_context.stdout = open(app.stdout_path, 'a+')
-            self.daemon_context.stderr = open(app.stderr_path, 'a+')
+            self.daemon_context.stdin = open(app.stdin_path, "r")
+            self.daemon_context.stdout = open(app.stdout_path, "a+")
+            self.daemon_context.stderr = open(app.stderr_path, "a+")
        
         def _terminate_daemon_process(self):
             #结束进程时
@@ -181,20 +190,24 @@ if __name__=="__main__":
                 redis_send_client.delete(h)
         
             #写日志
-            with open(stdout_path,'a+') as f:
-                f.write("%s,000 - %s\n" % (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), 'stop'))
+            with open(stdout_path,"a+") as f:
+                f.write("%s,000 - %s\n" % (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), "stop"))
 
             #python2.7时结束进程时需要使用kill -9
             import signal
             signal.SIGTERM=9
-            #super()._terminate_daemon_process()  
-            super(MyDaemonRunner,self)._terminate_daemon_process()  
             
             #杀死子进程
+            pid_key = "__pid__"
+            pid_key=pid_key+str(self.pidfile.read_pid())
             pid=redis_send_client.lpop(pid_key)
             while pid:
                 os.kill(int(pid), signal.SIGTERM)
                 pid=redis_send_client.lpop(pid_key)
+            
+            #杀主进程
+            #super()._terminate_daemon_process()  
+            super(MyDaemonRunner,self)._terminate_daemon_process()  
             
             #由于使用-9 需要自行删除pid文件
             try:

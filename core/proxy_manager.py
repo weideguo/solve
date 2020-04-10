@@ -101,7 +101,8 @@ class ProxyManager(JobManager):
         
         p_list.append(p1)
         p_list.append(p2)
-    
+        
         self.process_run(p_list,redis_client=self.redis_send_client)
         
+        return p_list
         

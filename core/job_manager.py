@@ -33,7 +33,8 @@ class JobManager(object):
     """    
 
     def __init__(self,redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool):
-
+        
+        
         self.redis_send_pool=redis_send_pool
         self.redis_log_pool=redis_log_pool
         self.redis_tmp_pool=redis_tmp_pool
@@ -360,6 +361,7 @@ class JobManager(object):
         
         self.process_run(p_list,redis_client=self.redis_send_client)
         
+        return p_list
     
     def process_run(self,p_list,redis_client=None,pid_key="__pid__"):
         """
@@ -368,14 +370,10 @@ class JobManager(object):
         for p in p_list:
             p.start()
         
-        #获取当前进程的pid
-        #os.getpid()
+        self.pid_key=pid_key+str(os.getpid())
+        
         #使用redis保存子进程的pid
         if redis_client:
             for p in p_list:
-                redis_client.rpush(pid_key,p.pid)
-        
-        for p in p_list:
-            p.join()
-            
+                redis_client.rpush(self.pid_key,p.pid)
         
