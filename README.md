@@ -219,11 +219,32 @@ proxy模式用于作为master的代理管理主机连接。整体任务协调均
 提供简单的文件管理restful接口，可以实现文件上传、下载、文件查看、目录创建，文件内容查看。  
 当solve与web服务处于不同主机时，可以启用fileserver以实现文件的管理。  
 conf/config的fileserver参数控制是否启用。  
-不带权限验证，启用时请务必确保网络安全。如只监听本地地址，防火墙+nginx+https。  
+不带权限验证，启用时请务必确保网络安全。（如：1.只监听本地地址/内网地址；2.防火墙+nginx+https）  
 
 ### 本地执行 ###
 修改配置文件conf/config.py的local_ip_list，发往该ip列表的地址将不会使用ssh模式运行，而是直接在本地运行。  
 对于proxy模式，则格式如：proxy:&lt;proxy_mark&gt;:127.0.0.1，对该主机执行时直接在proxy执行，而不是在proxy上通过ssh执行。  
-127.0.0.1或者proxy:&lt;proxy_mark&gt;:127.0.0.1不需要预先设置realhost。  
+127.0.0.1或者proxy:&lt;proxy_mark&gt;:127.0.0.1不需要预先设置realhost。或者对应设置的非127.0.0.1/localhost的local_ip_list。    
 
+### 部署架构 ###
+本地执行在多master或者多proxy会导致本地执行出现问题（在不同主机执行可能结果不一样，而且如果指定使用特定master/proxy会导致playbook不能适用架构变化，如发生master/proxy退出的情况），因而在这些情况谨慎考虑是否要启动本地执行。    
+master/proxy服务之间的文件同步需要额外实现。（如：1.使用rsync；2.启用fileserver，并在上传文件时同时上传所有服务；3.其他自行实现的同步策略）  
 
+* 单master模式  
+  最简单模式，所有任务管理以及、主机连接只由一个master服务管理。  
+
+* 单master-多proxy模式  
+  master用于任务管理，一个proxy对应一个独立的SSH网络。  
+  master/proxy需要连接相同的redis，可以使用vpn实现处于相同内网环境。  
+  
+* 单master-多相同proxy模式  
+  与单master-多proxy模式类似，但一个独立网络部署多个proxy（proxy主要用于主机连接，可以避免主机过多时对proxy压力过大，以及提供高可用）。  
+  相同proxy由相同的proxy_mark标记。proxy不要启动本地执行。    
+   
+* 多master-多相同proxy模式    
+  与单master-多相同proxy模式类似，但同时启动多个master（避免master压力过大，以及提供高可用）。master不要启动本地执行。    
+  
+* 多master模式    
+  与多master-多相同proxy模式类似，但没有proxy用于连接主机，仅由master处理。master不要启动本地执行。       
+  
+  
