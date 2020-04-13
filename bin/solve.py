@@ -197,6 +197,10 @@ if __name__=="__main__":
             import signal
             signal.SIGTERM=9
             
+            #杀主进程
+            #super()._terminate_daemon_process()  
+            super(MyDaemonRunner,self)._terminate_daemon_process()  
+            
             #杀死子进程
             pid_key = "__pid__"
             pid_key=pid_key+str(self.pidfile.read_pid())
@@ -204,10 +208,6 @@ if __name__=="__main__":
             while pid:
                 os.kill(int(pid), signal.SIGTERM)
                 pid=redis_send_client.lpop(pid_key)
-            
-            #杀主进程
-            #super()._terminate_daemon_process()  
-            super(MyDaemonRunner,self)._terminate_daemon_process()  
             
             #由于使用-9 需要自行删除pid文件
             try:

@@ -7,7 +7,7 @@ import time
 import salt.client
 
 
-class MySalt():
+class MySalt(object):
     """
     对salt接口的封装
     target为minion的名字 可以使用通配符 *
