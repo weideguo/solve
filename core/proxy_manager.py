@@ -9,7 +9,7 @@ from conf import config
 from .job_manager import JobManager
 from lib.utils import get_host_ip
 from lib.logger import logger,logger_err
-
+from lib.wrapper import connection_error_rerun
 
 class ProxyManager(JobManager):
     """
@@ -60,7 +60,7 @@ class ProxyManager(JobManager):
         """
         self.conn_localhost(self.listen_tag)
         
-    
+    @connection_error_rerun()
     def __remot_host(self):
         """
         符合proxy的则启动ssh连接

@@ -3,6 +3,7 @@ import os
 import re
 import time
 import uuid
+import importlib
 from threading import Thread
 from multiprocessing import Process
 from traceback import format_exc
@@ -13,17 +14,15 @@ from .localhost import LocalHost
 from .cluster_exe import ClusterExecution
 from lib.utils import my_md5,file_row_count
 from lib.logger import logger,logger_err
+from lib.wrapper import connection_error_rerun
 from conf import config
 
-
-import importlib
 
 
 class_name = config.remote_model.split(".")[-1]
 module_name = ".".join(config.remote_model.split(".")[:-1])
 mod = importlib.import_module(module_name)
 RemoteHost = getattr(mod, class_name)
-
 
 class JobManager(object):
     """
@@ -141,7 +140,9 @@ class JobManager(object):
             self.redis_log_client.hset(init_host_uuid,"exit_code","init failed")
             self.redis_log_client.hset(init_host_uuid,"stderr",format_exc())
             logger_err.error(format_exc())
-  
+    
+    
+    @connection_error_rerun()
     def __remot_host(self):
         """
         监听队列进行主机控制连接 与 关闭 
@@ -196,7 +197,8 @@ class JobManager(object):
             else:
                 logger_err.error("do nothing on %s" % init_host)
     
-
+    
+    @connection_error_rerun()
     def __close_host(self):
         """
         主机自动关闭 
@@ -322,6 +324,7 @@ class JobManager(object):
         self.redis_log_client.hmset(config.prefix_log_job+job_id.split(config.prefix_job)[1],log_job)        
     
     
+    @connection_error_rerun()
     def __job_exe(self):
         """
         监听队列持续执行任务

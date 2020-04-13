@@ -113,6 +113,7 @@ class ClusterExecution():
     def exe(self,target,playbook,cluster_id="",begin_line=0):
         """
         playbook执行入口 线程不安全 如果多线程需要每次都创建对象
+        当执行命令到一半出现redis连接错误，则只执行完当前的命令，之后的命令不会再执行
         """        
         self.cluster_id=cluster_id
         cluster_start_time=time.time()           

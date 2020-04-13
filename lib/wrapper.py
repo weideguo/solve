@@ -1,6 +1,12 @@
 #coding:utf8
 #一些函数的封装
+import time
 from threading import Thread
+
+from redis.exceptions import ConnectionError
+
+from .logger import logger_err
+
 
 def gen_background_log_set(cmd_uuid,redis_client,len=0):
     """生成执行命令时设置日志的函数"""
@@ -36,9 +42,11 @@ def gen_background_log_set(cmd_uuid,redis_client,len=0):
         t1.join()
         t2.join()
         
-        
-        sout=redis_client.hget(cmd_uuid,"stdout")
-        serr=redis_client.hget(cmd_uuid,"stderr")
+        try:
+            sout=redis_client.hget(cmd_uuid,"stdout")
+            serr=redis_client.hget(cmd_uuid,"stderr")
+        except:
+            sout,serr = "","redis conn error, check if execute success manully"
         
         #如果线程运行失败，处理None
         if not sout:
@@ -49,3 +57,26 @@ def gen_background_log_set(cmd_uuid,redis_client,len=0):
         
     return background_log_set
 
+
+
+def connection_error_rerun(retry_gap=1):
+    """
+    当发生连接错误时函数的重新运行
+    """
+    def __wrapper(func):                  
+        def __wrapper2(*args, **kwargs):
+            while True:
+                try:
+                    func(*args, **kwargs)
+                    break
+                except ConnectionError:
+                    time.sleep(retry_gap)
+                    if args:
+                        func_name="%s.%s" % (args[0].__class__.__name__, func.__name__)
+                    else:
+                        func_name=func.__name__
+                    
+                    logger_err.info("function:%s  retry" % func_name)
+                          
+        return __wrapper2
+    return __wrapper

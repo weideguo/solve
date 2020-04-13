@@ -11,14 +11,14 @@ import subprocess
 from traceback import format_exc
 import redis
 
-from lib.wrapper import gen_background_log_set
+from lib.wrapper import gen_background_log_set,connection_error_rerun
 from lib.logger import logger,logger_err
 from lib.utils import get_host_ip
 from conf import config
 
 
 
-class LocalHost():
+class LocalHost(object):
     """
     对本地的执行
     """
@@ -34,8 +34,9 @@ class LocalHost():
         #self.tag=self.listen_tag[0]
     
         self.thread_q=Queue.Queue(t_number)   #单个主机的并发
-        
     
+    
+    @connection_error_rerun()
     def __heart_beat(self):
         """
         心跳
@@ -72,8 +73,9 @@ class LocalHost():
             p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
             
             background_log_set=gen_background_log_set(cmd_uuid,self.redis_log_client)
-            stdout,stderr = background_log_set(p.stdout,p.stderr)
             
+            stdout,stderr = background_log_set(p.stdout,p.stderr)
+                        
             p.communicate()
             exit_code=p.returncode
             
@@ -100,18 +102,22 @@ class LocalHost():
         for k in self.listen_tag:
             key = config.prefix_cmd + k
             t=Thread(target=self.__real_forever_run,args=(key,k))
-            t.start()
             t_list.append(t)
         
-        for t in t_list:
-            t.join()
+        return t_list
     
     
+    @connection_error_rerun()
     def __real_forever_run(self,key,tag):
         while True:
             self.thread_q.put(1)                #控制并发数
-            t_allcmd=self.redis_send_client.blpop(key,1)       
-            #使用阻塞获取 好处是能及时响应 
+            try:
+                #使用阻塞获取 好处是能及时响应 
+                t_allcmd=self.redis_send_client.blpop(key,1)       
+            except :
+                #如果获取出现则需要先移除已经占用的队列，防止队列处于满的状态
+                self.thread_q.get()
+                raise
 
             if t_allcmd:                           
                 allcmd=t_allcmd[1]
@@ -135,7 +141,7 @@ class LocalHost():
                 #命令为空时释放队列
                 self.thread_q.get()    
     
-
+    @connection_error_rerun()
     def set_log(self,tag,exe_result,is_update=True):
         """
         设置日志
@@ -150,7 +156,14 @@ class LocalHost():
     
     def forever_run(self):
         t1=Thread(target=self.__heart_beat)
-        t1.start()
-        self.__forever_run()
+        t_list=self.__forever_run()
+        
+        t_list.append(t1)
+        
+        for t in t_list:
+            t.start()
+        
+        for t in t_list:
+            t.join()
         
     

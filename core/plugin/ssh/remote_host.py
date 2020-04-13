@@ -13,7 +13,7 @@ from traceback import format_exc
 
 import redis
 
-from lib.wrapper import gen_background_log_set
+from lib.wrapper import gen_background_log_set,connection_error_rerun
 from lib.logger import logger,logger_err
 from lib.utils import my_md5,get_host_ip
 from lib.myssh import MySSH
@@ -226,8 +226,10 @@ class RemoteHost(MySSH):
         #logger.debug("----------------------------------")
 
         self.thread_q.get()                                   #停止阻塞下一个线程            
-        
- 
+    
+    
+    #确保当前执行的命令日志正确返回
+    @connection_error_rerun()
     def set_log(self,exe_result,is_update=True):
         """
         设置日志
