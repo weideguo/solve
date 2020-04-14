@@ -70,6 +70,8 @@ def connection_error_rerun(retry_gap=1):
                     func(*args, **kwargs)
                     break
                 except ConnectionError:
+                    from traceback import format_exc
+                    logger_err.info(format_exc())
                     time.sleep(retry_gap)
                     if args:
                         func_name="%s.%s" % (args[0].__class__.__name__, func.__name__)

@@ -9,39 +9,26 @@ import sys
 import time
 from multiprocessing import Process
 
-import redis
 from daemon.runner import DaemonRunner
     
 base_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
+from lib.redis_conn import RedisConn
 from lib.logger import logger
 from core.job_manager import JobManager
 from core.proxy_manager import ProxyManager
 
 if __name__=="__main__":
     from conf import config
-    #decode_responses=True      将结果自动编码为unicode格式，否则对于python3结果格式为 b"xxx"
-    #encoding_errors="ignore"   decode的选项，编码出错时的处理方式，可选 strict ignore replace 默认为strict 
-    #可清除以下
-    redis_send_pool=redis.ConnectionPool(host=config.redis_send_host, port=config.redis_send_port,\
-                    db=config.redis_send_db, password=config.redis_send_passwd,decode_responses=True,encoding_errors="ignore")
-    redis_log_pool=redis.ConnectionPool(host=config.redis_log_host, port=config.redis_log_port,\
-                    db=config.redis_log_db, password=config.redis_log_passwd,decode_responses=True,encoding_errors="ignore")
-    redis_tmp_pool=redis.ConnectionPool(host=config.redis_tmp_host, port=config.redis_tmp_port,\
-                    db=config.redis_tmp_db, password=config.redis_tmp_passwd,decode_responses=True,encoding_errors="ignore")
     
-    #不可清除以下
-    redis_job_pool=redis.ConnectionPool(host=config.redis_job_host, port=config.redis_job_port,\
-                        db=config.redis_job_db, password=config.redis_job_passwd,decode_responses=True,encoding_errors="ignore")
-    redis_config_pool=redis.ConnectionPool(host=config.redis_config_host, port=config.redis_config_port,\
-                        db=config.redis_config_db, password=config.redis_config_passwd,decode_responses=True,encoding_errors="ignore")
+    rc=RedisConn()
+    #redis客户端线程/进程安全，可以复用
+    redis_send_client=rc.redis_init(config.redis_send)
+    redis_log_client=rc.redis_init(config.redis_log)
+    redis_tmp_client=rc.redis_init(config.redis_tmp)
+    redis_job_client=rc.redis_init(config.redis_job)
+    redis_config_client=rc.redis_init(config.redis_config)            
     
-    #线程/进程安全，可以复用
-    redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
-    redis_log_client=redis.StrictRedis(connection_pool=redis_log_pool)
-    redis_tmp_client=redis.StrictRedis(connection_pool=redis_tmp_pool)
-    redis_job_client=redis.StrictRedis(connection_pool=redis_job_pool)  
-    redis_config_client=redis.StrictRedis(connection_pool=redis_config_pool)
     
     log_path=os.path.join(base_dir,"./logs")
     if not os.path.exists(log_path):

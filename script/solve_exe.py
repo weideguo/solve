@@ -13,7 +13,7 @@ import redis
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from conf import config
-
+from lib.redis_conn import RedisConn
 
 class SolveExe():
     """
@@ -131,18 +131,12 @@ class SolveExe():
 
 if __name__=="__main__":
     
-    #可清除以下
-    redis_send_client=redis.StrictRedis(host=config.redis_send_host, port=config.redis_send_port, \
-                                        db=config.redis_send_db, password=config.redis_send_passwd,decode_responses=True)
-    redis_log_client=redis.StrictRedis(host=config.redis_log_host, port=config.redis_log_port, \
-                                       db=config.redis_log_db, password=config.redis_log_passwd,decode_responses=True)
-    #不可清除以下
-    redis_tmp_client=redis.StrictRedis(host=config.redis_tmp_host, port=config.redis_tmp_port, \
-                                          db=config.redis_tmp_db, password=config.redis_tmp_passwd,decode_responses=True)
-    redis_job_client=redis.StrictRedis(host=config.redis_job_host, port=config.redis_job_port, \
-                                       db=config.redis_job_db, password=config.redis_job_passwd,decode_responses=True)
-  
-
+    rc=RedisConn()
+    redis_send_client=rc.redis_init(config.redis_send)
+    redis_log_client=rc.redis_init(config.redis_log)
+    redis_tmp_client=rc.redis_init(config.redis_tmp)
+    redis_job_client=rc.redis_init(config.redis_job)
+    redis_config_client=rc.redis_init(config.redis_config)   
 
     if sys.version_info<(3,0):
         input=raw_input

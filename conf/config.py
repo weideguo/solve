@@ -1,40 +1,54 @@
 #coding:utf8
 
 #redis_send
-redis_send_host="127.0.0.1"
-redis_send_port=6379
-#是否启用sentinel，不设置则不启用
-#设置sentinel则不必设置以上两项
-sentinel_name="mymaster"
-sentinels=[('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]
-
-redis_send_passwd="my_redis_passwd"
-redis_send_db=0
+redis_send={
+"db": 0,
+"password": "my_redis_passwd",
+"host": "127.0.0.1",                                                                  #使用sentinel则这个不必设置
+"port": 6379,                                                                         #使用sentinel则这个不必设置
+"service_name": "mymaster",                                                          #是否使用sentinel
+"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)],       #是否使用sentinel
+}
 
 #redis_log
-redis_log_host="127.0.0.1"
-redis_log_port=6379
-redis_log_passwd="my_redis_passwd"
-redis_log_db=1
+redis_log={
+"db": 1,
+"password": "my_redis_passwd",
+"host": "127.0.0.1",         
+"port": 6379,                
+"service_name": "mymaster",                                                         
+"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]      
+}
 
 #redis_tmp
-redis_tmp_host="127.0.0.1"
-redis_tmp_port=6379
-redis_tmp_passwd="my_redis_passwd"
-redis_tmp_db=2
+redis_tmp={
+"db": 2,
+"password": "my_redis_passwd",
+"host": "127.0.0.1",         
+"port": 6379,                
+"service_name": "mymaster",                                                         
+"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]     
+}
 
 #redis_job
-redis_job_host="127.0.0.1"
-redis_job_port=6379
-redis_job_passwd="my_redis_passwd"
-redis_job_db=14
+redis_job={
+"db": 14,
+"password": "my_redis_passwd",
+"host": "127.0.0.1",         
+"port": 6379,                
+"service_name": "mymaster",                                                         
+"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]       
+}
 
 #redis_config
-redis_config_host="127.0.0.1"
-redis_config_port=6379
-redis_config_passwd="my_redis_passwd"
-redis_config_db=15
-
+redis_config={
+"db": 15,
+"password": "my_redis_passwd",
+"host": "127.0.0.1",         
+"port": 6379,                
+"service_name": "mymaster",                                                         
+"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]     
+}
 
 
 ###################################################################################################
