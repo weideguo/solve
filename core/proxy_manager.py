@@ -1,7 +1,6 @@
 #coding:utf8
 import re
 import uuid
-import redis
 from multiprocessing import Process
 from traceback import format_exc
 
@@ -24,9 +23,9 @@ class ProxyManager(JobManager):
             master监听文件目录变化主动向所有proxy下发文件
     """
     
-    def __init__(self,redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool):
+    def __init__(self,redis_send_client,redis_log_client,redis_tmp_client,redis_job_client,redis_config_client):
         
-        super(ProxyManager, self).__init__(redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool) 
+        super(ProxyManager, self).__init__(redis_send_client,redis_log_client,redis_tmp_client,redis_job_client,redis_config_client) 
         
         #优先从配置文件获取，获取失败，则使用ip地址
         try:

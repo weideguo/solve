@@ -16,7 +16,9 @@ if __name__=="__main__":
     
     listen_tag=["proxy:192.168.153.128:127.0.0.1"]
     
-    lh=LocalHost(redis_send_pool,redis_log_pool,listen_tag) 
+    redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
+    redis_log_client=redis.StrictRedis(connection_pool=redis_log_pool)
+    lh=LocalHost(redis_send_client,redis_log_client,listen_tag) 
     lh.forever_run()
     """
     
@@ -27,7 +29,7 @@ if __name__=="__main__":
                 raise Exception("%s should be null" % ("cmd_"+init_host))
     def f():
         print("start")
-        lh=LocalHost(redis_send_pool,redis_log_pool,listen_tag) 
+        lh=LocalHost(redis_send_client,redis_log_client,listen_tag) 
         lh.forever_run()
     
     def f2():
@@ -52,9 +54,9 @@ if __name__=="__main__":
             
     """        
             
-    #(self,redis_send_pool,redis_log_pool,listen_tag,t_number=5)
+    #(self,redis_send_client,redis_log_client,listen_tag,t_number=5)
     #host_info2={"ip":"192.168.59.129","user":"root","passwd":"my_host_pass","ssh_port":22}
 
-    #h2=RemoteHost(host_info2,redis_send_pool,redis_log_pool) 
+    #h2=RemoteHost(host_info2,redis_send_client,redis_log_client) 
     #h2.forever_run()
 

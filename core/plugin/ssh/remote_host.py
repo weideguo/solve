@@ -11,8 +11,6 @@ else:
 from threading import Thread
 from traceback import format_exc
 
-import redis
-
 from lib.wrapper import gen_background_log_set,connection_error_rerun
 from lib.logger import logger,logger_err
 from lib.utils import my_md5,get_host_ip
@@ -29,7 +27,7 @@ class RemoteHost(MySSH):
     续监听队列判断是否关闭连接
     """
     
-    def __init__(self,host_info,redis_send_pool,redis_log_pool,t_number=config.max_concurrent_thread):
+    def __init__(self,host_info,redis_send_client,redis_log_client,t_number=config.max_concurrent_thread):
     
         #super(RemoteHost, self).__init__(host_info)
         super(RemoteHost, self).__init__(host_info)       
@@ -40,10 +38,8 @@ class RemoteHost(MySSH):
         else:
             self.tag=self.ip
  
-        self.redis_send_pool=redis_send_pool
-        self.redis_log_pool=redis_log_pool
-        self.redis_send_client=None
-        self.redis_log_client=None
+        self.redis_send_client=redis_send_client
+        self.redis_log_client=redis_log_client
 
         self.thread_q=Queue.Queue(t_number)   #单个主机的并发
         self.t_thread_q=Queue.Queue(t_number) #用于存储正在运行的队列 
@@ -56,8 +52,6 @@ class RemoteHost(MySSH):
         """
         super(RemoteHost, self).init_conn()
         
-        self.redis_send_client=redis.StrictRedis(connection_pool=self.redis_send_pool)
-        self.redis_log_client=redis.StrictRedis(connection_pool=self.redis_log_pool)
         self.is_run=True
     
     

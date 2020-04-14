@@ -31,13 +31,17 @@ if __name__=="__main__":
                     db=config.redis_tmp_db, password=config.redis_tmp_passwd,decode_responses=True,encoding_errors="ignore")
     
     #不可清除以下
-    redis_config_pool=redis.ConnectionPool(host=config.redis_config_host, port=config.redis_config_port,\
-                        db=config.redis_config_db, password=config.redis_config_passwd,decode_responses=True,\
-                        encoding_errors="ignore")
     redis_job_pool=redis.ConnectionPool(host=config.redis_job_host, port=config.redis_job_port,\
                         db=config.redis_job_db, password=config.redis_job_passwd,decode_responses=True,encoding_errors="ignore")
+    redis_config_pool=redis.ConnectionPool(host=config.redis_config_host, port=config.redis_config_port,\
+                        db=config.redis_config_db, password=config.redis_config_passwd,decode_responses=True,encoding_errors="ignore")
     
+    #线程/进程安全，可以复用
     redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
+    redis_log_client=redis.StrictRedis(connection_pool=redis_log_pool)
+    redis_tmp_client=redis.StrictRedis(connection_pool=redis_tmp_pool)
+    redis_job_client=redis.StrictRedis(connection_pool=redis_job_pool)  
+    redis_config_client=redis.StrictRedis(connection_pool=redis_config_pool)
     
     log_path=os.path.join(base_dir,"./logs")
     if not os.path.exists(log_path):
@@ -85,7 +89,7 @@ if __name__=="__main__":
     elif start_mode==mode[1]:
         Manager=ProxyManager
     
-    manager=Manager(redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool)
+    manager=Manager(redis_send_client,redis_log_client,redis_tmp_client,redis_job_client,redis_config_client)
     
     try:
         opt=sys.argv[1].strip()
@@ -126,7 +130,6 @@ if __name__=="__main__":
         
         #清除相关key
         if config.clear_start:
-            #redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
             k_list=[]
             for k_pattern in [config.key_conn_control,config.prefix_cmd,config.prefix_heart_beat]:
                 k_list +=redis_send_client.keys(k_pattern+"*")

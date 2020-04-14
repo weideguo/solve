@@ -9,7 +9,6 @@ else:
 from threading import Thread
 import subprocess
 from traceback import format_exc
-import redis
 
 from lib.wrapper import gen_background_log_set,connection_error_rerun
 from lib.logger import logger,logger_err
@@ -22,11 +21,9 @@ class LocalHost(object):
     """
     对本地的执行
     """
-    def __init__(self,redis_send_pool,redis_log_pool,listen_tag,t_number=5):
-        self.redis_send_pool=redis_send_pool
-        self.redis_log_pool=redis_log_pool
-        self.redis_send_client=redis.StrictRedis(connection_pool=self.redis_send_pool)
-        self.redis_log_client=redis.StrictRedis(connection_pool=self.redis_log_pool)
+    def __init__(self,redis_send_client,redis_log_client,listen_tag,t_number=5):
+        self.redis_send_client=redis_send_client
+        self.redis_log_client=redis_log_client
         
         #127.0.0.1 localhost
         #proxy:10.0.0.1:127.0.0.1 proxy:10.0.0.1:localhost

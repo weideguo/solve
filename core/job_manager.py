@@ -8,8 +8,6 @@ from threading import Thread
 from multiprocessing import Process
 from traceback import format_exc
 
-import redis
-
 from .localhost import LocalHost
 from .cluster_exe import ClusterExecution
 from lib.utils import my_md5,file_row_count
@@ -31,20 +29,13 @@ class JobManager(object):
     SSH连接与关闭的控制
     """    
 
-    def __init__(self,redis_send_pool,redis_log_pool,redis_tmp_pool,redis_job_pool,redis_config_pool):
-        
-        
-        self.redis_send_pool=redis_send_pool
-        self.redis_log_pool=redis_log_pool
-        self.redis_tmp_pool=redis_tmp_pool
-        self.redis_job_pool=redis_job_pool        
-        self.redis_config_pool=redis_config_pool
-        
-        self.redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)    
-        self.redis_log_client=redis.StrictRedis(connection_pool=redis_log_pool)
-        self.redis_job_client=redis.StrictRedis(connection_pool=redis_job_pool)
-        self.redis_tmp_client=redis.StrictRedis(connection_pool=redis_tmp_pool)
-        self.redis_config_client=redis.StrictRedis(connection_pool=redis_config_pool)
+    def __init__(self,redis_send_client,redis_log_client,redis_tmp_client,redis_job_client,redis_config_client):
+            
+        self.redis_send_client=redis_send_client
+        self.redis_log_client=redis_log_client
+        self.redis_tmp_client=redis_tmp_client
+        self.redis_job_client=redis_job_client        
+        self.redis_config_client=redis_config_client
         
     
     def is_listen_tag_clean(self,listen_tag=config.local_ip_list):
@@ -60,7 +51,7 @@ class JobManager(object):
         """
         
         logger.debug("localhost start, listen on: %s" % str(listen_tag))
-        lh=LocalHost(self.redis_send_pool,self.redis_log_pool,listen_tag,config.max_localhost_thread) 
+        lh=LocalHost(self.redis_send_client,self.redis_log_client,listen_tag,config.max_localhost_thread) 
         lh.forever_run() 
         #阻塞运行，以下操作不应该被运行
         logger_err.error("localhost should not end, something error!")
@@ -117,7 +108,7 @@ class JobManager(object):
             
                     try:
                         self.redis_send_client.set(config.prefix_initing+init_host,time.time())
-                        h=RemoteHost(host_info,self.redis_send_pool,self.redis_log_pool)
+                        h=RemoteHost(host_info,self.redis_send_client,self.redis_log_client)
                         h.forever_run()
                         logger.info("< %s > init success" % init_host)                    
                     except:
@@ -306,7 +297,7 @@ class JobManager(object):
             
             try:
                 
-                ce=ClusterExecution(self.redis_send_pool,self.redis_log_pool,self.redis_tmp_pool,self.redis_config_pool)
+                ce=ClusterExecution(self.redis_send_client,self.redis_log_client,self.redis_tmp_client,self.redis_config_client)
                 
                 if "begin_line" in job:
                     begin_line=int(job["begin_line"])

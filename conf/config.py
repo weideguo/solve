@@ -3,6 +3,11 @@
 #redis_send
 redis_send_host="127.0.0.1"
 redis_send_port=6379
+#是否启用sentinel，不设置则不启用
+#设置sentinel则不必设置以上两项
+sentinel_name="mymaster"
+sentinels=[('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]
+
 redis_send_passwd="my_redis_passwd"
 redis_send_db=0
 

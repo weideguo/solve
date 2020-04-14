@@ -1,6 +1,5 @@
 #coding:utf8
 import time
-import redis
 from threading import Thread
 
 from conf import config
@@ -27,10 +26,10 @@ class AbstractConn():
     """    
 
 
-    def __init__(self,host_info,redis_send_pool,redis_log_pool):
+    def __init__(self,host_info,redis_send_client,redis_log_client):
         self.host_info = host_info
-        self.redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)
-        self.redis_log_client=redis.StrictRedis(connection_pool=redis_log_pool)
+        self.redis_send_client=redis_send_client
+        self.redis_log_client=redis_log_client
         self.__new_forever_run()
          
 

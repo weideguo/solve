@@ -8,7 +8,6 @@ from threading import Thread
 from traceback import format_exc
 
 from jinja2 import Template
-import redis
 
 from lib.logger import logger,logger_err
 from conf import config
@@ -28,17 +27,17 @@ class ClusterExecution():
     cluster_id=""                 #全局uuid 用于标记cluster的日志 global变量的存储
     target=""
     
-    def __init__(self,redis_send_pool,redis_log_pool,redis_tmp_pool,redis_config_pool):
+    def __init__(self,redis_send_client,redis_log_client,redis_tmp_client,redis_config_client):
         """
         每一次执行创建一个对象，运行完毕后销毁
         对多个集群执行时，创建多个对象
         多个集群多次需要创建多个对象
 
         """
-        self.redis_send_client=redis.StrictRedis(connection_pool=redis_send_pool)         #执行命令 返回值等执行过程信息
-        self.redis_log_client=redis.StrictRedis(connection_pool=redis_log_pool)           #执行日志
-        self.redis_tmp_client=redis.StrictRedis(connection_pool=redis_tmp_pool)           #执行对象 global session 的临时数据
-        self.redis_config_client=redis.StrictRedis(connection_pool=redis_config_pool)     #执行对象原始数据
+        self.redis_send_client=redis_send_client         #执行命令 返回值等执行过程信息
+        self.redis_log_client=redis_log_client           #执行日志
+        self.redis_tmp_client=redis_tmp_client           #执行对象 global session 的临时数据
+        self.redis_config_client=redis_config_client     #执行对象原始数据
         
         self.exe_uuid_list=[]
         
