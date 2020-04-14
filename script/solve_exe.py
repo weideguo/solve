@@ -7,6 +7,8 @@ import re
 import sys
 import time
 import uuid
+import atexit
+
 import redis
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -85,7 +87,7 @@ class SolveExe():
         return self.job_name
     
     
-    def check_job_result(self):
+    def check_job_result(self,kill=False):
         """
         检查统计当前job的执行结果
         """
@@ -99,8 +101,6 @@ class SolveExe():
         if log_job_dict:
             log_target=eval(log_job_dict["log"])
             for lc in log_target:
-                #cluster_id=lc[0].split("_")[-1]
-                #cluster_name=lc[0].split("_"+cluster_id)[0]
                 cluster_id=lc[0].split(config.spliter)[-1]
                 cluster_name=lc[0].split(config.spliter+cluster_id)[0]
     
@@ -113,6 +113,12 @@ class SolveExe():
                         fail.append(cluster_name)
                 else:
                     uncomplete.append(cluster_name)
+                    if kill:
+                        """
+                        杀死当前的执行对象
+                        """
+                        redis_send_client.set(config.prefix_kill+cluster_id,time.time())
+                        redis_log_client.hset(config.prefix_sum+cluster_id,'stop_str','killing')
     
         result_sum={"complete":complete,"fail":fail,"uncomplete":uncomplete}
         return result_sum
@@ -121,6 +127,7 @@ class SolveExe():
         self.redis_tmp_client.expire(self.session,config.tmp_config_expire_sec) 
 
 
+    
 
 if __name__=="__main__":
     
@@ -160,7 +167,7 @@ if __name__=="__main__":
     new_info=get_var_interactive(["target","playbook"])
 
     for k in new_info:
-        if not new_info["target"]:
+        if not new_info[k]:
             print("%s can not be null" % k)
             exit()
      
@@ -177,19 +184,41 @@ if __name__=="__main__":
     se.set_session(session_info)
       
     print("--------------------------begin--------------------------"+se.job_name)
-        
+    
+    #开始执行    
     se.exe()  
-
+    
     job_result=se.check_job_result()
-    while job_result["uncomplete"] or (not job_result["complete"] and not job_result["uncomplete"] and not job_result["fail"]):
+    
+    
+    def is_job_done(job_result):
+        if job_result["uncomplete"] or (not job_result["complete"] and not job_result["uncomplete"] and not job_result["fail"]):
+            return False
+        else:
+            return True
+        
+    @atexit.register
+    def exit_opt():
+        """
+        退出处理
+        """
+        
+        se.key_expire() 
+        
+        job_result=se.check_job_result(kill=True)
+        if is_job_done(job_result):
+            #正常执行结束
+            tag="done"
+        else:
+            #异常执行结束
+            tag="kill"
+            
+        print(job_result)
+        print("--------------------------%s--------------------------%s" % (tag,se.job_name))
+    
+    
+    while not is_job_done(job_result):
         print(job_result)
         time.sleep(1)
         job_result=se.check_job_result()
-    
-    print(job_result)
-    
-    se.key_expire()  
-
-    print("--------------------------done--------------------------"+se.job_name)
-    
     
