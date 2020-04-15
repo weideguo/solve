@@ -6,8 +6,8 @@ redis_send={
 "password": "my_redis_passwd",
 "host": "127.0.0.1",                                                                  #使用sentinel则这个不必设置
 "port": 6379,                                                                         #使用sentinel则这个不必设置
-"service_name": "mymaster",                                                          #是否使用sentinel
-"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)],       #是否使用sentinel
+#"service_name": "mymaster",                                                          #是否使用sentinel
+#"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)],       #是否使用sentinel
 }
 
 #redis_log
@@ -16,8 +16,8 @@ redis_log={
 "password": "my_redis_passwd",
 "host": "127.0.0.1",         
 "port": 6379,                
-"service_name": "mymaster",                                                         
-"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]      
+#"service_name": "mymaster",                                                         
+#"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]      
 }
 
 #redis_tmp
@@ -26,8 +26,8 @@ redis_tmp={
 "password": "my_redis_passwd",
 "host": "127.0.0.1",         
 "port": 6379,                
-"service_name": "mymaster",                                                         
-"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]     
+#"service_name": "mymaster",                                                         
+#"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]     
 }
 
 #redis_job
@@ -36,8 +36,8 @@ redis_job={
 "password": "my_redis_passwd",
 "host": "127.0.0.1",         
 "port": 6379,                
-"service_name": "mymaster",                                                         
-"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]       
+#"service_name": "mymaster",                                                         
+#"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]       
 }
 
 #redis_config
@@ -46,8 +46,8 @@ redis_config={
 "password": "my_redis_passwd",
 "host": "127.0.0.1",         
 "port": 6379,                
-"service_name": "mymaster",                                                         
-"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]     
+#"service_name": "mymaster",                                                         
+#"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]     
 }
 
 

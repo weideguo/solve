@@ -13,6 +13,7 @@ from .cluster_exe import ClusterExecution
 from lib.utils import my_md5,file_row_count
 from lib.logger import logger,logger_err
 from lib.wrapper import connection_error_rerun
+from lib.redis_conn import RedisConn
 from conf import config
 
 
@@ -29,14 +30,28 @@ class JobManager(object):
     SSH连接与关闭的控制
     """    
 
-    def __init__(self,redis_send_client,redis_log_client,redis_tmp_client,redis_job_client,redis_config_client):
-            
-        self.redis_send_client=redis_send_client
-        self.redis_log_client=redis_log_client
-        self.redis_tmp_client=redis_tmp_client
-        self.redis_job_client=redis_job_client        
-        self.redis_config_client=redis_config_client
+    def __init__(self,redis_config_list):
+        self.redis_send_client=None
+        self.redis_log_client=None
+        self.redis_tmp_client=None
+        self.redis_job_client=None
+        self.redis_config_client=None
         
+        self.redis_send_config=redis_config_list[0]
+        self.redis_log_config=redis_config_list[1]
+        self.redis_tmp_config=redis_config_list[2]
+        self.redis_job_config=redis_config_list[3]       
+        self.redis_config_config=redis_config_list[4]
+        self.redis_init()
+
+    
+    def redis_init(self):
+        rc=RedisConn()        
+        self.redis_send_client=rc.refresh(self.redis_send_client,self.redis_send_config)
+        self.redis_log_client=rc.refresh(self.redis_log_client,self.redis_log_config) 
+        self.redis_tmp_client=rc.refresh(self.redis_tmp_client,self.redis_tmp_config)
+        self.redis_job_client=rc.refresh(self.redis_job_client,self.redis_job_config)        
+        self.redis_config_client=rc.refresh(self.redis_config_client,self.redis_config_config)        
     
     def is_listen_tag_clean(self,listen_tag=config.local_ip_list):
         #启动本地时检查是否已经存在旧的命令
@@ -51,7 +66,7 @@ class JobManager(object):
         """
         
         logger.debug("localhost start, listen on: %s" % str(listen_tag))
-        lh=LocalHost(self.redis_send_client,self.redis_log_client,listen_tag,config.max_localhost_thread) 
+        lh=LocalHost([self.redis_send_config,self.redis_log_config],listen_tag,config.max_localhost_thread) 
         lh.forever_run() 
         #阻塞运行，以下操作不应该被运行
         logger_err.error("localhost should not end, something error!")
@@ -108,7 +123,7 @@ class JobManager(object):
             
                     try:
                         self.redis_send_client.set(config.prefix_initing+init_host,time.time())
-                        h=RemoteHost(host_info,self.redis_send_client,self.redis_log_client)
+                        h=RemoteHost(host_info,[self.redis_send_config,self.redis_log_config])
                         h.forever_run()
                         logger.info("< %s > init success" % init_host)                    
                     except:
@@ -140,7 +155,7 @@ class JobManager(object):
         只允许干净连接，即命令队列中不应该存在以前的旧命令
 
         """
-
+        self.redis_init()
         while True:
             init_host=self.redis_send_client.blpop(config.key_conn_control)
             init_host_list=init_host[1].split(config.spliter)
@@ -197,7 +212,7 @@ class JobManager(object):
         避免创建不久后被判断为要关闭
         将需要关闭的信息插入队列 由__remot_host执行关闭
         """
-
+        self.redis_init()
         hb_tag=config.prefix_heart_beat
         while True:
             
@@ -325,6 +340,7 @@ class JobManager(object):
         session为可选
 
         """
+        self.redis_init()
         while True:
             job_id=self.redis_send_client.blpop(config.key_job_list)
             job_id=job_id[1]
@@ -356,6 +372,7 @@ class JobManager(object):
         self.process_run(p_list,redis_client=self.redis_send_client)
         
         return p_list
+    
     
     def process_run(self,p_list,redis_client=None,pid_key="__pid__"):
         """

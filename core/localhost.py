@@ -13,6 +13,7 @@ from traceback import format_exc
 from lib.wrapper import gen_background_log_set,connection_error_rerun
 from lib.logger import logger,logger_err
 from lib.utils import get_host_ip
+from lib.redis_conn import RedisConn
 from conf import config
 
 
@@ -21,9 +22,13 @@ class LocalHost(object):
     """
     对本地的执行
     """
-    def __init__(self,redis_send_client,redis_log_client,listen_tag,t_number=5):
-        self.redis_send_client=redis_send_client
-        self.redis_log_client=redis_log_client
+    def __init__(self,redis_config_list,listen_tag,t_number=5):
+        self.redis_send_client=None
+        self.redis_log_client=None
+        
+        self.redis_send_config=redis_config_list[0]
+        self.redis_log_config=redis_config_list[1]
+        self.redis_init()
         
         #127.0.0.1 localhost
         #proxy:10.0.0.1:127.0.0.1 proxy:10.0.0.1:localhost
@@ -33,11 +38,21 @@ class LocalHost(object):
         self.thread_q=Queue.Queue(t_number)   #单个主机的并发
     
     
+    def redis_init(self):
+        """
+        redis断开后的重连
+        """
+        rc=RedisConn()        
+        self.redis_send_client=rc.refresh(self.redis_send_client,self.redis_send_config)
+        self.redis_log_client=rc.refresh(self.redis_log_client,self.redis_log_config)
+        
+    
     @connection_error_rerun()
     def __heart_beat(self):
         """
         心跳
         """
+        self.redis_init()
         while True:
             for tag in self.listen_tag:
                 self.redis_send_client.set(config.prefix_heart_beat+tag,time.time())
@@ -88,29 +103,21 @@ class LocalHost(object):
         self.set_log(tag,exe_result,is_update=True)
         logger.debug(str(exe_result)+" done")
         
-        self.thread_q.get()                                   #停止阻塞下一个线程   
-    
-    
-    def __forever_run(self):
-        """
-        无限接收命令
-        """
-        t_list=[]
-        for k in self.listen_tag:
-            key = config.prefix_cmd + k
-            t=Thread(target=self.__real_forever_run,args=(key,k))
-            t_list.append(t)
-        
-        return t_list
+        self.thread_q.get()          #停止阻塞下一个线程   
     
     
     @connection_error_rerun()
-    def __real_forever_run(self,key,tag):
+    def __forever_run(self,tag):
+        """
+        无限接收命令
+        """
+        self.redis_init()
+        key = config.prefix_cmd + tag
         while True:
             self.thread_q.put(1)                #控制并发数
             try:
                 #使用阻塞获取 好处是能及时响应 
-                t_allcmd=self.redis_send_client.blpop(key,1)       
+                t_allcmd=self.redis_send_client.blpop(key)                   
             except :
                 #如果获取出现则需要先移除已经占用的队列，防止队列处于满的状态
                 self.thread_q.get()
@@ -126,9 +133,10 @@ class LocalHost(object):
                         cmd_uuid=allcmd[1]
                     else:
                         cmd_uuid=uuid.uuid1().hex
-
-                    t=Thread(target=self.__single_run,args=(cmd,cmd_uuid,tag))
-                    t.start()
+                    
+                    print(cmd,cmd_uuid,tag)
+                    #t=Thread(target=self.__single_run,args=(cmd,cmd_uuid,tag))
+                    #t.start()
                           
                 else:
                     #命令为空时释放队列
@@ -153,14 +161,13 @@ class LocalHost(object):
     
     def forever_run(self):
         t1=Thread(target=self.__heart_beat)
-        t_list=self.__forever_run()
-        
-        t_list.append(t1)
+        t_list=[t1]
+        for k in self.listen_tag:
+            t=Thread(target=self.__forever_run,args=(k,))
+            t_list.append(t)
         
         for t in t_list:
             t.start()
         
         for t in t_list:
             t.join()
-        
-    

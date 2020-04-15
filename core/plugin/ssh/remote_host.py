@@ -11,6 +11,7 @@ else:
 from threading import Thread
 from traceback import format_exc
 
+from lib.redis_conn import RedisConn
 from lib.wrapper import gen_background_log_set,connection_error_rerun
 from lib.logger import logger,logger_err
 from lib.utils import my_md5,get_host_ip
@@ -27,7 +28,7 @@ class RemoteHost(MySSH):
     续监听队列判断是否关闭连接
     """
     
-    def __init__(self,host_info,redis_send_client,redis_log_client,t_number=config.max_concurrent_thread):
+    def __init__(self,host_info,redis_config_list,t_number=config.max_concurrent_thread):
     
         #super(RemoteHost, self).__init__(host_info)
         super(RemoteHost, self).__init__(host_info)       
@@ -38,12 +39,21 @@ class RemoteHost(MySSH):
         else:
             self.tag=self.ip
  
-        self.redis_send_client=redis_send_client
-        self.redis_log_client=redis_log_client
+        self.redis_send_client=None
+        self.redis_log_client=None
+        self.redis_send_config=redis_config_list[0]
+        self.redis_log_config=redis_config_list[1]
+        self.redis_init()
 
         self.thread_q=Queue.Queue(t_number)   #单个主机的并发
         self.t_thread_q=Queue.Queue(t_number) #用于存储正在运行的队列 
         self.is_run=False                     #后台运行    
+    
+    
+    def redis_init(self):
+        rc=RedisConn()        
+        self.redis_send_client=rc.refresh(self.redis_send_client,self.redis_send_config)
+        self.redis_log_client=rc.refresh(self.redis_log_client,self.redis_log_config)     
     
     
     def init_conn(self):
@@ -64,7 +74,7 @@ class RemoteHost(MySSH):
             self.redis_log_client.hset(cmd_uuid,name,step)
         return set_step
     
-    #def send_file(self,local_file,remote_path,c_uuid,set_info,set_step):
+    
     def send_file(self,local_file,remote_path,set_info,set_step):
         """
         从本地上传文件到远端 文件名不变
@@ -93,8 +103,8 @@ class RemoteHost(MySSH):
                     try:
                         #self.redis_log_client.hset(c_uuid,"remote_md5","copying")
                         set_step("copying","remote_md5")
-                        remote_md5,local_md5,is_success,error_msg=self.copy_file(exist_remote_file,remote_file,set_info,local_md5,\
-                                                                                local_filesize,config.is_copy_by_link,set_step)
+                        remote_md5,local_md5,is_success,error_msg=self.copy_file(exist_remote_file,remote_file,local_md5,\
+                                                                                local_filesize,config.is_copy_by_link,set_info,set_step)
                         if is_success:
                             return remote_md5,local_md5,is_success,error_msg
                         else:
@@ -347,11 +357,9 @@ class RemoteHost(MySSH):
             raise BaseException
         else:
             t1=Thread(target=self.__forever_run)
-            t1.start()
-
             t2=Thread(target=self.__heart_beat)
-            t2.start()
-
             t3=Thread(target=self.__close_conn)
-            t3.start()    
+            
+            for t in [t1,t2,t3]:
+                t.start()    
     

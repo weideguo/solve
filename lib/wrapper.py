@@ -2,6 +2,7 @@
 #一些函数的封装
 import time
 from threading import Thread
+from traceback import format_exc
 
 from redis.exceptions import ConnectionError
 
@@ -59,7 +60,7 @@ def gen_background_log_set(cmd_uuid,redis_client,len=0):
 
 
 
-def connection_error_rerun(retry_gap=1):
+def connection_error_rerun(retry_gap=5):
     """
     当发生连接错误时函数的重新运行
     """
@@ -70,8 +71,7 @@ def connection_error_rerun(retry_gap=1):
                     func(*args, **kwargs)
                     break
                 except ConnectionError:
-                    from traceback import format_exc
-                    logger_err.info(format_exc())
+                    logger_err.debug(format_exc())
                     time.sleep(retry_gap)
                     if args:
                         func_name="%s.%s" % (args[0].__class__.__name__, func.__name__)

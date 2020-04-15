@@ -63,4 +63,16 @@ class RedisConn(object):
             redis_client=self.redis_init_single(host, port, db, password)
         
         return redis_client   
+    
+
+    def refresh(self,redis_client,redis_config):
+        """
+        如果发生断开，重新获取客户端
+        """
+        try:
+            redis_client.ping()
+        except:
+            redis_client=self.redis_init(redis_config)
         
+        return redis_client
+    

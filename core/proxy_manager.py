@@ -23,9 +23,9 @@ class ProxyManager(JobManager):
             master监听文件目录变化主动向所有proxy下发文件
     """
     
-    def __init__(self,redis_send_client,redis_log_client,redis_tmp_client,redis_job_client,redis_config_client):
+    def __init__(self,redis_config_list):
         
-        super(ProxyManager, self).__init__(redis_send_client,redis_log_client,redis_tmp_client,redis_job_client,redis_config_client) 
+        super(ProxyManager, self).__init__(redis_config_list) 
         
         #优先从配置文件获取，获取失败，则使用ip地址
         try:
@@ -66,7 +66,7 @@ class ProxyManager(JobManager):
         """
         #init_str='proxy:10.0.0.1:192.168.16.1'
         #init_str='proxy:10.0.0.1:192.168.16.1@@@@@ba8d8c646e6711ea8d01000c295dd589'
-        
+        self.redis_init()
         while True:
             #_init=pub.parse_response(block=True)     
             _init=self.redis_send_client.blpop(self.proxy_tag)           #阻塞获取

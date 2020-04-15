@@ -24,10 +24,10 @@ if __name__=="__main__":
     rc=RedisConn()
     #redis客户端线程/进程安全，可以复用
     redis_send_client=rc.redis_init(config.redis_send)
-    redis_log_client=rc.redis_init(config.redis_log)
-    redis_tmp_client=rc.redis_init(config.redis_tmp)
-    redis_job_client=rc.redis_init(config.redis_job)
-    redis_config_client=rc.redis_init(config.redis_config)            
+    #redis_log_client=rc.redis_init(config.redis_log)
+    #redis_tmp_client=rc.redis_init(config.redis_tmp)
+    #redis_job_client=rc.redis_init(config.redis_job)
+    #redis_config_client=rc.redis_init(config.redis_config)            
     
     
     log_path=os.path.join(base_dir,"./logs")
@@ -76,7 +76,8 @@ if __name__=="__main__":
     elif start_mode==mode[1]:
         Manager=ProxyManager
     
-    manager=Manager(redis_send_client,redis_log_client,redis_tmp_client,redis_job_client,redis_config_client)
+    #manager=Manager(redis_send_client,redis_log_client,redis_tmp_client,redis_job_client,redis_config_client)
+    manager=Manager([config.redis_send,config.redis_log,config.redis_tmp,config.redis_job,config.redis_config])
     
     try:
         opt=sys.argv[1].strip()

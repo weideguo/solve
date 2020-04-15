@@ -4,6 +4,7 @@ from threading import Thread
 
 from conf import config
 from lib.utils import Singleton
+from lib.redis_conn import RedisConn
 
 
 def check_host_conn(host_info):
@@ -26,13 +27,25 @@ class AbstractConn():
     """    
 
 
-    def __init__(self,host_info,redis_send_client,redis_log_client):
+    def __init__(self,host_info,redis_config_list):
+        redis_send_config=redis_config_list[0]
+        redis_log_config=redis_config_list[1]
+    
         self.host_info = host_info
-        self.redis_send_client=redis_send_client
-        self.redis_log_client=redis_log_client
+        self.redis_send_client=None
+        self.redis_log_client=None
+        
+        self.redis_init()
+        
         self.__new_forever_run()
-         
-
+    
+    
+    def redis_init(self):
+        rc=RedisConn()        
+        self.redis_send_client=rc.refresh(self.redis_send_client,self.redis_send_config)
+        self.redis_log_client=rc.refresh(self.redis_log_client,self.redis_log_config) 
+    
+    
     def __new_forever_run(self):
         """
         开启后台线程用于统一处理命令
