@@ -120,10 +120,6 @@ class ClusterExecution():
         if not self.cluster_id:
             self.cluster_id=uuid.uuid1().hex
         
-        #if begin_host:
-        #    self.current_host=begin_host        
-
-
         logger.info("<%s %s>  %s begin" % (target,self.cluster_id,playbook)) 
 
         self.redis_tmp_client.hset(target,config.prefix_global,config.prefix_global+config.spliter+self.cluster_id)

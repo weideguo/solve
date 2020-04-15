@@ -51,14 +51,14 @@ class MySSH(object):
         exit_code=stdout.channel.recv_exit_status()
         return out,err,exit_code
         
-    def copy_file(self,exist_remote_file,remote_file,set_info,local_md5,local_filesize,is_copy_by_link=True,set_step=None):
+    def copy_file(self,exist_remote_file,remote_file,local_md5,local_filesize,is_copy_by_link=True,set_info=None,set_step=None):
         """
         复制文件，可以通过创建链接代替
         """
         def _set_step(step):
             if set_step:
                 set_step(step)
-                
+        
         ftp_client=self.ssh_client.open_sftp()
         if not self.is_remote_file(ftp_client,exist_remote_file,local_md5,set_step):
             return "",local_md5,0,"remote file to copy not exist"
@@ -87,7 +87,7 @@ class MySSH(object):
         
         return remote_md5,local_md5,remote_md5==local_md5,"copy file"
     
-    def put_file(self,local_md5,local_file,remote_path,set_info,set_step=None):
+    def put_file(self,local_md5,local_file,remote_path,set_info=None,set_step=None):
         """
         从本地上传文件到远端 文件名不变
         远端目录如果不存在 则创建一个
