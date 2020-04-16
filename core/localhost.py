@@ -134,9 +134,8 @@ class LocalHost(object):
                     else:
                         cmd_uuid=uuid.uuid1().hex
                     
-                    print(cmd,cmd_uuid,tag)
-                    #t=Thread(target=self.__single_run,args=(cmd,cmd_uuid,tag))
-                    #t.start()
+                    t=Thread(target=self.__single_run,args=(cmd,cmd_uuid,tag))
+                    t.start()
                           
                 else:
                     #命令为空时释放队列
