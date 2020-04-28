@@ -129,7 +129,7 @@ if __name__=="__main__":
         web服务用于文件管理
         """
         if is_start_fileserver:
-            from core.fileserver import fileserver
+            from fileserver import fileserver
             bind=config.bind
             port=config.port
             origin=config.origin
