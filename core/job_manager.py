@@ -350,24 +350,30 @@ class JobManager(object):
     
     def run_forever(self):
         """
-        使用多进程
+        使用多进程/多线程
         conn_localhost 本地执行
         __remot_host 远程连接创建
         __job_exe    执行任务 创建ClusterExecution实例，循环监听队列，运行playbook
         __close_host 判定是否自动关闭远程连接
         """
         self.is_listen_tag_clean()
+        
+        #这两个任务压力不大，使用线程即可
+        t1=Thread(target=self.__job_exe)
+        t2=Thread(target=self.__close_host)
+        t1.start()
+        t2.start()
+        
         p_list=[]
         
         p1=Process(target=self.conn_localhost)
-        p2=Process(target=self.__remot_host)
-        p3=Process(target=self.__job_exe)
-        p4=Process(target=self.__close_host)
-        
         p_list.append(p1)
-        p_list.append(p2)
-        p_list.append(p3)
-        p_list.append(p4)
+        
+        #远程主机众多时需要使用多进程分担，充分利用cpu
+        #for i in range(3):
+        for i in range(config.remote_process):
+            p2=Process(target=self.__remot_host)
+            p_list.append(p2)
         
         self.process_run(p_list,redis_client=self.redis_send_client)
         

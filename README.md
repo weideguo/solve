@@ -224,7 +224,8 @@ conf/config的fileserver参数控制是否启用。
 ### 本地执行 ###
 修改配置文件conf/config.py的local_ip_list，发往该ip列表的地址将不会使用ssh模式运行，而是直接在本地运行。  
 对于proxy模式，则格式如：proxy:&lt;proxy_mark&gt;:127.0.0.1，对该主机执行时直接在proxy执行，而不是在proxy上通过ssh执行。  
-127.0.0.1或者proxy:&lt;proxy_mark&gt;:127.0.0.1不需要预先设置realhost。或者对应设置的非127.0.0.1/localhost的local_ip_list。    
+127.0.0.1或proxy:&lt;proxy_mark&gt;:127.0.0.1不需要预先设置，但也可以设置以用于参数渲染（proxy字段不生效，需要设置ip字段指定是在本地或代理的本地）。    
+命令缓存于队列cmd_127.0.0.1 或 cmd_proxy:&lt;proxy_mark&gt;:127.0.0.1  
 
 ### 部署架构 ###
 本地执行在多master或者多proxy会导致本地执行出现问题（在不同主机执行可能结果不一样，而且如果指定使用特定master/proxy会导致playbook不能适用架构变化，如发生master/proxy退出的情况），因而在这些情况谨慎考虑是否要启动本地执行。    

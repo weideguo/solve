@@ -93,13 +93,17 @@ class ProxyManager(JobManager):
         __remot_host   proxy的远程连接
         """
         self.is_listen_tag_clean(listen_tag=self.listen_tag)
+        
         p_list=[]
         
         p1=Process(target=self.__localhost)
-        p2=Process(target=self.__remot_host)
-        
         p_list.append(p1)
-        p_list.append(p2)
+        
+        #远程主机众多时需要使用多进程分担，充分利用cpu
+        for i in range(config.remote_process):
+            p2=Process(target=self.__remot_host)
+            p_list.append(p2)
+            
         
         self.process_run(p_list,redis_client=self.redis_send_client)
         
