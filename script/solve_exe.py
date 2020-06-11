@@ -15,7 +15,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from conf import config
 from lib.redis_conn import RedisConn
 
-class SolveExe():
+class SolveExe(object):
     """
     使用solve执行job
     """

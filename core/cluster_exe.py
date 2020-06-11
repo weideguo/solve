@@ -13,7 +13,7 @@ from lib.logger import logger,logger_err
 from conf import config
 
 
-class ClusterExecution():
+class ClusterExecution(object):
     """
     cluster（执行对象）的执行类
     逐行读取playbook，使用自己的配置参数进行替换，然后运行

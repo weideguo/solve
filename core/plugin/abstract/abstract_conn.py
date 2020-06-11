@@ -21,7 +21,7 @@ def preinit(func):
     return my_wrapper
 
 
-class AbstractConn():
+class AbstractConn(object):
     """
     单例模式抽象类
     """    
