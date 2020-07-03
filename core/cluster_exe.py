@@ -355,8 +355,8 @@ class ClusterExecution(object):
         """
         对于如 global.xx=`${cmd_exe}` 全局参数的设置
         """
-        
-        g_field=cmd.split("=")[0].lstrip(config.prefix_global+".").strip()         #变量名
+        g_field=cmd.split("=")[0].strip().split(config.prefix_global+".")[1].strip()         #变量名
+        #g_field=cmd.split("=")[0].lstrip(config.prefix_global+".").strip()         #变量名 会去除额外的字符
         #g_value=cmd.lstrip(cmd.split("=")[0]+"=")                  #变量值 会去除额外的字符
         g_value=cmd.split(cmd.split("=")[0]+"=")[1]                 #变量值
 
