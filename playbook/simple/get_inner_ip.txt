@@ -1,0 +1,4 @@
+#获取内网ip
+[{{host.ip}}]
+global.inner_ip=`ip addr | grep inet |grep -v inet6 | awk '{print $2}' | awk -F "/" '{print $1}' | grep -E "(^192\.|^172\.|^10\.)"`
+echo {{global.inner_ip}}
