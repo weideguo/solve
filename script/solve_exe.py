@@ -1,5 +1,5 @@
 #!/bin/env python
-#coding:utf8
+# -*- coding: utf-8 -*-
 #execute job by this script
 
 import os

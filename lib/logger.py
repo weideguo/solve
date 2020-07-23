@@ -1,5 +1,5 @@
 #!/bin/env python
-# -*- coding: UTF-8 -*- 
+# -*- coding: utf-8 -*- 
 
 import sys
 import logging

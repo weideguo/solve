@@ -1,4 +1,4 @@
-#coding:utf8
+# -*- coding: utf-8 -*-
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lib.myssh import MySSH

@@ -1,4 +1,4 @@
-#coding:utf8
+# -*- coding: utf-8 -*-
 #python 2.7
 #salt 2018.3.3 (Oxygen)
 

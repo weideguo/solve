@@ -1,4 +1,4 @@
-#coding:utf8
+# -*- coding: utf-8 -*-
 #一些函数的封装
 import time
 from threading import Thread

@@ -1,4 +1,4 @@
-#encoding:utf8
+# -*- coding: utf-8 -*-
 from lib.utils import Singleton
 from ..abstract import abstract_conn
 from ..abstract.abstract_conn import AbstractConn
