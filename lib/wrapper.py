@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #一些函数的封装
+import os
 import time
 from threading import Thread
 from traceback import format_exc
@@ -7,6 +8,21 @@ from traceback import format_exc
 from redis.exceptions import ConnectionError
 
 from .logger import logger_err
+from .utils import trans
+from conf import config
+
+
+domain="solve"
+relate_path = "./locale/"
+locale_path= os.path.join(config.base_dir, relate_path)
+
+if hasattr(config,"language"):
+    language_setting=config.language
+else:
+    language_setting=""
+
+_=trans(domain, locale_path, language_setting)
+
 
 
 def gen_background_log_set(cmd_uuid,redis_client,len=0):
@@ -47,7 +63,7 @@ def gen_background_log_set(cmd_uuid,redis_client,len=0):
             sout=redis_client.hget(cmd_uuid,"stdout")
             serr=redis_client.hget(cmd_uuid,"stderr")
         except:
-            sout,serr = "","redis conn error, check if execute success manully"
+            sout,serr = "",_("redis conn error, check if execute success manully")
         
         #如果线程运行失败，处理None
         if not sout:

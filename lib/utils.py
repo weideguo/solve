@@ -91,3 +91,36 @@ def Singleton(cls):
     
     return _singleton
 
+
+
+def trans(domain="solve",locale_path = "./locale/",language_setting=""):
+    """
+    #翻译文件设置：
+    mkdir -p locale/zh_CN/LC_MESSAGES/
+    
+    xgettext -k_ -o locale/solve.po *.py  */*py  */*/*py  */*/*/*py  
+    
+    #编辑文本文件
+    vim locale/solve.po
+    
+    msgfmt -o ./locale/zh_CN/LC_MESSAGES/solve.mo locale/solve.po
+    """
+    
+    import gettext
+    
+    if language_setting:
+        trans = gettext.translation(domain, locale_path, languages=[language_setting])
+        _ = trans.gettext
+        return _
+    
+    else:
+        """
+        #使用环境的变量设置选择的翻译语言
+        locale                       #查看使用的语言
+        export LC_ALL="en_US.UTF-8"  #设置使用的语言
+        export LC_ALL="zh_CN.UTF-8"  #设置使用的语言
+        """
+        gettext.bindtextdomain(domain, locale_path)
+        gettext.textdomain(domain)
+        _ = gettext.gettext
+        return _

@@ -1,0 +1,82 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-07-24 12:22+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: lib/myssh.py:65
+msgid "remote file to copy not exist"
+msgstr ""
+
+#: lib/myssh.py:69
+msgid "copy same file and md5"
+msgstr ""
+
+#: lib/myssh.py:80 lib/myssh.py:85 lib/myssh.py:124 lib/myssh.py:165
+msgid "calculate remote md5 begin"
+msgstr ""
+
+#: lib/myssh.py:82 lib/myssh.py:87 lib/myssh.py:126 lib/myssh.py:167
+msgid "calculate remote md5 done"
+msgstr ""
+
+#: lib/myssh.py:102
+msgid "local file not exist"
+msgstr ""
+
+#: lib/myssh.py:112 lib/myssh.py:221
+msgid "remote dir is a file"
+msgstr ""
+
+#: lib/myssh.py:121
+msgid "upload same file and md5"
+msgstr ""
+
+#: lib/myssh.py:127
+msgid "upload file"
+msgstr ""
+
+#: lib/myssh.py:145
+msgid "remote file not exist"
+msgstr ""
+
+#: lib/myssh.py:156
+msgid "create local dir failed"
+msgstr ""
+
+#: lib/myssh.py:158
+msgid "create local dir failed,it is a file"
+msgstr ""
+
+#: lib/myssh.py:162
+msgid "calculate local md5 begin"
+msgstr ""
+
+#: lib/myssh.py:164
+msgid "calculate local md5 done"
+msgstr ""
+
+#: lib/myssh.py:192
+msgid "calculate remote md5 in check begin"
+msgstr ""
+
+#: lib/myssh.py:194
+msgid "calculate remote md5 in check done"
+msgstr ""
+
+#: lib/wrapper.py:66
+msgid "redis conn error, check if execute success manully"
+msgstr ""
