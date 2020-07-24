@@ -145,7 +145,7 @@ prefix_heart_beat="heart_beat_"     #heart_beat_<host ip>  主机心跳的key
 prefix_check_flag="check_flag_"     #check_flag_<host ip>  是否可以检查存在连接  已经存在则不可再次检查
 prefix_initing="initing_"           #正在创建连接的标识
 prefix_closing="closing_"           #标记正在关闭 closing_<host ip>
-prefix_block="block_"               #block_<cluster id> 标记制定对象逐行阻塞执行 list类型，插入0正常运行下一条命令，其他则终止
+prefix_block="block_"               #block_<cluster id> 标记制定对象逐行阻塞执行 list类型，插入0正常运行下一条命令，-1则结束阻塞，1超时终止，其他则终止
 
 pre_close="close_"                  #插入key_conn_control中       关闭连接 close_<ip>  
 key_conn_control="conn_control"     #控制主机连接与断开的队列key  建立连接 <ip> 

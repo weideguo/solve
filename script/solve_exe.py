@@ -158,8 +158,31 @@ if __name__=="__main__":
             print("process abort,bye!")
             exit()
     
+    block_tag=False
+    if len(sys.argv) > 1:
+        if sys.argv[1] == '--help' or sys.argv[1] == '-h':
+            print("useage:")
+            print("%s [ --help | -h | --block | -b ]" % sys.argv[0])
+        if sys.argv[1] == '--block' or sys.argv[1] == '-b':
+            """
+            使用阻塞模式，即每次运行一行后阻塞
+            """
+            block_tag=True
+    
     new_info=get_var_interactive(["target","playbook"])
-
+    
+    if block_tag:
+        target_list=new_info["target"].split(",")
+        if len(target_list)>1:
+            print("can not run multi cluster in block mode")
+            exit()
+        else:
+            cluster_id=uuid.uuid1().hex
+            new_info["target"]=target_list[0]+config.spliter+cluster_id
+            block_key=config.prefix_block+cluster_id
+            redis_send_client.rpush(block_key,"0")
+            print(block_key)
+    #exit()
     for k in new_info:
         if not new_info[k]:
             print("%s can not be null" % k)

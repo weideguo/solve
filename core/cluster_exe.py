@@ -153,7 +153,9 @@ class ClusterExecution(object):
                 block_tag=self.redis_send_client.blpop(key, timeout=config.tmp_config_expire_sec)
                 self.redis_log_client.hdel(self.current_uuid,"stdout")
                 if block_tag:
-                    #插入其他非0的数 说明存在中断
+                    #插入其他非0的数 
+                    #插入-1则不再阻塞 
+                    #其他说明存在中断
                     try:
                         pause_time_out = int(block_tag[-1])
                     except:
@@ -200,7 +202,9 @@ class ClusterExecution(object):
                     pause_time_out,pause_tag = pause(config.prefix_block+cluster_id, pause_tag)
                     #pause_time_out,pause_tag = pause("block_aaaa", pause_tag)
                     
-                    if pause_time_out:
+                    if pause_time_out==-1:
+                        pause_tag=0
+                    elif pause_time_out:
                         if pause_time_out == 1:
                             stop_str="pause timeout"
                         else:
@@ -212,6 +216,7 @@ class ClusterExecution(object):
                         self.exe_next=False                   
                         break
                     
+                        
                     #结束暂停判断
                     
                     if re.match("^#",cmd) or re.match("^$",cmd):

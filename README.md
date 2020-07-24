@@ -176,7 +176,11 @@ python script/solve_exe.py
 redis_send> set kill_<cluster id> 1
 #设置cluster执行一条命令后阻塞，再次插入0则继续执行一条命令后阻塞
 redis_send> rpush block_<cluster id> 0
-#再次插入非0值则可以结束阻塞并终止之后的所有操作
+#结束阻塞，剩下的命令按正常顺序全部执行
+redis_send> rpush block_<cluster id> -1
+#阻塞超时，剩下的命令全部不执行，不需要手动操作，通过redis的blpop实现超时
+redis_send> rpush block_<cluster id> 1
+#其他值则可以结束阻塞并终止之后的所有操作
 redis_send> rpush block_<cluster id> abort
 #主机连接的建立与关闭
 redis_send> rpsuh conn_control "10.0.0.1" "close_10.0.0.1" "10.0.0.1@@@@63d07bf6f49c11e9befb000c295dd589"
