@@ -133,7 +133,39 @@ class ClusterExecution(object):
         stop_info["target"]=self.target        
         
         self.redis_log_client.hmset(stop_id,stop_info)        
-
+        
+        
+        #是否暂停
+        pause_tag=0
+        
+        def pause(key, pause_tag):
+            """
+            用于执行暂停
+            
+            """
+            if self.redis_send_client.exists(key):
+                #只要存在key一次，则全部进行暂停
+                pause_tag=1
+            
+            pause_time_out=0
+            if pause_tag:
+                self.redis_log_client.hset(self.current_uuid,"stdout","pausing")
+                block_tag=self.redis_send_client.blpop(key, timeout=config.tmp_config_expire_sec)
+                self.redis_log_client.hdel(self.current_uuid,"stdout")
+                if block_tag:
+                    #插入其他非0的数 说明存在中断
+                    try:
+                        pause_time_out = int(block_tag[-1])
+                    except:
+                        pause_time_out = str(block_tag[-1])
+                else:
+                    #超时
+                    pause_time_out = 1
+            else:
+                pause_time_out = 0
+        
+            return pause_time_out,pause_tag
+        
         try:
             with open(playbook,"r") as f:
                 
@@ -163,6 +195,24 @@ class ClusterExecution(object):
                     根据日志队列、playbook即可获知执行到哪一行结束
                     以及每一行的执行结果
                     """
+                    
+                    #进行暂停判断
+                    pause_time_out,pause_tag = pause(config.prefix_block+cluster_id, pause_tag)
+                    #pause_time_out,pause_tag = pause("block_aaaa", pause_tag)
+                    
+                    if pause_time_out:
+                        if pause_time_out == 1:
+                            stop_str="pause timeout"
+                        else:
+                            stop_str=pause_time_out
+                        
+                        self.redis_log_client.hset(self.current_uuid,"exit_code",stop_str)
+                        self.redis_log_client.hset(self.current_uuid,"stderr",stop_str)
+                        self.redis_log_client.hset(self.current_uuid,"stdout","")
+                        self.exe_next=False                   
+                        break
+                    
+                    #结束暂停判断
                     
                     if re.match("^#",cmd) or re.match("^$",cmd):
                         #跳过注释以及空白行

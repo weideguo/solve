@@ -174,6 +174,10 @@ python script/solve_exe.py
 #对指定执行对象终止操作
 #kill_<cluster id>;由 log_job_<job id>中确定
 redis_send> set kill_<cluster id> 1
+#设置cluster执行一条命令后阻塞，再次插入0则继续执行一条命令后阻塞
+redis_send> rpush block_<cluster id> 0
+#再次插入非0值则可以结束阻塞并终止之后的所有操作
+redis_send> rpush block_<cluster id> abort
 #主机连接的建立与关闭
 redis_send> rpsuh conn_control "10.0.0.1" "close_10.0.0.1" "10.0.0.1@@@@63d07bf6f49c11e9befb000c295dd589"
 #重新执行
