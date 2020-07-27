@@ -179,7 +179,7 @@ redis_send> rpush block_<cluster id> 0
 #结束阻塞，剩下的命令按正常顺序全部执行
 redis_send> rpush block_<cluster id> -1
 #阻塞超时，剩下的命令全部不执行，不需要手动操作，通过redis的blpop实现超时
-redis_send> rpush block_<cluster id> 1
+redis_send> rpush block_<cluster id> "pause timeout"
 #其他值则可以结束阻塞并终止之后的所有操作
 redis_send> rpush block_<cluster id> abort
 #主机连接的建立与关闭

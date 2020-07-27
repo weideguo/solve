@@ -162,7 +162,7 @@ class ClusterExecution(object):
                         pause_time_out = str(block_tag[-1])
                 else:
                     #超时
-                    pause_time_out = 1
+                    pause_time_out = "pause timeout"
             else:
                 pause_time_out = 0
         
@@ -200,15 +200,13 @@ class ClusterExecution(object):
                     
                     #进行暂停判断
                     pause_time_out,pause_tag = pause(config.prefix_block+cluster_id, pause_tag)
-                    #pause_time_out,pause_tag = pause("block_aaaa", pause_tag)
                     
-                    if pause_time_out==-1:
+                    if pause_time_out == -1:
+                        #负数
                         pause_tag=0
                     elif pause_time_out:
-                        if pause_time_out == 1:
-                            stop_str="pause timeout"
-                        else:
-                            stop_str=pause_time_out
+                        #非零
+                        stop_str=pause_time_out
                         
                         self.redis_log_client.hset(self.current_uuid,"exit_code",stop_str)
                         self.redis_log_client.hset(self.current_uuid,"stderr",stop_str)
