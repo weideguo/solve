@@ -202,16 +202,17 @@ class ClusterExecution(object):
                     pause_time_out,pause_tag = pause(config.prefix_block+cluster_id, pause_tag)
                     
                     if pause_time_out == -1:
-                        #负数
+                        #<0 为str时出现错误 因此不用
                         pause_tag=0
                     elif pause_time_out:
-                        #非零
+                        #非-1 非零
                         stop_str=pause_time_out
                         
                         self.redis_log_client.hset(self.current_uuid,"exit_code",stop_str)
                         self.redis_log_client.hset(self.current_uuid,"stderr",stop_str)
                         self.redis_log_client.hset(self.current_uuid,"stdout","")
                         self.exe_next=False                   
+                        self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
                         break
                     
                         
@@ -234,6 +235,7 @@ class ClusterExecution(object):
                             self.redis_log_client.hset(self.current_uuid,"stderr","render error")
                             self.redis_log_client.hset(self.current_uuid,"stdout","")
                             self.exe_next=False                   
+                            self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
                             break
     
                         cmd=cmd.strip()
@@ -252,7 +254,8 @@ class ClusterExecution(object):
                             self.redis_log_client.hset(self.current_uuid,"exit_code","current_host null")
                             self.redis_log_client.hset(self.current_uuid,"stderr","should execute [<ip>] before any command")
                             self.redis_log_client.hset(self.current_uuid,"stdout","")
-                            self.exe_next=False                   
+                            self.exe_next=False
+                            self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)                            
                             break
                         
                         #脚本全局变量设置
