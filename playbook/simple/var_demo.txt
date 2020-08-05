@@ -4,7 +4,7 @@
 #引用 {{global.XX}}
 #对cluster执行
 [{{db1.host.ip}}]
-global.v1=`ifconfig | grep -oP "(?<=addr:).*?(?=  Bcast)"`
+global.v1=`ip addr | grep inet |grep -v inet6 | awk '{print $2}' | awk -F "/" '{print $1}' | grep -E "(^192\.|^172\.|^10\.)"`
 
 [{{db2.host.ip}}]
-echo "{{global.v1}}" > /tmp/`date +%Y%m%d`.test
+echo "{{global.v1}}" 
