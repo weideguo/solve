@@ -1,0 +1,10 @@
+#select变量的使用
+#与global变量使用类似 不同为select变量的值为命令结果的再次选择
+#用于交互执行
+#
+[{{db1.host.ip}}]
+#执行右边的命令返回结果临时存放，需要交互选择设置左边的值，然后再执行下一行命令
+#如果一直不选择，则会超时退出
+select.v1=`ls -altr /tmp | awk '{print $9}'  | grep -v "^$"`
+
+echo {{select.v1}}

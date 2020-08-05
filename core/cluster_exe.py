@@ -48,7 +48,7 @@ class ClusterExecution(object):
         """
         name_str=name_str.strip()
         key_name=target_name
-        pattern='^(%s|%s)\s*\..*' % (config.prefix_global,config.prefix_session)
+        pattern='^(%s|%s|%s)\s*\..*' % (config.prefix_global,config.prefix_session,config.prefix_select)
         
         if re.match(pattern,name_str):
             change=False
@@ -123,6 +123,8 @@ class ClusterExecution(object):
         logger.info("<%s %s>  %s begin" % (target,self.cluster_id,playbook)) 
 
         self.redis_tmp_client.hset(target,config.prefix_global,config.prefix_global+config.spliter+self.cluster_id)
+        self.redis_tmp_client.hset(target,config.prefix_select,config.prefix_select+config.spliter+self.cluster_id)
+        #self.redis_tmp_client.hset(target,"select","select"+config.spliter+self.cluster_id)
         
         stop_str=""          #用于标记执行结束的信息
         last_uuid=""         #最后分发的命令的uuid 用于判断playbook执行是否正常退出
@@ -262,6 +264,14 @@ class ClusterExecution(object):
                         #elif re.match("^global\..+=",cmd):
                         elif re.match("^"+config.prefix_global+"\..+=",cmd):
                             self.__global_var(cmd,self.current_uuid)
+                        
+                        #选择变量设置
+                        #elif re.match("^select\..+=",cmd):
+                        elif re.match("^"+config.prefix_select+"\..+=",cmd):
+                            if not self.__select_var(cmd,self.current_uuid):
+                                self.exe_next=False
+                                stop_str="select failed"
+                                break
     
                         #普通命令 简单的shell命令
                         else:
@@ -407,17 +417,15 @@ class ClusterExecution(object):
             self.redis_log_client.hset(current_uuid,"stdout","")
         
 
-    def __global_var(self,cmd,current_uuid):
+    def __var_exe(self,cmd,current_uuid,var_prefix):
         """
-        对于如 global.xx=`${cmd_exe}` 全局参数的设置
+        global.xx="..." select.yy="..." 命令的实际执行
         """
-        g_field=cmd.split("=")[0].strip().split(config.prefix_global+".")[1].strip()         #变量名
+        g_field=cmd.split("=")[0].strip().split(var_prefix+".")[1].strip()         #变量名
         #g_field=cmd.split("=")[0].lstrip(config.prefix_global+".").strip()         #变量名 会去除额外的字符
         #g_value=cmd.lstrip(cmd.split("=")[0]+"=")                  #变量值 会去除额外的字符
         g_value=cmd.split(cmd.split("=")[0]+"=")[1]                 #变量值
-
-        g_name=config.prefix_global+config.spliter+self.cluster_id
-
+        
         os_type = platform.system()
 
         #存在`shell_command` 则分发到主机
@@ -427,8 +435,43 @@ class ClusterExecution(object):
 
             g_value=self.__single_exe(self.current_host,tmp_cmd,current_uuid)
    
+        return g_field,g_value
+        
+
+    def __global_var(self,cmd,current_uuid):
+        """
+        对于如 global.xx=`${cmd_exe}` 全局参数的设置
+        """
+        g_field,g_value = self.__var_exe(cmd,current_uuid,config.prefix_global)
         #脚本全局变量保存 可以在执行脚本结束后清空        
-        self.redis_tmp_client.hset(g_name,g_field,g_value)
+        self.redis_tmp_client.hset(config.prefix_global+config.spliter+self.cluster_id,g_field,g_value)
+    
+    
+    def __select_var(self,cmd,current_uuid):
+        """
+        对于如 select.xx=`${cmd_exe}` 参数的设置
+        """
+        g_field,g_value = self.__var_exe(cmd,current_uuid,config.prefix_select)
+        
+        key_select_all=config.prefix_select+"_all"+config.spliter+current_uuid
+        key_select=config.prefix_select+config.spliter+current_uuid
+        #使用临时变量存放
+        self.redis_send_client.set(key_select_all,g_value)
+        self.redis_send_client.expire(key_select_all, config.tmp_config_expire_sec)
+        #阻塞等待
+        self.redis_log_client.hset(current_uuid,"step","waiting select")
+        block_tag=self.redis_send_client.blpop(key_select, config.tmp_config_expire_sec)
+        self.redis_send_client.delete(key_select_all)
+        
+        if block_tag:
+            s_value=str(block_tag[-1])
+            self.redis_tmp_client.hset(config.prefix_select+config.spliter+self.cluster_id,g_field,s_value)
+            self.redis_log_client.hset(current_uuid,"step","SELECT: "+s_value)
+            return 1
+        else:
+            #超时
+            self.redis_log_client.hset(current_uuid,"step","wait select timeout")
+            return 0
 
 
     def __check_result(self,c_uuid_list,check_result_block=True,ignore_last_err=False):

@@ -69,6 +69,10 @@ playbook
   
   全局参数可以通过执行shell命令的返回值获取。即符号"="之后的字符串当成shell命令运行后的结果。
 
+* select.&lt;select_var_name&gt;=&lt;other string&gt;\`&lt;shell command&gt;`&lt;other string&gt;
+
+  与global参数使用类似，不同为其值为获取shell命令的返回值，再进行手动选择的值，用于交互执行。
+
 * \# &lt;comment&gt;
 
   
@@ -82,6 +86,10 @@ playbook
   使用格式为{{global.&lt;global_var_name&gt;}}
 
   运行时替换为global.&lt;global_var_name&gt;=&lt;other string&gt;\`&lt;shell command&gt;`&lt;other string&gt;全局参数的设置值
+
+* select参数
+
+  与global参数使用类似
 
 * session参数
 
@@ -192,6 +200,10 @@ redis_send> rpsuh cmd_10.0.0.1 "whoami"
 redis_send> rpsuh cmd_10.0.0.1 "whoami@@@@@9d21376cd47911e99464000c295dd589"
 #查看主机执行过命令列表
 redis_log> lrange log_host_10.0.0.1 0 100
+#session_all开头的key即为select参数的等号右边命令返回值，返回值用于在设置select参数时进行参考
+redis_send>keys session_all*
+#设置select参数的值，设置后才会继续运行下一行命令（只插入一个值），一个select_all对应一个select
+redis_send>rpush select@@@@@a20fb0fcd6ec11eaadc7000c295dd589 "aaa bbb ccc"
 ```
 
 ### more ###

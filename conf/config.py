@@ -125,11 +125,11 @@ max_localhost_thread=20                  #本地模式运行时的最大并发�
 #######################################################################################################
 #redis_config
 prefix_realhost="realhost_"         #用于创建连接的主机的key开头
+
+#redis_tmp
 prefix_global="global"              #全局变量对应的key开头 playbook中全局变量的开头 全局变量如 global.yyy
 prefix_session="session"            #输入变量对应的key开头 playbook中全局变量的开头 全局变量如 global.yyy
-
-#playbook_prefix_global="global"     #playbook中全局变量的开头 全局变量如 global.yyy
-#playbook_prefix_session="session"   #playbook中全局变量的开头 全局变量如 global.yyy
+prefix_select="select"              #输入变量对应的key开头 playbook中全局变量的开头 全局变量如 select.yyy
 
 #redis_log
 prefix_sum="sum_"                   #每次每个执行对象所执行的汇总
