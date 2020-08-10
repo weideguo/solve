@@ -1,60 +1,75 @@
 # -*- coding: utf-8 -*-
 
-#redis_send
-redis_send={
-"db": 0,
-"password": "my_redis_passwd",
-"host": "127.0.0.1",                                                                  #使用sentinel则这个不必设置
-"port": 6379,                                                                         #使用sentinel则这个不必设置
-#"service_name": "mymaster",                                                          #是否使用sentinel
-#"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)],       #是否使用sentinel
-}
+#根路径
+import os
+import configparser
 
-#redis_log
-redis_log={
-"db": 1,
-"password": "my_redis_passwd",
-"host": "127.0.0.1",         
-"port": 6379,                
-#"service_name": "mymaster",                                                         
-#"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]      
-}
+base_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-#redis_tmp
-redis_tmp={
-"db": 2,
-"password": "my_redis_passwd",
-"host": "127.0.0.1",         
-"port": 6379,                
-#"service_name": "mymaster",                                                         
-#"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]     
-}
+def getcp(config_file=None):
+    cp = configparser.ConfigParser()
+    if not config_file:
+        config_file=os.path.join(os.path.dirname(os.path.abspath(__file__)),"config.conf")
+    cp.read(config_file)
+    return cp
 
-#redis_job
-redis_job={
-"db": 14,
-"password": "my_redis_passwd",
-"host": "127.0.0.1",         
-"port": 6379,                
-#"service_name": "mymaster",                                                         
-#"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]       
-}
+cp=getcp()
 
-#redis_config
-redis_config={
-"db": 15,
-"password": "my_redis_passwd",
-"host": "127.0.0.1",         
-"port": 6379,                
-#"service_name": "mymaster",                                                         
-#"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]     
-}
+
+def get_config(section, option, default=None):
+    if cp.has_section(section) and cp.has_option(section, option):
+        return cp.get(section, option)
+    else:
+        return default
+
+def get_redis_config(section):
+    """
+    将每个section的配置信息转成dict
+    """
+    db=int(cp.get(section,"db"))
+    password=cp.get(section,"password")
+    sentinels=[]
+    service_name=""
+    host=""
+    port=0
+    try:
+        sentinels=eval(cp.get(section,"sentinels"))
+        service_name=cp.get(section,"service_name")
+        return {"db":db,"password":password,"sentinels":sentinels,"service_name":service_name}
+    except:    
+        host=cp.get(section,"host")
+        port=int(cp.get(section,"port"))
+        return {"db":db,"password":password,"host":host,"port":port}
+
+
+redis_send = get_redis_config("redis_send")
+redis_log = get_redis_config("redis_log")
+redis_tmp = get_redis_config("redis_tmp")
+redis_config = get_redis_config("redis_config")
+redis_job = get_redis_config("redis_job")
 
 
 ###################################################################################################
-#设置根路径
-import os
-base_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#是否为proxy模式
+PROXY=int(get_config("proxy","proxy",0))
+proxy_tag="proxy"                                               #用于标记主机为proxy以及proxy广播用的key
+proxy_mark=str(get_config("proxy","mark",""))                   #默认使用proxy的ip，处于多网卡环境时可能需要手动设置
+
+###################################################################################################
+#web服务没有安全认证机制，请不要对外网开放        
+#是否启动web服务提供文件管理，服务位于 core.fileserver
+bind=get_config("fileserver","bind")                   #web服务监听的网络 
+port=get_config("fileserver","port")                   #web服务监听的端口
+origin=get_config("fileserver","origin")               #Access-Control-Allow-Origin 允许访问的域，前后端分离时必须要设置
+
+if bind and port and origin:
+    bind=str(bind)     
+    port=int(port)     
+    origin=str(origin) 
+    fileserver=True
+else:
+    fileserver=False
+
 ###################################################################################################
 
 remote_model="core.plugin.ssh.remote_host.RemoteHost" #远端主机实现模块
@@ -72,23 +87,6 @@ core.plugin.ssh.remote_host.RemoteHost                使用ssh实现
 core.plugin.salt.salt_conn.SaltConn                   使用salt实现,首次启动前需要通过链接设置salt上传/下载目录与主机目录的映射
                                                       #python 2.7 / salt 2018.3.3 (Oxygen)
 """
-
-###################################################################################################
-#是否为proxy模式 不设置默认为master 
-#在启动时可以在命令行指定为proxy或master，优先级为：命令行>配置文件>master模式
-#PROXY=False
-proxy_tag="proxy"                   #用于标记主机为proxy以及proxy广播用的key
-proxy_mark=""                       #默认使用proxy的ip，处于多网卡环境时可能需要手动设置
-#proxy_mark="AAA"                   #不一定使用ip，最好每个proxy唯一，如果相同则竞争处理（这是正常的）
-
-#使用proxy管理的主机
-#<proxy_tag>:<proxy_mark>:<host_ip>
-###################################################################################################
-#web服务没有安全认证机制，请不要对外网开放
-#fileserver=True           #是否启动web服务提供文件管理，服务位于 core.fileserver
-bind="127.0.0.1"            #web服务监听的网络 
-port=9000                 #web服务监听的端口
-origin="*"                #Access-Control-Allow-Origin 允许访问的域，前后端分离时必须要设置
 
 ###################################################################################################
 
@@ -133,7 +131,7 @@ prefix_select="select"              #输入变量对应的key开头 playbook中�
 
 #redis_log
 prefix_sum="sum_"                   #每次每个执行对象所执行的汇总
-prefix_log_target="log_target_"   #每个执行对象执行命令的队列key
+prefix_log_target="log_target_"     #每个执行对象执行命令的队列key
 prefix_log_host="log_host_"         #log_host_<host ip> 每个主机的执行信息
 prefix_put="put_"                   #put_<host ip> 存储已经上传文件的信息
 prefix_log_job="log_job_"           #每个任务的日志信息

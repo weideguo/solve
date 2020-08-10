@@ -21,7 +21,7 @@ running
 ### prerun ###
 ```shell
 #set config
-vim conf/config.py
+vim conf/config.conf
 #install dependency
 pip install -r requirements.txt
 #set env
@@ -107,7 +107,7 @@ playbook
 demo
 --------------
 ### 使用样例 ###
-redis_send redis_log redis_job redis_config为配置文件conf/config.py中设置的redis
+redis_send redis_log redis_job redis_config为配置文件conf/config.py中设置的redis，即conf/config.conf对应的模块
 
 ```
 #playbook命令样例
@@ -227,7 +227,7 @@ proxy模式用于作为master的代理管理主机连接。整体任务协调均
 
 * proxy启动方式:  
   1.命令行中 python bin/solve.py start proxy  
-  2.修改配置文件conf/config.py的PROXY  
+  2.修改配置文件conf/config.py的PROXY，即设置conf/config.conf的proxy模块
 * proxy与master的通信通过redis实现  
 * 默认启动的模式为master模式，不需要与其他节点有关联  
 * 指定主机使用proxy管理，则格式如 realhost_proxy:10.0.0.1:192.168.16.1 ip proxy:10.0.0.1:192.168.16.1  
