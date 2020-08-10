@@ -3,3 +3,4 @@ python-daemon==2.2.3
 redis==3.2.1
 salt==2018.3.3
 Flask==1.0.3
+configparser==3.7.4

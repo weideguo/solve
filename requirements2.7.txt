@@ -3,3 +3,4 @@ paramiko==2.4.2
 python-daemon==2.2.3
 redis==3.2.1
 Flask==1.0.3
+configparser==3.7.4
