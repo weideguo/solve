@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-#根路径
 import os
 import configparser
 
+
+#根路径
 base_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def getcp(config_file=None):
@@ -52,8 +53,8 @@ redis_job = get_redis_config("redis_job")
 ###################################################################################################
 #是否为proxy模式
 PROXY=int(get_config("proxy","proxy",0))
-proxy_tag="proxy"                                               #用于标记主机为proxy以及proxy广播用的key
-proxy_mark=str(get_config("proxy","mark",""))                   #默认使用proxy的ip，处于多网卡环境时可能需要手动设置
+proxy_tag="proxy"                                      #用于标记主机为proxy以及proxy广播用的key
+proxy_mark=str(get_config("proxy","mark",""))          #默认使用proxy的ip，处于多网卡环境时可能需要手动设置
 
 ###################################################################################################
 #web服务没有安全认证机制，请不要对外网开放        
