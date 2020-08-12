@@ -72,6 +72,9 @@ else:
     fileserver=False
 
 ###################################################################################################
+aes_key=str(get_config("common","aes_key"))
+
+###################################################################################################
 
 remote_model="core.plugin.ssh.remote_host.RemoteHost" #远端主机实现模块
 #remote_model="core.plugin.salt.salt_conn.SaltConn"     

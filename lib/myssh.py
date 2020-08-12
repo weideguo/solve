@@ -7,7 +7,7 @@ import sys
 import paramiko
 from paramiko import SSHClient
 from lib.utils import my_md5
-
+from lib.password import password
 
 
 class MySSH(object):
@@ -31,7 +31,7 @@ class MySSH(object):
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         client.connect(hostname=self.host_info["ip"],port=int(self.host_info["ssh_port"]), username=self.host_info["user"],\
-                        password=self.host_info["passwd"])
+                        password=password.decrypt(str(self.host_info["passwd"])) )
 
         self.ssh_client=client
          
