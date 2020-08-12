@@ -163,6 +163,7 @@ if __name__=="__main__":
         if sys.argv[1] == '--help' or sys.argv[1] == '-h':
             print("useage:")
             print("%s [ --help | -h | --block | -b ]" % sys.argv[0])
+            exit()
         if sys.argv[1] == '--block' or sys.argv[1] == '-b':
             """
             使用阻塞模式，即每次运行一行后阻塞
