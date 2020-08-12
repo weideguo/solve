@@ -152,6 +152,10 @@ EOF
 #以下操作要在redis操作
 #创建连接主机 名字必须为 realhost_<ip> 格式固定
 redis_config> hmset realhost_10.0.0.1 ip 10.0.0.1 user root ssh_port 22 passwd my_ssh_passwd
+#realhost_<ip> 的passwd 可以为加密后的字符串
+#python script/solve_password.py 'my_ssh_passwd'   #由原始密码生产加密字符串
+#python script/solve_password.py -d '$aes_password$KzZPM01rO2wtLkcwelt6KA==$ILeCn13IoiPjE6OwpZSxLA=='  #解密验证
+redis_config> hmset realhost_10.0.0.1 ip 10.0.0.1 user root ssh_port 22 passwd '$aes_password$KzZPM01rO2wtLkcwelt6KA==$ILeCn13IoiPjE6OwpZSxLA=='
 #设置执行对象
 redis_config> hmset server_mysql_10.0.0.1 ip 10.0.0.1 port 3306
 #设置session参数 要设置的属性由playbook使用的session参数确定
