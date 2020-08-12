@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
+import base64
+
 from conf import config
 
 def _bytes(_str):
@@ -35,16 +37,15 @@ class Password():
         if len(_password)>2:
             crypt_type=_password[1]
         
-            if crypt_type=="aes_password" and len(_password)>=4 and (not _password[0]):
+            if crypt_type=="aes_password" and len(_password)==4 and (not _password[0]):
                 """
-                $aes_password$[aoSJCd.FRt&RR}O$QfVCwjeanhmSF21BQS/dhw==
+                $aes_password$KzZPM01rO2wtLkcwelt6KA==$ILeCn13IoiPjE6OwpZSxLA==
                 """
                 from lib.aes_lib import AesCrypt
                 ac = AesCrypt()
                 
-                #必须确保原始iv不存在分割符号
-                ac.iv=_bytes(_password[2])      
-                #加密密码串可能存在$
+                #ac.iv= _bytes(_password[2]) 
+                ac.iv=base64.b64decode(_bytes(_password[2])) 
                 p=self.spliter.join(_password[3:])
                 ac.key=_bytes(self.kwargs["aes_key"])
                 
@@ -63,11 +64,11 @@ class Password():
             ac = AesCrypt()
             
             #必须确保原始iv不存在分割符号
-            ac.iv = ac.iv.replace(_bytes(self.spliter) , _bytes("A"))
+            #ac.iv = ac.iv.replace(_bytes(self.spliter) , _bytes("A"))
             ac.key=_bytes(self.kwargs["aes_key"])
             _password=ac.encrypt(_bytes(passwd))
             
-            return self.spliter+crypt_type+self.spliter+_str(ac.iv)+self.spliter+_str(_password)
+            return self.spliter+crypt_type+self.spliter+_str(base64.b64encode(ac.iv))+self.spliter+_str(_password)
         else:
             raise Exception("crypt_type %s not support" % crypt_type)
         
