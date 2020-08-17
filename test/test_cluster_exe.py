@@ -26,9 +26,9 @@ if __name__=="__main__":
     cid=uuid.uuid1().hex
     ce.run("cluster2",p,cid)
 
-    print "================================================================"
+    print("================================================================")
     ce=ClusterExecution(redis_send_client,redis_log_client,redis_tmp_client,redis_config_client)
     cid=uuid.uuid1().hex
     ce.run("cluster1",p,cid)
 
-    print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
