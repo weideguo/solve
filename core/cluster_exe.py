@@ -145,30 +145,39 @@ class ClusterExecution(object):
             用于执行暂停
             
             """
-            if self.redis_send_client.exists(key):
-                #只要存在key一次，则全部进行暂停
-                pause_tag=1
-            
-            pause_time_out=0
+            if not pause_tag:
+                if self.redis_send_client.exists(key):
+                    #只要存在key一次，则全部进行暂停
+                    pause_tag=1
+                    #队列第一次的第一个值只用于判断是否暂停，不控制执行，因此先移除
+                    self.redis_send_client.blpop(key,1)
+                    
+            stop_str=""
             if pause_tag:
                 self.redis_log_client.hset(self.current_uuid,"stdout","pausing")
                 block_tag=self.redis_send_client.blpop(key, timeout=config.tmp_config_expire_sec)
                 self.redis_log_client.hdel(self.current_uuid,"stdout")
                 if block_tag:
-                    #插入其他非0的数 
-                    #插入-1则不再阻塞 
-                    #其他说明存在中断
+                    
                     try:
-                        pause_time_out = int(block_tag[-1])
+                        stop_str = int(block_tag[-1])
+                        if stop_str <  0:
+                            #插入<0 则不再阻塞 
+                            pause_tag=0
+                        
+                        #插入>0的数 继续下一步
+                        stop_str=""    
                     except:
-                        pause_time_out = str(block_tag[-1])
+                        #字符说明存在中断
+                        stop_str = str(block_tag[-1])
                 else:
                     #超时
-                    pause_time_out = "pause timeout"
+                    stop_str = "pause timeout"
             else:
-                pause_time_out = 0
+                stop_str = ""
         
-            return pause_time_out,pause_tag
+            return stop_str,pause_tag
+        
         
         try:
             with open(playbook,"r") as f:
@@ -200,26 +209,6 @@ class ClusterExecution(object):
                     以及每一行的执行结果
                     """
                     
-                    #进行暂停判断
-                    pause_time_out,pause_tag = pause(config.prefix_block+cluster_id, pause_tag)
-                    
-                    if pause_time_out == -1:
-                        #<0 为str时出现错误 因此不用
-                        pause_tag=0
-                    elif pause_time_out:
-                        #非-1 非零
-                        stop_str=pause_time_out
-                        
-                        self.redis_log_client.hset(self.current_uuid,"exit_code",stop_str)
-                        self.redis_log_client.hset(self.current_uuid,"stderr",stop_str)
-                        self.redis_log_client.hset(self.current_uuid,"stdout","")
-                        self.exe_next=False                   
-                        self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
-                        break
-                    
-                        
-                    #结束暂停判断
-                    
                     if re.match("^#",cmd) or re.match("^$",cmd):
                         #跳过注释以及空白行
                         logger.debug("origin command: %s ---- <%s %s> will not execute" % (next_cmd,self.target,self.cluster_id))
@@ -245,7 +234,22 @@ class ClusterExecution(object):
                         self.redis_log_client.hset(self.current_uuid,"render_cmd",cmd)
     
                         logger.debug("render command: %s ------------ <%s %s> %s" % (cmd,self.target,self.cluster_id,self.current_uuid))
-    
+                        
+                        #进行暂停判断 空白以及注释行不暂停 先渲染后暂停
+                        stop_str,pause_tag = pause(config.prefix_block+cluster_id,pause_tag)
+                        
+                        if stop_str:
+                            
+                            self.redis_log_client.hset(self.current_uuid,"exit_code",stop_str)
+                            self.redis_log_client.hset(self.current_uuid,"stderr",stop_str)
+                            self.redis_log_client.hset(self.current_uuid,"stdout","")
+                            self.exe_next=False                   
+                            self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
+                            break
+                        
+                            
+                        #结束暂停判断
+                    
                         #[ip_addr] 主机切换命令 
                         if re.match("^\[.*\]$",cmd):
                             self.__host_change(cmd,self.current_uuid)                        
