@@ -1,6 +1,6 @@
 简体中文 | [English](./README.en.md)
 
-# SOLVE #
+# SOLVE ![](./solve.ico)
 
 Simple command deliver server, base on SSH. 
 

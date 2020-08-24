@@ -1,5 +1,5 @@
 [简体中文](./README.md) | English
 
-# SOLVE #
+# SOLVE ![](./solve.ico)
 
 Simple command deliver server, base on SSH. 
