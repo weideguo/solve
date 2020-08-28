@@ -215,7 +215,7 @@ redis_send>rpush select@@@@@a20fb0fcd6ec11eaadc7000c295dd589 "aaa bbb ccc"
 > 
 > 更多playbook与使用样例详见playbook目录
 > 
-> 通过web服务实现可视化交互，详见[solve-frontend](https://github.com/zouzhicun/solve-frontend)的说明
+> 通过web服务实现可视化交互，详见[solve-stack](https://github.com/zouzhicun/solve-stack)
 
 
 extend
