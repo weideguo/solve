@@ -210,6 +210,20 @@ class ClusterExecution(object):
                     """
                     
                     if re.match("^#",cmd) or re.match("^$",cmd):
+                        #空白以及注释行单独判断
+                        stop_str,pause_tag = pause(config.prefix_block+cluster_id,pause_tag)
+                        
+                        if stop_str:
+                            
+                            self.redis_log_client.hset(self.current_uuid,"exit_code",stop_str)
+                            self.redis_log_client.hset(self.current_uuid,"stderr",stop_str)
+                            self.redis_log_client.hset(self.current_uuid,"stdout","")
+                            self.exe_next=False                   
+                            self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
+                            break
+                        
+                        #结束暂停判断
+                    
                         #跳过注释以及空白行
                         logger.debug("origin command: %s ---- <%s %s> will not execute" % (next_cmd,self.target,self.cluster_id))
                         
@@ -235,7 +249,7 @@ class ClusterExecution(object):
     
                         logger.debug("render command: %s ------------ <%s %s> %s" % (cmd,self.target,self.cluster_id,self.current_uuid))
                         
-                        #进行暂停判断 空白以及注释行不暂停 先渲染后暂停
+                        #进行暂停判断 先渲染后暂停
                         stop_str,pause_tag = pause(config.prefix_block+cluster_id,pause_tag)
                         
                         if stop_str:
