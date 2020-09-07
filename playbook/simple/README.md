@@ -39,5 +39,11 @@ hmset cluster1 "db1" "server_db_${host1_ip}" "db2" "server_db_${host2_ip}" "site
 ```
 
 
-使用脚本运行任务
+使用脚本运行任务  
+```shell
 python script/solve_exe.py  #根据提示输入对应信息
+```
+
+
+.conf文件为对应playbook在web端的控制配置，需要配合web端使用才有效。
+
