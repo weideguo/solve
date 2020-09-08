@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import ast
 import configparser
 
 
@@ -34,7 +35,8 @@ def get_redis_config(section):
     host=""
     port=0
     try:
-        sentinels=eval(cp.get(section,"sentinels"))
+        #sentinels=eval(cp.get(section,"sentinels"))
+        sentinels=ast.literal_eval(cp.get(section,"sentinels"))
         service_name=cp.get(section,"service_name")
         return {"db":db,"password":password,"sentinels":sentinels,"service_name":service_name}
     except:    

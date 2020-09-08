@@ -5,6 +5,7 @@
 import os
 import re
 import sys
+import ast
 import time
 import uuid
 import atexit
@@ -99,7 +100,8 @@ class SolveExe(object):
         log_job_dict=self.redis_log_client.hgetall(log_job)
         #print(log_job_dict)
         if log_job_dict:
-            log_target=eval(log_job_dict["log"])
+            #log_target=eval(log_job_dict["log"])
+            log_target=ast.literal_eval(log_job_dict["log"])
             for lc in log_target:
                 cluster_id=lc[0].split(config.spliter)[-1]
                 cluster_name=lc[0].split(config.spliter+cluster_id)[0]
