@@ -18,6 +18,17 @@ from lib.logger import logger
 from core.job_manager import JobManager
 from core.proxy_manager import ProxyManager
 
+
+
+solve_logo="""
+ _____ _____ _ __   __ _____     
+|   __|     | |\ \ / /|  ___|    
+|__   |  |  | |_\ V / |  ___|   
+|_____|_____|___|\_/  |_____|   
+    
+"""
+
+
 if __name__=="__main__":
     from conf import config
     
@@ -82,6 +93,7 @@ if __name__=="__main__":
     try:
         opt=sys.argv[1].strip()
         if opt != "stop":
+            print("\033[1;32m %s \033[0m" % solve_logo)
             print("%s mode \033[1;32m %s \033[0m" % (opt,start_mode))
             try:
                 #for proxy mode
