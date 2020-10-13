@@ -117,10 +117,10 @@ playbook
 
   |   参数名    | 说明 | 必须 |
   | :---: | :----: | :--: |
-  | ip        | 创建ssh连接用的ip              | 是 |
-  | user      | 创建ssh连接用的user            | 是 |
-  | ssh_port  | ssh的端口                      | 是 |
-  | passwd    | ssh的密码                      | 是 |
+  | ip        | 创建ssh连接用的ip                              | 是 |
+  | user      | 创建ssh连接用的user，不设置则默认root          | -  |
+  | ssh_port  | ssh的端口，不设置则默认22                      | -  |
+  | passwd    | ssh的密码，在主机设置免密登陆时则不需要设置    | -  |
   | proxy     | 使用的代理名，对应proxy的mark，不设置则为直连  | -  |
 
 * 普通执行对象
@@ -178,6 +178,8 @@ EOF
 #以下操作要在redis操作
 #创建连接主机 名字必须为 realhost_<ip> 格式固定
 redis_config> hmset realhost_10.0.0.1 ip 10.0.0.1 user root ssh_port 22 passwd my_ssh_passwd
+#默认使用运行该程序用户的ssh目录即 ~/.ssh 进行免密认证。如文件 ~/.ssh/id_rsa。如果预先进行免密登陆设置，则passwd的值设置与否或者是否正确无关紧要，优先使用免密设置。
+#同时也支持ssh-agent加载其他位置的私钥文件，先加载后启动该程序
 #realhost_<ip> 的passwd 可以为加密后的字符串
 #python script/solve_password.py 'my_ssh_passwd'   #由原始密码生产加密字符串
 #python script/solve_password.py -d '$aes_password$KzZPM01rO2wtLkcwelt6KA==$ILeCn13IoiPjE6OwpZSxLA=='  #解密验证
@@ -221,7 +223,7 @@ redis_send> rpush block_<cluster id> "pause timeout"
 #其他值则可以结束阻塞并终止之后的所有操作
 redis_send> rpush block_<cluster id> abort
 #主机连接的建立与关闭
-redis_send> rpsuh conn_control "10.0.0.1" "close_10.0.0.1" "10.0.0.1@@@@63d07bf6f49c11e9befb000c295dd589"
+redis_send> rpush conn_control "10.0.0.1" "close_10.0.0.1" "10.0.0.1@@@@63d07bf6f49c11e9befb000c295dd589"
 #重新执行
 #可以由原有的job重新构建，并设置begin_line,实现断点继续运行。
 #直接对主机分发命令 必须先连接主机

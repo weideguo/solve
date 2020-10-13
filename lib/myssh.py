@@ -18,21 +18,23 @@ class MySSH(object):
     下载文件
     """
     
-    def __init__(self,host_info,*arg,**kwargs):
-        self.host_info=host_info
+    def __init__(self,host_info,*arg,**kwargs):     
+        self.hostname = host_info["ip"]
+        self.port     = int(host_info.get("ssh_port", 22))
+        self.username = host_info.get("user", "root")
+        self.password = password.decrypt(str(host_info.get("passwd","")))
+        
         self.ssh_client=None
         
-   
     def init_conn(self):
         """
         初始化连接
         """
         client = SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-        client.connect(hostname=self.host_info["ip"],port=int(self.host_info["ssh_port"]), username=self.host_info["user"],\
-                        password=password.decrypt(str(self.host_info["passwd"])) )
-
+        #默认使用运行该程序用户的ssh目录即 ~/.ssh 进行免密认证。如文件 ~/.ssh/id_rsa
+        #同时也支持ssh-agent加载其他位置的私钥文件，先加载后启动该程序
+        client.connect(hostname=self.hostname, port=self.port, username=self.username, password=self.password)
         self.ssh_client=client
          
     def exe_cmd(self,cmd,background_log_set=None):
