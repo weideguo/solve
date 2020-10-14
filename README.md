@@ -2,6 +2,10 @@
 
 # SOLVE ![](./solve.ico)
 
+[![Python 2.7|3.5](https://img.shields.io/badge/python-2.7%7C3.5-green.svg)](https://github.com/zouzhicun/solve) 
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/zouzhicun/solve/blob/master/LICENSE) 
+
+
 Simple command deliver server, base on SSH. 
 
 基于SSH实现的命令分发服务, 由redis存储数据。对[执行对象](#执行对象)运行[playbook](#playbook)，即为对主机运行shell命令的扩展。
@@ -14,9 +18,6 @@ start
 * redis (>= 2.0.0)
 * salt (使用salt分发时才必须, [README.salt.md](./README.salt.md))
 
-### version support ###
-* python 2.7
-* python 3.5
 
 ### prerun ###
 ```shell
