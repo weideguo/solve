@@ -16,6 +16,7 @@ def gen_background_log_set(cmd_uuid,redis_client,len=0):
             """真实用于设置日志的后台函数"""
             #防止获取到None
             redis_client.hset(cmd_uuid,tag,"")
+            _new_log=b""
             while True:
                 #单行读取，读取不到阻塞，但读取结束后不会阻塞
                 #readline(1) read(1) 作用类似，只获取一个字符，但更新太频繁，消耗太大，在其他更高实时性场景使用
@@ -23,15 +24,38 @@ def gen_background_log_set(cmd_uuid,redis_client,len=0):
                     new_log=out.readline(len)
                 else:
                     new_log=out.readline()
-                try:
-                    new_log=str(new_log,encoding="utf8")
-                except:
-                    pass
-                old_log=redis_client.hget(cmd_uuid,tag)
-                redis_client.hset(cmd_uuid,tag,old_log+new_log)
+                
                 # 单行读取，每一行至少为"\n"
                 if not new_log:
+                    if _new_log:
+                        raise Exception("can not decode to unicode", _new_log)
                     break
+                   
+                ###可能值                    
+                # new_log=u"中公文\n"         #ssh执行
+                # new_log=b"\xe4\xb8\xad1\n"  #本地执行
+                #
+                # new_log=b"\xe4"  #单字节可能需要先拼接后再转换
+                               
+                #_log=u""
+                _log=redis_client.hget(cmd_uuid,tag) 
+                _log_all=_log
+                try:     
+                    _log_all = _log+new_log
+                except:
+                    #new_log=b""
+                    #单字节可能需要先拼接后再转换
+                    _new_log=_new_log+new_log
+                    try:
+                        #b"" -> u""
+                        _log_all = _log+_new_log.decode("utf8")
+                        #_log_all = _log+str(new_log,encoding="utf8")  #python2 not support
+                        _new_log=b""
+                    except:
+                        pass
+                
+                if _log_all != _log:
+                    redis_client.hset(cmd_uuid,tag, _log_all)
                 
                 #time.sleep(1)
         
