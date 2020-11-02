@@ -9,7 +9,7 @@
 
 Simple command deliver server, base on SSH. 
 
-基于SSH实现的命令分发服务, 由redis存储数据。对[执行对象](#执行对象)运行[playbook](#playbook)，即为对主机运行shell命令的扩展。
+基于SSH实现的命令分发服务, 由redis存储数据。对[执行对象(target)](#target)运行[playbook](#playbook)，即为对主机运行shell命令的扩展。
 
 
 start
@@ -103,10 +103,10 @@ playbook
 
   如执行对象A为 {"a":"aaa","b":"bbb"}，则可以使用{{a}}，替换后为"aaa"
 
-  多层级参数如{{a.a1}}，详见[执行对象](#执行对象)的说明
+  多层级参数如{{a.a1}}，详见[执行对象](#target)的说明
   
 
-执行对象
+target
 --------------
 
 执行对象本质即为参数的集合，用于在实际执行时对playbook进行变量替换，得到实际的要执行的命令。执行对象可以通过执行对象名的引用实现多层级参数。
@@ -136,6 +136,8 @@ demo
 --------------
 ### 使用样例 ###
 redis_send redis_log redis_job redis_config为配置文件conf/config.py中设置的redis，即conf/config.conf对应的模块
+
+更多playbook与使用样例详见[playbook示例目录](./playbook/simple/)
 
 ```
 #playbook命令样例
@@ -242,8 +244,6 @@ redis_send>rpush select@@@@@a20fb0fcd6ec11eaadc7000c295dd589 "aaa bbb ccc"
 
 ### more ###
 > 可由脚本 script/solve_exe.py 直接运行job
-> 
-> 更多playbook与使用样例详见playbook目录
 > 
 > 通过web服务实现可视化交互，详见[solve-stack](https://github.com/zouzhicun/solve-stack)
 
