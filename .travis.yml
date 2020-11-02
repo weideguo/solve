@@ -3,6 +3,7 @@ language: python
 python:
   - "2.7"
   - "3.5"
+  - "3.7"
 
 install:
   - pip install -r requirements.txt
@@ -10,10 +11,11 @@ install:
 services:
   - redis-server   
 
-# before_script: 
-# #   # 使用自己的redis配置文件替换已有的配置文件并重新加载（不是必须，默认没有密码）
-# #   - sudo cp redis.conf /etc/redis/redis.conf
-# #   - sudo service redis-server force-reload &
-#
+before_script: 
+  - sed -i "s|password=.*|password=|g" conf/config.conf
+    #   # 使用自己的redis配置文件替换已有的配置文件并重新加载（不是必须，默认没有密码）
+    #   - sudo cp redis.conf /etc/redis/redis.conf
+    #   - sudo service redis-server force-reload &
+
 script:
   - python bin/solve.py start
