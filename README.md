@@ -41,6 +41,12 @@ python bin/solve.py restart
 ```
 
 
+### usage ###
+设置好playbook(#playbook)和执行对象(#target)之后  
+* python script/solve_exe.py   #由[脚本](./script/solve_exe.py)构建[任务](#job)运行
+* 通过web服务实现可视化交互，详见[solve-stack](https://github.com/zouzhicun/solve-stack)
+
+
 playbook
 --------------
 
@@ -109,7 +115,7 @@ playbook
 target
 --------------
 
-执行对象本质即为参数的集合，用于在实际执行时对playbook进行变量替换，得到实际的要执行的命令。执行对象可以通过执行对象名的引用实现多层级参数。
+hash类型的redis key。执行对象本质即为参数的集合，用于在实际执行时对playbook进行变量替换，得到实际的要执行的命令。执行对象可以通过执行对象名的引用实现多层级参数。
 
 * 特殊执行对象 realhost_&lt;ip&gt;
 
@@ -130,6 +136,20 @@ target
   普通的存储信息的对象
   
   如执行对象A为 {"a":"A1","b":"bbb"}，关联的对象A1为 {"a1":"a111"}，则playbook可以使用变量{{a.a1}}，替换后为"a111"
+
+
+job
+--------------
+由playbook和执行对象可以构建成一个任务。
+
+### job的参数说明 ###
+
+|   参数名   | 说明 | 必须 |
+| :---: | :----: | :--: |
+| target     | 执行对象的列表，使用","分隔                                    | 是 |
+| playbook   | 对应的playbook（绝对路径，或者参照playbook目录的相对路径）     | 是 |
+| session    | 用于引入临时的参数，如果playbook中使用session参数，则必须设置  | - |
+| begin_line | 从第playbook的第几行开始执行                                   | - |
 
 
 demo
@@ -204,14 +224,6 @@ redis_log> hgetall log_job_dcf3e208d47011e99464000c295dd589
 #根据提示输入 target、playbook以及需要设置的session参数
 python script/solve_exe.py
 ```
-### job的参数说明 ###
-
-|   参数名    | 说明 | 必须 |
-| :---: | :----: | :--: |
-| target | 执行对象的列表，使用","分隔 | 是 |
-| playbook | 对应的playbook（绝对路径，或者参照playbook目录的相对路径） | 是 |
-| session | 如果playbook中使用session参数，则必须设置。 | - |
-| begin_line | 从第playbook的第几行开始执行。 | - |
 
 ### 高级用法 ###
 ```
@@ -242,18 +254,13 @@ redis_send>keys session_all*
 redis_send>rpush select@@@@@a20fb0fcd6ec11eaadc7000c295dd589 "aaa bbb ccc"
 ```
 
-### more ###
-> 可由脚本 script/solve_exe.py 直接运行job
-> 
-> 通过web服务实现可视化交互，详见[solve-stack](https://github.com/zouzhicun/solve-stack)
 
 
 extend
 --------------
 ### 系统支持 ###
-> 要分发命令的目标主机
 * linux 启动ssh服务，同时stfp可以使用。
-* windows 安装ssh，启动ssh同时stfp可以使用。
+* windows 安装ssh，启动ssh同时stfp可以使用（建议安装如MinGW，实现类unix命令操作）。
 
 ### proxy模式 ###
 proxy模式用于作为master的代理管理主机连接。整体任务协调均由master发起。 
