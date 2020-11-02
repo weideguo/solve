@@ -42,7 +42,7 @@ python bin/solve.py restart
 
 
 ### usage ###
-设置好playbook(#playbook)和执行对象(#target)之后  
+设置好[playbook](#playbook)和[执行对象](#target)之后  
 * python script/solve_exe.py   #由[脚本](./script/solve_exe.py)构建[任务](#job)运行
 * 通过web服务实现可视化交互，详见[solve-stack](https://github.com/zouzhicun/solve-stack)
 
@@ -140,7 +140,7 @@ hash类型的redis key。执行对象本质即为参数的集合，用于在实�
 
 job
 --------------
-由playbook和执行对象可以构建成一个任务。
+由[playbook](#playbook)和[执行对象](#target)可以构建成一个任务。
 
 ### job的参数说明 ###
 
