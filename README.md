@@ -309,4 +309,9 @@ master/proxy服务之间的文件同步需要额外实现。（如：1.使用rsy
 * 多master模式    
   与多master-多相同proxy模式类似，但没有proxy用于连接主机，仅由master处理。master不要启动本地执行。       
   
-  
+### redis config ###  
+```
+#redis.conf
+#设置redis的timeout参数为一个较小值，可以回收空闲的连接，避免连接数过大
+timeout 100
+```

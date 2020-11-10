@@ -290,6 +290,10 @@ class RemoteHost(MySSH):
             else:
                 #命令为空时释放队列
                 self.thread_q.get()
+        
+        
+        self.redis_send_client.connection_pool.disconnect()
+        self.redis_log_client.connection_pool.disconnect()
     
     
     def __heart_beat(self):
@@ -304,6 +308,9 @@ class RemoteHost(MySSH):
             time.sleep(config.heart_beat_interval)
 
         self.redis_send_client.delete(config.prefix_heart_beat+self.tag)
+        
+        self.redis_send_client.connection_pool.disconnect()
+        self.redis_log_client.connection_pool.disconnect()
         
     
     def __close_conn(self):
@@ -331,7 +338,11 @@ class RemoteHost(MySSH):
 
         self.redis_send_client.delete(config.prefix_heart_beat+self.tag)
         self.redis_send_client.expire(config.prefix_closing+self.tag,config.closing_host_flag_expire_sec)      #关闭已经完成  
-    
+        
+        #关闭redis连接 防止连接数一直增大
+        self.redis_send_client.connection_pool.disconnect()
+        self.redis_log_client.connection_pool.disconnect()
+        
 
     def close(self):
         """
