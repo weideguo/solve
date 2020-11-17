@@ -11,6 +11,7 @@ from jinja2 import Template
 
 from lib.logger import logger,logger_err
 from conf import config
+from lib.redis_conn import RedisConn
 
 
 class ClusterExecution(object):
@@ -19,29 +20,61 @@ class ClusterExecution(object):
     逐行读取playbook，使用自己的配置参数进行替换，然后运行
     远端主机的连接的创建在此具体控制
     """
-
-    current_host=""    
-    exe_next=True
-    #exe_uuid_list=[]              #正在运行的命令的uuid列表 如果依赖前项则逐个uuid检测获取结果再判断是否执行下一步 
-    current_uuid=""               #当前命令的uuid
-    cluster_id=""                 #全局uuid 用于标记cluster的日志 global变量的存储
-    target=""
     
-    def __init__(self,redis_send_client,redis_log_client,redis_tmp_client,redis_config_client):
+    def __init__(self,cluster_id,redis_config_list,redis_connect=None):
         """
         每一次执行创建一个对象，运行完毕后销毁
         对多个集群执行时，创建多个对象
         多个集群多次需要创建多个对象
 
         """
-        self.redis_send_client=redis_send_client         #执行命令 返回值等执行过程信息
-        self.redis_log_client=redis_log_client           #执行日志
-        self.redis_tmp_client=redis_tmp_client           #执行对象 global session 的临时数据
-        self.redis_config_client=redis_config_client     #执行对象原始数据
+        if redis_connect:
+            self.redis_connect=redis_connect
+        else:
+            self.redis_connect=RedisConn(config.cluster_redis_pool_size)
         
-        self.exe_uuid_list=[]
+        self.redis_send_config=redis_config_list[0]
+        self.redis_log_config=redis_config_list[1]
+        self.redis_tmp_config=redis_config_list[2]
+        self.redis_job_config=redis_config_list[3]       
+        self.redis_config_config=redis_config_list[4]
         
-
+        self.redis_config_list=redis_config_list
+        
+        self.redis_refresh()
+        
+        self.exe_next=True
+        
+        self.cluster_id=cluster_id         #全局uuid 用于标记cluster的日志 global变量的存储
+        self.target=""
+        self.current_host="" 
+        self.current_uuid=""               #当前命令的uuid
+        self.exe_uuid_list=[]              #正在运行的命令的uuid列表 如果依赖前项则逐个uuid检测获取结果再判断是否执行下一步 
+        
+        if not self.cluster_id:
+            self.cluster_id=uuid.uuid1().hex
+        
+        self.global_key=config.prefix_global+config.spliter+self.cluster_id
+        self.select_key=config.prefix_select+config.spliter+self.cluster_id
+        self.kill_key=config.prefix_kill+cluster_id
+        
+        self.block_key=config.prefix_block+cluster_id
+        
+        
+        self.sum_key=config.prefix_sum+self.cluster_id 
+        self.log_target=config.prefix_log_target+self.cluster_id
+        
+        
+    def redis_refresh(self):
+        self.redis_send_client=self.redis_connect.refresh(self.redis_send_config)
+        self.redis_log_client=self.redis_connect.refresh(self.redis_log_config) 
+        self.redis_tmp_client=self.redis_connect.refresh(self.redis_tmp_config)
+        self.redis_job_client=self.redis_connect.refresh(self.redis_job_config)        
+        self.redis_config_client=self.redis_connect.refresh(self.redis_config_config)      
+        
+        self.redis_client_list=[self.redis_send_client,self.redis_log_client,self.redis_tmp_client,self.redis_job_client,self.redis_config_client]
+       
+    
     def get_value(self,target_name,name_str):
         """
         如 db1.host.ip 获取参数值
@@ -68,17 +101,22 @@ class ClusterExecution(object):
 
     def reset(self):
         """
-        重置变量实现类复用
+        重置
         """
-        self.redis_tmp_client.expire(config.prefix_global+config.spliter+self.cluster_id,config.tmp_config_expire_sec)
-
         self.current_host=""
         self.exe_next=True
         self.exe_uuid_list=[] 
         self.current_uuid=""
         self.cluster_id=""
         self.target="" 
+        
+        for client in self.redis_client_list:
+            try:
+                client.connection_pool.disconnect()
+            except:
+                pass
 
+    
     def render(self,target,cmd):
         """
         使用jinja2模板方法替换命令中的变量 
@@ -100,41 +138,35 @@ class ClusterExecution(object):
         real_cmd=Template(cmd).render(data)      
         return real_cmd
         
-    def run(self,target,playbook,cluster_id,begin_line):
+    def run(self,target,playbook,begin_line):
         """
         后台运行
         """
         self.target=target
-        t=Thread(target=self.exe,args=(target,playbook,cluster_id,begin_line))
+        t=Thread(target=self.exe,args=(target,playbook,begin_line))
         t.start()
 
 
-    def exe(self,target,playbook,cluster_id="",begin_line=0):
+    def exe(self,target,playbook,begin_line=0):
         """
         playbook执行入口 线程不安全 如果多线程需要每次都创建对象
         当执行命令到一半出现redis连接错误，则只执行完当前的命令，之后的命令不会再执行
         """        
-        self.cluster_id=cluster_id
         cluster_start_time=time.time()           
-
-        if not self.cluster_id:
-            self.cluster_id=uuid.uuid1().hex
         
         logger.info("<%s %s>  %s begin" % (target,self.cluster_id,playbook)) 
 
-        self.redis_tmp_client.hset(target,config.prefix_global,config.prefix_global+config.spliter+self.cluster_id)
-        self.redis_tmp_client.hset(target,config.prefix_select,config.prefix_select+config.spliter+self.cluster_id)
-        #self.redis_tmp_client.hset(target,"select","select"+config.spliter+self.cluster_id)
+        self.redis_tmp_client.hset(target,config.prefix_global,self.global_key)
+        self.redis_tmp_client.hset(target,config.prefix_select,self.select_key)
         
         stop_str=""          #用于标记执行结束的信息
         last_uuid=""         #最后分发的命令的uuid 用于判断playbook执行是否正常退出
         
-        stop_id=config.prefix_sum+self.cluster_id 
         stop_info={}
         stop_info["begin_timestamp"]=cluster_start_time        
         stop_info["target"]=self.target        
         
-        self.redis_log_client.hmset(stop_id,stop_info)        
+        self.redis_log_client.hmset(self.sum_key,stop_info)        
         
         
         #是否暂停
@@ -202,7 +234,7 @@ class ClusterExecution(object):
                     else:
                         cmd=next_cmd
                     
-                    self.redis_log_client.rpush(config.prefix_log_target+self.cluster_id,self.current_uuid)
+                    self.redis_log_client.rpush(self.log_target,self.current_uuid)
                     """
                     每一行命令的日志id都放入日志队列 
                     根据日志队列、playbook即可获知执行到哪一行结束
@@ -211,7 +243,7 @@ class ClusterExecution(object):
                     
                     if re.match("^#",cmd) or re.match("^$",cmd):
                         #空白以及注释行单独判断
-                        stop_str,pause_tag = pause(config.prefix_block+cluster_id,pause_tag)
+                        stop_str,pause_tag = pause(self.block_key,pause_tag)
                         
                         if stop_str:
                             
@@ -250,7 +282,7 @@ class ClusterExecution(object):
                         logger.debug("render command: %s ------------ <%s %s> %s" % (cmd,self.target,self.cluster_id,self.current_uuid))
                         
                         #进行暂停判断 先渲染后暂停
-                        stop_str,pause_tag = pause(config.prefix_block+cluster_id,pause_tag)
+                        stop_str,pause_tag = pause(self.block_key,pause_tag)
                         
                         if stop_str:
                             
@@ -298,8 +330,8 @@ class ClusterExecution(object):
                         self.redis_log_client.hset(self.current_uuid,"stop_timestamp",time.time())
     
                     #从redis获取信息，判断是否进行kill操作终止之后的命令
-                    if self.redis_send_client.get(config.prefix_kill+self.cluster_id):        
-                        self.redis_send_client.expire(config.prefix_kill+self.cluster_id,config.kill_cluster_expire_sec)
+                    if self.redis_send_client.get(self.kill_key):        
+                        self.redis_send_client.expire(self.kill_key,config.kill_cluster_expire_sec)
                         self.exe_next=False
                         logger.info("get kill signal in <%s %s>" % (self.target,self.cluster_id))
                         stop_str="killed" 
@@ -334,21 +366,21 @@ class ClusterExecution(object):
             last_stdout=""
         stop_info["last_stdout"]=last_stdout
 
-        logger.info("%s %s %s" % (self.cluster_id,stop_id,stop_info))        
+        logger.info("%s %s %s" % (self.cluster_id,self.sum_key,stop_info))        
 
-        self.redis_log_client.hmset(stop_id,stop_info) 
+        self.redis_log_client.hmset(self.sum_key,stop_info) 
         
-        log_target=config.prefix_log_target+self.cluster_id
+        
         if stop_str=="done":        
             logger.info("<%s %s>  %s  done" % (target,self.cluster_id,playbook))
         else:
             logger.info("<%s %s>  %s  fail" % (target,self.cluster_id,playbook))
  
-        self.reset()
-        
+        self.redis_tmp_client.expire(self.global_key,config.tmp_config_expire_sec)
+        self.redis_tmp_client.expire(self.select_key,config.tmp_config_expire_sec)
         self.redis_tmp_client.expire(target,config.tmp_config_expire_sec)
         
-        return log_target
+        self.reset()
 
 
     def __single_exe(self,host,cmd,c_uuid=""):
@@ -462,7 +494,7 @@ class ClusterExecution(object):
         """
         g_field,g_value = self.__var_exe(cmd,current_uuid,config.prefix_global)
         #脚本全局变量保存 可以在执行脚本结束后清空        
-        self.redis_tmp_client.hset(config.prefix_global+config.spliter+self.cluster_id,g_field,g_value)
+        self.redis_tmp_client.hset(self.global_key,g_field,g_value)
     
     
     def __select_var(self,cmd,current_uuid):
@@ -506,9 +538,9 @@ class ClusterExecution(object):
                 
                 continue_check=True
                 while continue_check:
-                    if self.redis_send_client.get(config.prefix_kill+self.cluster_id):
+                    if self.redis_send_client.get(self.kill_key):
                         #可能存在kill操作
-                        self.redis_send_client.expire(config.prefix_kill+self.cluster_id,config.kill_cluster_expire_sec)
+                        self.redis_send_client.expire(self.kill_key,config.kill_cluster_expire_sec)
                         self.exe_next=False
                         continue_check=False
                         ignore_last_err=True

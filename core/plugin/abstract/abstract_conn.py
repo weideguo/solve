@@ -27,23 +27,19 @@ class AbstractConn(object):
     """    
 
 
-    def __init__(self,host_info,redis_config_list):
+    def __init__(self,host_info,redis_config_list,redis_connect=None,*args,**kwargs):
         redis_send_config=redis_config_list[0]
         redis_log_config=redis_config_list[1]
     
         self.host_info = host_info
-        self.redis_send_client=None
-        self.redis_log_client=None
         
-        self.redis_init()
+        if not redis_connect:
+            redis_connect=RedisConn()          #使用独占连接池需要自己控制连接的释放  在此该对象的一直在使用，所以不必释放？
+        
+        self.redis_send_client=redis_connect.redis_init(self.redis_send_config)
+        self.redis_log_client=redis_connect.redis_init(self.redis_log_config) 
         
         self.__new_forever_run()
-    
-    
-    def redis_init(self):
-        rc=RedisConn()        
-        self.redis_send_client=rc.refresh(self.redis_send_client,self.redis_send_config)
-        self.redis_log_client=rc.refresh(self.redis_log_client,self.redis_log_config) 
     
     
     def __new_forever_run(self):

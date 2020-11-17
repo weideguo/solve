@@ -30,28 +30,27 @@ class JobManager(object):
     SSH连接与关闭的控制
     """    
 
-    def __init__(self,redis_config_list):
-        self.redis_send_client=None
-        self.redis_log_client=None
-        self.redis_tmp_client=None
-        self.redis_job_client=None
-        self.redis_config_client=None
+    def __init__(self, redis_connect, redis_config_list):
         
         self.redis_send_config=redis_config_list[0]
         self.redis_log_config=redis_config_list[1]
         self.redis_tmp_config=redis_config_list[2]
         self.redis_job_config=redis_config_list[3]       
         self.redis_config_config=redis_config_list[4]
-        self.redis_init()
-
+        
+        self.redis_config_list=redis_config_list
+        self.redis_connect=redis_connect
+        
+        self.redis_refresh()
+   
+   
+    def redis_refresh(self):
+        self.redis_send_client=self.redis_connect.refresh(self.redis_send_config)
+        self.redis_log_client=self.redis_connect.refresh(self.redis_log_config) 
+        self.redis_tmp_client=self.redis_connect.refresh(self.redis_tmp_config)
+        self.redis_job_client=self.redis_connect.refresh(self.redis_job_config)        
+        self.redis_config_client=self.redis_connect.refresh(self.redis_config_config)           
     
-    def redis_init(self):
-        rc=RedisConn()        
-        self.redis_send_client=rc.refresh(self.redis_send_client,self.redis_send_config)
-        self.redis_log_client=rc.refresh(self.redis_log_client,self.redis_log_config) 
-        self.redis_tmp_client=rc.refresh(self.redis_tmp_client,self.redis_tmp_config)
-        self.redis_job_client=rc.refresh(self.redis_job_client,self.redis_job_config)        
-        self.redis_config_client=rc.refresh(self.redis_config_client,self.redis_config_config)        
     
     def is_listen_tag_clean(self,listen_tag=config.local_ip_list):
         #启动本地时检查是否已经存在旧的命令
@@ -64,9 +63,10 @@ class JobManager(object):
         """
         对本地的操作不需要再使用连接
         """
-        
+        #进程自己创建连接池 单个进程内的线程共享
+        redis_connect=None
         logger.debug("localhost start, listen on: %s" % str(listen_tag))
-        lh=LocalHost([self.redis_send_config,self.redis_log_config],listen_tag,config.max_localhost_thread) 
+        lh=LocalHost([self.redis_send_config,self.redis_log_config],listen_tag,redis_connect=redis_connect) 
         lh.forever_run() 
         #阻塞运行，以下操作不应该被运行
         logger_err.error("localhost should not end, something error!")
@@ -95,7 +95,7 @@ class JobManager(object):
         return is_alive
     
     
-    def conn_host(self,init_host,init_host_uuid,proxy_mode=False):
+    def conn_host(self,init_host,redis_connect,init_host_uuid,proxy_mode=False):
         try:
             #如果连接存在 则不必再创建 否则则新建连接 
             if not self.is_host_alive(init_host):
@@ -155,9 +155,11 @@ class JobManager(object):
         只允许干净连接，即命令队列中不应该存在以前的旧命令
 
         """
-        self.redis_init()
+        #redis_connect=RedisConn()          #每个进程共享连接池       
+        redis_connect=None                  #每个远程连接对象自己创建独占的连接池
         while True:
-            init_host=self.redis_send_client.blpop(config.key_conn_control)
+            
+            init_host=self.redis_send_client.blpop(config.key_conn_control) 
             init_host_list=init_host[1].split(config.spliter)
             init_host=init_host_list[0].strip()
             if len(init_host_list)>1:
@@ -198,7 +200,7 @@ class JobManager(object):
                 
             elif init_host:
                 #启动 
-                self.conn_host(init_host,init_host_uuid)
+                self.conn_host(init_host,redis_connect,init_host_uuid)
                 
             else:
                 logger_err.error("do nothing on %s" % init_host)
@@ -212,7 +214,6 @@ class JobManager(object):
         避免创建不久后被判断为要关闭
         将需要关闭的信息插入队列 由__remot_host执行关闭
         """
-        self.redis_init()
         hb_tag=config.prefix_heart_beat
         while True:
             
@@ -312,14 +313,15 @@ class JobManager(object):
             
             try:
                 
-                ce=ClusterExecution(self.redis_send_client,self.redis_log_client,self.redis_tmp_client,self.redis_config_client)
+                #ce=ClusterExecution(cluster_id,self.redis_config_list,self.redis_connect)     #使用共享连接池会导致在redis重连时有一定概率出错 why？
+                ce=ClusterExecution(cluster_id,self.redis_config_list)
                 
                 if "begin_line" in job:
                     begin_line=int(job["begin_line"])
                 else:
                     begin_line=0
                 
-                ce.run(new_c,playbook,cluster_id,begin_line)
+                ce.run(new_c,playbook,begin_line)
             except:
                 self.redis_tmp_client.expire(new_c,config.tmp_config_expire_sec)
                 self.redis_log_client.hmset(config.prefix_sum+cluster_id,{"stop_str":"runing failed"})
@@ -330,7 +332,6 @@ class JobManager(object):
         self.redis_log_client.hmset(config.prefix_log_job+job_id.split(config.prefix_job)[1],log_job)        
     
     
-    @connection_error_rerun()
     def __job_exe(self):
         """
         监听队列持续执行任务
@@ -340,12 +341,21 @@ class JobManager(object):
         session为可选
 
         """
-        self.redis_init()
         while True:
-            job_id=self.redis_send_client.blpop(config.key_job_list)
-            job_id=job_id[1]
-            t=Thread(target=self.__real_job_exe,args=(job_id,))
-            t.start()
+            job_id=None
+            try:
+                job_id=self.redis_send_client.blpop(config.key_job_list)     #redis重新连接运行会有连接报错
+                job_id=job_id[1]
+            except:
+                try:
+                    job_id=self.redis_send_client.lpop(config.key_job_list)
+                except:
+                    #logger_err.debug(format_exc())
+                    time.sleep(5)
+                
+            if job_id:
+                t=Thread(target=self.__real_job_exe,args=(job_id,))
+                t.start()    
     
     
     def run_forever(self):
@@ -359,7 +369,7 @@ class JobManager(object):
         self.is_listen_tag_clean()
         
         #这两个任务压力不大，使用线程即可
-        t1=Thread(target=self.__job_exe)
+        t1=Thread(target=self.__job_exe)        
         t2=Thread(target=self.__close_host)
         t1.start()
         t2.start()

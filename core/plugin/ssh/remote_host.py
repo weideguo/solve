@@ -26,36 +26,44 @@ class RemoteHost(MySSH):
     在远端执行命令 上传下载文件
     持续监听队列获取命令
     续监听队列判断是否关闭连接
+    
+    只确保当前正在执行的能正确返回 不必维护执行队列
     """
     
-    def __init__(self,host_info,redis_config_list,t_number=config.max_concurrent_thread):
-    
-        #super(RemoteHost, self).__init__(host_info)
+    def __init__(self,host_info,redis_config_list,t_number=config.max_concurrent_thread,redis_connect=None):
+        
         super(RemoteHost, self).__init__(host_info)       
- 
+        
         self.ip=host_info["ip"]
         if "tag" in host_info:
             self.tag=host_info["tag"]
         else:
             self.tag=self.ip
- 
-        self.redis_send_client=None
-        self.redis_log_client=None
+        
+        self.cmd_key       = config.prefix_cmd+self.tag
+        self.heartbeat_key = config.prefix_heart_beat+self.tag
+        self.cloing_key    = config.prefix_closing+self.tag
+        
         self.redis_send_config=redis_config_list[0]
         self.redis_log_config=redis_config_list[1]
-        self.redis_init()
+        
+        if redis_connect:
+            rc=redis_connect                                                        #单个进程所创建的远程连接共享连接池  redis连接被多个远程连接复用
+            self.is_disconnect=False                                                #关闭远程连接不能回收redis连接
+        else:
+            rc=RedisConn(max_connections=config.remote_host_redis_pool_size)        #每个远程连接使用自己的连接池  有些连接不能被共享  如进行blpop操作时/消息订阅时 因而在此需要大于2
+            self.is_disconnect=True                                                 #在关闭远程连接时回收redis连接
 
+        self.redis_send_client=rc.refresh(self.redis_send_config)
+        self.redis_log_client=rc.refresh(self.redis_log_config) 
+        
+        self.redis_client_list=[self.redis_send_client,self.redis_log_client]
+        
         self.thread_q=Queue.Queue(t_number)   #单个主机的并发
         self.t_thread_q=Queue.Queue(t_number) #用于存储正在运行的队列 
         self.is_run=False                     #后台运行    
     
-    
-    def redis_init(self):
-        rc=RedisConn()        
-        self.redis_send_client=rc.refresh(self.redis_send_client,self.redis_send_config)
-        self.redis_log_client=rc.refresh(self.redis_log_client,self.redis_log_config)     
-    
-    
+       
     def init_conn(self):
         """
         初始化连接
@@ -92,48 +100,52 @@ class RemoteHost(MySSH):
         set_step("calculate local md5 done")
         local_filesize=os.path.getsize(local_file)
         
-        put_flag = False
+        put_flag = True     #是否要实际上传
         if self.redis_log_client.hexists(config.prefix_put+self.tag,local_md5):
             #已经存在其他上传操作的情况
             wait_flag = 1 
-            while wait_flag:
-                exist_remote_file = self.redis_log_client.hget(config.prefix_put+self.tag,local_md5)
-                if exist_remote_file:
-                    wait_flag = 0
-                    try:
-                        #self.redis_log_client.hset(c_uuid,"remote_md5","copying")
-                        set_step("copying","remote_md5")
-                        remote_md5,local_md5,is_success,error_msg=self.copy_file(exist_remote_file,remote_file,local_md5,\
-                                                                                local_filesize,config.is_copy_by_link,set_info,set_step)
-                        if is_success:
-                            return remote_md5,local_md5,is_success,error_msg
-                        else:
-                            logger.debug("copy but faild:  %s %s %s %s" % (remote_md5,local_md5,is_success,error_msg))   
-                            #self.redis_log_client.hset(c_uuid,"remote_md5",error_msg+", copy failed, will upload")
-                            set_step(error_msg+", copy failed, will upload","remote_md5")
-                            put_flag = True
-                    except:
-                        logger_err.debug(format_exc())
-                        return "","",0,"copy remote file failed"
-                    
-                else:
-                    #如果其他上传还在进行 则等待后再检查
-                    #self.redis_log_client.hset(c_uuid,"remote_md5","waiting others complete:"+str(wait_flag))
-                    set_step("waiting others complete:"+str(wait_flag),"remote_md5")
-                    time.sleep(config.put_wait_time)
-                    #超时检查
-                    wait_flag = wait_flag+1                                       
-                    if wait_flag> config.put_wait:
-                        wait_flag=0
-                        put_flag = True
         else:
-            #没有其他上传操作
-            put_flag = True
+            wait_flag = 0
+        
+        #可以在等待过程中删除标记结束等待
+        while wait_flag and self.redis_log_client.hexists(config.prefix_put+self.tag,local_md5):
+            exist_remote_file = self.redis_log_client.hget(config.prefix_put+self.tag,local_md5)
+            if exist_remote_file:
+                #远端已经存在文件
+                wait_flag = 0
+                try:
+                    set_step("copying","remote_md5")
+                    #校验MD5并复制文件
+                    remote_md5,local_md5,is_success,error_msg=self.copy_file(exist_remote_file,remote_file,local_md5,\
+                                                                            local_filesize,config.is_copy_by_link,set_info,set_step)
+                    if is_success:
+                        return remote_md5,local_md5,is_success,error_msg
+                    else:
+                        logger.debug("copy but faild:  %s %s %s %s" % (remote_md5,local_md5,is_success,error_msg))   
+                        set_step(error_msg+", copy failed, will upload","remote_md5")
+                        #复制已经存在的文件失败 需要实际上传
+                        put_flag = True
+                except:
+                    logger_err.debug(format_exc())
+                    return "","",0,"copy remote file failed"
+                
+            else:
+                #如果其他上传还在进行 则等待后再检查
+                set_step("waiting others complete:"+str(wait_flag),"remote_md5")
+                time.sleep(config.put_wait_time)
+                #超时检查
+                wait_flag = wait_flag+1                                       
+                if wait_flag> config.put_wait:
+                    wait_flag=0
+                    #等待其他的上传超时 需要实际上传
+                    put_flag = True
+        
 
         if put_flag:
             self.redis_log_client.hset(config.prefix_put+self.tag,local_md5,"")
             try:
                 local_md5,remote_md5,is_success,error_msg=self.put_file(local_md5,local_file,remote_path,set_info,set_step)
+                #redis断开即导致上传失败 无需确保日志回写
                 if is_success:
                     self.redis_log_client.hset(config.prefix_put+self.tag,local_md5,remote_file)
                 else:
@@ -178,7 +190,12 @@ class RemoteHost(MySSH):
         
         try:
             #上传文件的cmd PUT:/local_path/file_name:/remote_path
-            #下载文件的cmd GET:/local_path/file_name:/remote_path
+            #下载文件的cmd GET:/local_path:/remote_path/file_name
+            
+            #cmd="__xxx__ ..."
+            #cmd=" __xxx__ ..."
+            #re.match("\s*__\w+__(\s))",cmd) 
+            
             if re.match("PUT:.+?:.+?",cmd) or re.match("GET:.+?:.+?",cmd):                      
                 cmd_type=cmd.split(":")[0]
                 exe_result["cmd_type"]=cmd_type            
@@ -252,18 +269,21 @@ class RemoteHost(MySSH):
         通过线程开启并发操作 
         """
 
-        key=config.prefix_cmd+self.tag
-
+        #key=config.prefix_cmd+self.tag
         while self.is_run:
-            self.thread_q.put(1)                #控制并发数
-            t_allcmd=self.redis_send_client.blpop(key,1)       
-            #使用阻塞获取 好处是能及时响应 
-
+            self.thread_q.put(1)                #控制并发数 放在此控制可以避免命令队列被提前消耗
+            try:    
+                t_allcmd=self.redis_send_client.blpop(self.cmd_key)    
+                #使用阻塞获取 好处是能及时响应 
+            except:
+                #redis连接失败立即关闭命令监听
+                break
+            
             if t_allcmd:                           
                 allcmd=t_allcmd[1]
                 #阻塞的过程中连接可能已经被关闭 所以需要再次判断
                 if not self.is_run:
-                    self.redis_send_client.lpush(key,allcmd)               
+                    #self.redis_send_client.lpush(self.cmd_key,allcmd)        #不必维护未执行队列          
                     #logger.debug("will not exe %s" % allcmd)
                     allcmd=""
 
@@ -274,9 +294,7 @@ class RemoteHost(MySSH):
                         cmd_uuid=allcmd[1]
                     else:
                         cmd_uuid=uuid.uuid1().hex
-
-                    #self.thread_q.put(1)                #控制并发数
-
+                    
                     t=Thread(target=self.__single_run,args=(cmd,cmd_uuid))
                     t.start()
                     
@@ -291,26 +309,22 @@ class RemoteHost(MySSH):
                 #命令为空时释放队列
                 self.thread_q.get()
         
-        
-        self.redis_send_client.connection_pool.disconnect()
-        self.redis_log_client.connection_pool.disconnect()
-    
     
     def __heart_beat(self):
         """
         定时更新连接信息
         """
-        while self.is_run:
-            logger.debug("%s heart beat" % self.tag)
-            self.redis_send_client.set(config.prefix_heart_beat+self.tag,time.time())
-            #断开后key自动删除
-            self.redis_send_client.expire(config.prefix_heart_beat+self.tag,config.host_check_success_time)
-            time.sleep(config.heart_beat_interval)
-
-        self.redis_send_client.delete(config.prefix_heart_beat+self.tag)
-        
-        self.redis_send_client.connection_pool.disconnect()
-        self.redis_log_client.connection_pool.disconnect()
+        try:
+            while self.is_run:
+                logger.debug("%s heart beat" % self.tag)
+                self.redis_send_client.set(self.heartbeat_key,time.time())
+                #断开后key自动删除
+                self.redis_send_client.expire(self.heartbeat_key,config.host_check_success_time)
+                time.sleep(config.heart_beat_interval)
+                
+            self.redis_send_client.delete(self.heartbeat_key) 
+        except:
+            pass
         
     
     def __close_conn(self):
@@ -322,34 +336,56 @@ class RemoteHost(MySSH):
         pub.psubscribe(config.key_kill_host)
         while True:             
             pub.listen()
-            kill_info=pub.parse_response(block=True)     #阻塞获取
+            try:
+                kill_info=pub.parse_response(block=True) 
+            except:
+                break
+            
             kill_tag=kill_info[-1]
 
             if kill_tag==self.tag:            
                 self.is_run=False
-                self.redis_send_client.set(config.prefix_closing+self.tag,time.time())    #标记host处于关闭状态，不再执行新命令
-                #正在运行的并发运行完毕后再退出
-                while not self.t_thread_q.empty():
-                    t=self.t_thread_q.get()
-                    t.join()
-
-                self.close()
+                try:
+                    self.redis_send_client.set(self.cloing_key,time.time())    #标记host处于关闭状态，不再执行新命令
+                except:
+                    pass
                 break
-
-        self.redis_send_client.delete(config.prefix_heart_beat+self.tag)
-        self.redis_send_client.expire(config.prefix_closing+self.tag,config.closing_host_flag_expire_sec)      #关闭已经完成  
+                
+        #等待后台的并发运行执行结束
+        while not self.t_thread_q.empty():
+            t=self.t_thread_q.get()
+            t.join()
+           
+        self.close()
+        #关闭订阅连接 其他线程才能从线程池获取连接客户端
+        pub.close()
         
-        #关闭redis连接 防止连接数一直增大
-        self.redis_send_client.connection_pool.disconnect()
-        self.redis_log_client.connection_pool.disconnect()
+        if not self.redis_send_client.llen(self.cmd_key):
+            #用于释放阻塞
+            self.redis_send_client.rpush(self.cmd_key,"")
         
-
+        self.redis_send_client.delete(self.heartbeat_key)
+        self.redis_send_client.expire(self.cloing_key,config.closing_host_flag_expire_sec)    
+        self.redis_send_client.delete(self.cmd_key)          #清空未执行的队列防止启动时错误地运行
+        
+        if self.is_disconnect:
+            #释放连接 防止连接数一直增大
+            for client in [self.redis_client_list]:
+                try:
+                    client.connection_pool.disconnect()
+                except:
+                    pass
+        
+    
     def close(self):
         """
         不再执行之后的命令 但当前正在执行的命令还是会后台运行
         """
-        #self.ftp_client.close()
-        self.ssh_client.close()
+        try:
+            #self.ftp_client.close()
+            self.ssh_client.close()
+        except:
+            pass
         self.is_run=False
         #self.redis_send_client=None            #不重置以确保redis还能用于重置命令队列 
         #self.redis_log_client=None        

@@ -5,7 +5,7 @@ import redis
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.job_manager import JobManager
-
+from lib.redis_conn import RedisConn
 
 
 if __name__=="__main__":
@@ -28,5 +28,7 @@ if __name__=="__main__":
     redis_job_config={"host":"127.0.0.1", "port":6379, "db":14, "password":"my_redis_passwd"}
     redis_config_config={"host":"127.0.0.1", "port":6379, "db":15, "password":"my_redis_passwd"}
     
-    jm=JobManager([redis_send_config,redis_log_config,redis_tmp_config,redis_job_config,redis_config_config])
+    redis_connect=RedisConn()
+    
+    jm=JobManager(redis_connect,[redis_send_config,redis_log_config,redis_tmp_config,redis_job_config,redis_config_config])
     jm.run_forever()

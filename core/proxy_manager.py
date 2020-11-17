@@ -9,6 +9,7 @@ from .job_manager import JobManager
 from lib.utils import get_host_ip
 from lib.logger import logger,logger_err
 from lib.wrapper import connection_error_rerun
+from lib.redis_conn import RedisConn
 
 class ProxyManager(JobManager):
     """
@@ -23,9 +24,9 @@ class ProxyManager(JobManager):
             master监听文件目录变化主动向所有proxy下发文件
     """
     
-    def __init__(self,redis_config_list):
+    def __init__(self, redis_connect, redis_config_list):
         
-        super(ProxyManager, self).__init__(redis_config_list) 
+        super(ProxyManager, self).__init__(redis_connect,redis_config_list) 
         
         #优先从配置文件获取，获取失败，则使用ip地址
         try:
@@ -66,7 +67,8 @@ class ProxyManager(JobManager):
         """
         #init_str='proxy:10.0.0.1:192.168.16.1'
         #init_str='proxy:10.0.0.1:192.168.16.1@@@@@ba8d8c646e6711ea8d01000c295dd589'
-        self.redis_init()
+        #redis_connect=RedisConn()
+        redis_connect=None
         while True:
             #_init=pub.parse_response(block=True)     
             _init=self.redis_send_client.blpop(self.proxy_tag)           #阻塞获取
@@ -83,7 +85,7 @@ class ProxyManager(JobManager):
                 #为proxy的本地，不需要创建连接
                 logger.debug("< %s > run in local mode" % init_host)
             else:
-                self.conn_host(init_host,init_host_uuid,proxy_mode=True)
+                self.conn_host(init_host,redis_connect,init_host_uuid,proxy_mode=True)
             
 
     def run_forever(self):

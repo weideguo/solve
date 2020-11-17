@@ -22,13 +22,18 @@ class LocalHost(object):
     """
     对本地的执行
     """
-    def __init__(self,redis_config_list,listen_tag,t_number=5):
-        self.redis_send_client=None
-        self.redis_log_client=None
-        
+    def __init__(self,redis_config_list,listen_tag,t_number=config.max_localhost_thread,redis_connect=None):        
         self.redis_send_config=redis_config_list[0]
         self.redis_log_config=redis_config_list[1]
-        self.redis_init()
+          
+        if redis_connect:                                                                            
+            self.redis_connect=redis_connect                                                       #单个进程所创建的远程连接共享连接池                               
+            self.is_disconnect=False                                                               #关闭远程连接不能回收redis连接
+        else:                                                                                      
+            self.redis_connect=RedisConn(max_connections=config.localhost_redis_pool_size)         #每个远程连接使用自己的连接池
+            self.is_disconnect=True                                                                #在关闭远程连接时回收redis连接
+        
+        self.redis_refresh()
         
         #127.0.0.1 localhost
         #proxy:10.0.0.1:127.0.0.1 proxy:10.0.0.1:localhost
@@ -38,25 +43,22 @@ class LocalHost(object):
         self.thread_q=Queue.Queue(t_number)   #单个主机的并发
     
     
-    def redis_init(self):
-        """
-        redis断开后的重连
-        """
-        rc=RedisConn()        
-        self.redis_send_client=rc.refresh(self.redis_send_client,self.redis_send_config)
-        self.redis_log_client=rc.refresh(self.redis_log_client,self.redis_log_config)
-        
+    def redis_refresh(self):
+        self.redis_send_client=self.redis_connect.refresh(self.redis_send_config,force=True)
+        self.redis_log_client=self.redis_connect.refresh(self.redis_log_config,force=True)
     
-    @connection_error_rerun()
+    
     def __heart_beat(self):
         """
         心跳
         """
-        self.redis_init()
         while True:
-            for tag in self.listen_tag:
-                self.redis_send_client.set(config.prefix_heart_beat+tag,time.time())
-                self.redis_send_client.expire(config.prefix_heart_beat+tag,config.host_check_success_time)
+            try:
+                for tag in self.listen_tag:
+                    self.redis_send_client.set(config.prefix_heart_beat+tag,time.time())
+                    self.redis_send_client.expire(config.prefix_heart_beat+tag,config.host_check_success_time)
+            except:
+                time.sleep(5)
             
             time.sleep(config.heart_beat_interval)
                 
@@ -76,6 +78,7 @@ class LocalHost(object):
         self.set_log(tag,exe_result,is_update=False)
         logger.debug(str(exe_result)+" begin")
         stdout,stderr="",""
+        #self.redis_refresh()
         try:
             """
             c=subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -84,7 +87,7 @@ class LocalHost(object):
             """
             p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
             
-            background_log_set=gen_background_log_set(cmd_uuid,self.redis_log_client)
+            background_log_set=gen_background_log_set(cmd_uuid,self.redis_log_client)   ###????重新连后有一定概率出错
             
             stdout,stderr = background_log_set(p.stdout,p.stderr)
                         
@@ -106,23 +109,26 @@ class LocalHost(object):
         self.thread_q.get()          #停止阻塞下一个线程   
     
     
-    @connection_error_rerun()
     def __forever_run(self,tag):
         """
         无限接收命令
         """
-        self.redis_init()
         key = config.prefix_cmd + tag
         while True:
             self.thread_q.put(1)                #控制并发数
             try:
                 #使用阻塞获取 好处是能及时响应 
-                t_allcmd=self.redis_send_client.blpop(key)                   
-            except :
-                #如果获取出现则需要先移除已经占用的队列，防止队列处于满的状态
-                self.thread_q.get()
-                raise
-
+                t_allcmd=self.redis_send_client.blpop(key)              #redis重新连接运行会有连接报错
+            except:
+                try:
+                    _t_allcmd=self.redis_send_client.lpop(key)
+                except:
+                    _t_allcmd=None
+                    #logger_err.debug(format_exc())
+                    time.sleep(5)
+                
+                t_allcmd=(_t_allcmd,_t_allcmd)   
+        
             if t_allcmd:                           
                 allcmd=t_allcmd[1]
                 
@@ -136,14 +142,15 @@ class LocalHost(object):
                     
                     t=Thread(target=self.__single_run,args=(cmd,cmd_uuid,tag))
                     t.start()
-                          
+                        
                 else:
                     #命令为空时释放队列
                     self.thread_q.get()
-
+            
             else:
                 #命令为空时释放队列
                 self.thread_q.get()    
+    
     
     @connection_error_rerun()
     def set_log(self,tag,exe_result,is_update=True):

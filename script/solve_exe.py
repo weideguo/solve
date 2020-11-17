@@ -134,11 +134,11 @@ class SolveExe(object):
 if __name__=="__main__":
     
     rc=RedisConn()
-    redis_send_client=rc.redis_init(config.redis_send)
-    redis_log_client=rc.redis_init(config.redis_log)
-    redis_tmp_client=rc.redis_init(config.redis_tmp)
-    redis_job_client=rc.redis_init(config.redis_job)
-    redis_config_client=rc.redis_init(config.redis_config)   
+    redis_send_client=rc.init(config.redis_send)
+    redis_log_client=rc.init(config.redis_log)
+    redis_tmp_client=rc.init(config.redis_tmp)
+    redis_job_client=rc.init(config.redis_job)
+    redis_config_client=rc.init(config.redis_config)   
 
     if sys.version_info<(3,0):
         input=raw_input

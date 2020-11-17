@@ -14,7 +14,7 @@ from daemon.runner import DaemonRunner
 base_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
 from lib.redis_conn import RedisConn
-from lib.logger import logger
+from lib.logger import logger,logger_err
 from core.job_manager import JobManager
 from core.proxy_manager import ProxyManager
 
@@ -32,13 +32,13 @@ solve_logo="""
 if __name__=="__main__":
     from conf import config
     
-    rc=RedisConn()
+    rc=RedisConn(max_connections=config.shared_redis_pool_size)                 #max_connections只是对于单个连接池 使用时每个db对应一个连接池
     #redis客户端线程/进程安全，可以复用
-    redis_send_client=rc.redis_init(config.redis_send)
-    #redis_log_client=rc.redis_init(config.redis_log)
-    #redis_tmp_client=rc.redis_init(config.redis_tmp)
-    #redis_job_client=rc.redis_init(config.redis_job)
-    #redis_config_client=rc.redis_init(config.redis_config)            
+    redis_send_client=rc.init(config.redis_send)
+    #redis_log_client=rc.init(config.redis_log)
+    #redis_tmp_client=rc.init(config.redis_tmp)
+    #redis_job_client=rc.init(config.redis_job)
+    #redis_config_client=rc.init(config.redis_config)            
     
     
     log_path=os.path.join(base_dir,"./logs")
@@ -87,8 +87,7 @@ if __name__=="__main__":
     elif start_mode==mode[1]:
         Manager=ProxyManager
     
-    #manager=Manager(redis_send_client,redis_log_client,redis_tmp_client,redis_job_client,redis_config_client)
-    manager=Manager([config.redis_send,config.redis_log,config.redis_tmp,config.redis_job,config.redis_config])
+    manager=Manager(rc,[config.redis_send,config.redis_log,config.redis_tmp,config.redis_job,config.redis_config])
     
     try:
         opt=sys.argv[1].strip()
@@ -209,7 +208,10 @@ if __name__=="__main__":
             pid_key=pid_key+str(self.pidfile.read_pid())
             pid=redis_send_client.lpop(pid_key)
             while pid:
-                os.kill(int(pid), signal.SIGTERM)
+                try:
+                    os.kill(int(pid), signal.SIGTERM)
+                except:
+                    pass
                 pid=redis_send_client.lpop(pid_key)
             
             #由于使用-9 需要自行删除pid文件
