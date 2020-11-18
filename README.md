@@ -83,7 +83,7 @@ playbook
   
   暂时只实现 \_\_put\_\_ \_\_get\_\_ 两个命令
   
-  \_\_put\_\_  &lt;path in remote host&gt; &lt;file to upload&gt;
+  \_\_put\_\_ &lt;file to upload&gt; &lt;path in remote host&gt; 
   
   从solve所在的主机上传文件。\_\_put\_\_为关键字，使用空格分隔参数。第一个参数为本地文件的全路径，第二个参数为要保存在远端主机的路径。远端路径不存在则创建。远端文件存在则判断MD5码是否一致，一致则不再上传，不一致则重命名远端文件然后重新上传。命令之后不要存在空格。
 
