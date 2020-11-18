@@ -189,41 +189,11 @@ class RemoteHost(MySSH):
         logger.debug(str(exe_result)+" begin")
         
         try:
-            #上传文件的cmd PUT:/local_path/file_name:/remote_path
-            #下载文件的cmd GET:/local_path:/remote_path/file_name
-            
+            #扩展命令以 "__"包围前后 使用格式如下
             #cmd="__xxx__ ..."
             #cmd=" __xxx__ ..."
-            #re.match("\s*__\w+__(\s))",cmd) 
-            
-            if re.match("PUT:.+?:.+?",cmd) or re.match("GET:.+?:.+?",cmd):                      
-                cmd_type=cmd.split(":")[0]
-                exe_result["cmd_type"]=cmd_type            
-                self.set_log(exe_result,is_update=False)      #命令执行前   
-
-                if cmd_type=="PUT":
-                    file_flag,local_file,remote_path=cmd.split(":")
-                    remote_path=remote_path.rstrip()
-                    
-                    local_md5,remote_md5,is_success,msg=self.send_file(local_file,remote_path,self.gen_set_info(cmd_uuid),self.gen_set_step(cmd_uuid))
-                    
-                elif cmd_type=="GET":
-                    file_flag,local_path,remote_file=cmd.split(":") 
-                    remote_file=remote_file.rstrip()
-                    
-                    local_md5,remote_md5,is_success,msg=self.get_file(local_path,remote_file,self.gen_set_info(cmd_uuid),self.gen_set_step(cmd_uuid))
-                
-                exe_result["local_md5"]=local_md5
-                exe_result["remote_md5"]=remote_md5
-                exe_result["is_success"]=int(is_success)
-                
-                if is_success:
-                    stdout=msg
-                    stderr=""
-                else:
-                    stdout=""
-                    stderr=msg
-                exit_code=int(not is_success) 
+            if re.match("\s*__\w+__($|\s)",cmd):
+                exe_result,stdout,stderr,exit_code=self.__exe_extend(cmd, exe_result)
 
             else:
                 cmd_type="CMD"
@@ -248,6 +218,97 @@ class RemoteHost(MySSH):
 
         self.thread_q.get()                                   #停止阻塞下一个线程            
     
+    
+    def __exe_extend(self, cmd_line, exe_result):
+        """
+        执行自定义的扩展命令
+        格式类似于shell命令即 
+        cmd arg1 arg2 ...
+        """
+        exe_result["cmd_type"]="EXTEND"               
+        self.set_log(exe_result,is_update=False)  
+        
+        cmd_uuid=exe_result["uuid"]
+        
+        def cmd_split(cmd_line):
+            """按照shell的格式分割命令行"""
+            cmd_line=cmd_line.strip()
+            cmd_list=[]
+            temp_str=""
+            for c in cmd_line:
+                if c != " ":
+                    temp_str += c
+                elif temp_str:
+                    cmd_list.append(temp_str)
+                    temp_str=""
+                else:
+                    temp_str=""
+                    
+            if temp_str:
+                cmd_list.append(temp_str)
+            return cmd_list
+            
+        try:    
+            #不能存在多余的空格
+            _cmd = cmd_split(cmd_line)
+        except:
+            stdout=""
+            stderr="parse cmd line error"
+            exit_code="1"                
+            return exe_result,stdout,stderr,exit_code
+            
+        cmd  = _cmd[0]
+        args = _cmd[1:]
+                
+        if cmd=="__put__":
+            #上传文件的cmd 
+            #__put__ /local_path/file_name /remote_path
+            local_file,remote_path = args[0],args[1]
+            remote_path=remote_path.rstrip()
+            
+            local_md5,remote_md5,is_success,msg=self.send_file(local_file,remote_path,self.gen_set_info(cmd_uuid),self.gen_set_step(cmd_uuid))
+            
+            exe_result["local_md5"]=local_md5
+            exe_result["remote_md5"]=remote_md5
+            exe_result["is_success"]=int(is_success)
+            
+            if is_success:
+                stdout=msg
+                stderr=""
+            else:
+                stdout=""
+                stderr=msg
+            exit_code=int(not is_success) 
+            
+         
+        elif cmd=="__get__":
+            #下载文件的cmd 
+            #__get__ /remote_path/file_name /local_path
+            remote_file,local_path = args[0],args[1]
+            remote_file=remote_file.rstrip()
+            
+            local_md5,remote_md5,is_success,msg=self.get_file(local_path,remote_file,self.gen_set_info(cmd_uuid),self.gen_set_step(cmd_uuid))
+        
+            exe_result["local_md5"]=local_md5
+            exe_result["remote_md5"]=remote_md5
+            exe_result["is_success"]=int(is_success)
+            
+            if is_success:
+                stdout=msg
+                stderr=""
+            else:
+                stdout=""
+                stderr=msg
+            exit_code=int(not is_success) 
+        
+        else:
+            #未实现的命令
+            stdout=""
+            stderr="extend command [%s]  not define" % cmd
+            exit_code="127"               
+
+        return exe_result,stdout,stderr,exit_code
+        
     
     #确保当前执行的命令日志正确返回
     @connection_error_rerun()

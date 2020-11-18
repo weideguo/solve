@@ -1,7 +1,7 @@
 #上传命令也可以放到后台运行
 #直接对host操作
 [{{realhost.ip}}]
-PUT:{{session.file_to_send}}:/tmp  &
+__put__ {{session.file_to_send}} /tmp  &
 echo "upload begin"
 
 wait

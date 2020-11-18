@@ -5,6 +5,6 @@
 #选择cluster操作
 [{{db2.host.ip}}]
 global.xx=`date +%s`_$RANDOM
-PUT:{{session.file_to_send}}:/tmp/upload_test/{{site}}/x
+__put__ {{session.file_to_send}} /tmp/upload_test/{{site}}/x
 #cat /tmp/`basename {{session.file_to_send}}`
 echo "xxx"

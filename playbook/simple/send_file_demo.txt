@@ -5,6 +5,6 @@
 #对host操作
 [{{host.ip}}]
 
-PUT:{{session.file_to_send}}:/tmp/upload_test/x
+__put__ {{session.file_to_send}} /tmp/upload_test/x
 #cat /tmp/`basename {{session.file_to_send}}`
 echo "xxx"

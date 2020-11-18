@@ -61,14 +61,6 @@ playbook
   
   单行shell命令
 
-* PUT:&lt;file to upload&gt;:&lt;path in remote host&gt;
-  
-  从solve所在的主机上传文件。PUT为关键字，使用":"分隔参数。第一个参数为本地文件的全路径，第二个参数为要保存在远端主机的路径。远端路径不存在则创建。远端文件存在则判断MD5码是否一致，一致则不再上传，不一致则重命名远端文件然后重新上传。命令之后不要存在空格。
-
-* GET:&lt;local path&gt;:&lt;file in remote host&gt;
-  
-  从远端主机下载文件到solve所在的主机。GET为关键字，使用":"分隔参数。第一个参数为要保存在本地的路径，第二个参数为远端主机文件的全路径。本地路径不存在则创建，本地文件已经存在则重命名然后下载。命令之后不要存在空格。
-
 * wait
   
   wait为关键字，阻塞至所有后台运行全命令结束。默认playbook的命令逐行运行，后一行命令在前一行命令执行结束后再运行，可以使用<single-line shell command> &实现将单行命令放入后台运行，从而不必阻塞后一行命令。
@@ -83,8 +75,22 @@ playbook
 
 * \# &lt;comment&gt;
 
-  
   \#开头的注释。不要在注释中包含jinja模板，即双括号包含字段如{{xxx}}
+
+* __&lt;keyword&gt;__ 自定义扩展命令
+  
+  开头单词以 “__” 包围的命令行被当成扩展命令自定义实现，使用格式形同普通的shell，即 cmd arg1 args ...
+  
+  暂时只实现 __put__ __get__ 两个命令
+  
+  __put__  &lt;path in remote host&gt; &lt;file to upload&gt;
+  
+  从solve所在的主机上传文件。PUT为关键字，使用" "分隔参数。第一个参数为本地文件的全路径，第二个参数为要保存在远端主机的路径。远端路径不存在则创建。远端文件存在则判断MD5码是否一致，一致则不再上传，不一致则重命名远端文件然后重新上传。命令之后不要存在空格。
+
+  __get__ &lt;file in remote host&gt; &lt;local path&gt;
+  
+  从远端主机下载文件到solve所在的主机。GET为关键字，使用" "分隔参数。第一个参数为远端主机文件的全路径，第二个参数为要保存在本地的路径。本地路径不存在则创建，本地文件已经存在则重命名然后下载。命令之后不要存在空格。
+
 
 ### 参数替换 ###
 
@@ -174,15 +180,15 @@ echo {{session.my_session_test}}
 mysql -u{{const.db_user}} -p{{const.db_passwd}} -h127.0.0.1 -P{{db_port}} -e"show databases"
 #上传文件 远端目录不存在则创建 文件名跟本地一样 
 #通过md5判断是否一致 远端文件存但md5不一样则被重命令
-PUT:/tmp/my_local_file:/tmp
-PUT:{{session.local_file}}:{{session.remote_path}}
+__put__ /tmp/my_local_file /tmp
+__put__ {{session.local_file}} {{session.remote_path}}
 #上传也可以后台运行
-PUT:{{session.local_file}}:{{session.remote_path}} &
+__put__ {{session.local_file}} {{session.remote_path}} &
 #下载文件 本地目录不存在则创建 文件名跟远端的一样 本地文件存在则被重命令
-GET:/tmp:/tmp/my_remote_file
-GET:{{session.local_path}}:{{session.remote_file}}
+__get__ /tmp/my_remote_file /tmp
+__get__ {{session.remote_file}} {{session.local_path}} 
 #下载也可以后台运行
-GET:{{session.local_path}}:{{session.remote_file}} &
+__get__ {{session.remote_file}} {{session.local_path}} &
 #后台运行 &之后只允许存在空格
 #可以跨多个主机后台运行，即发生主机跳转也可以
 echo "111" ; sleep 15 &

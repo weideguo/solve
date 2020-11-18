@@ -4,4 +4,4 @@
 #如果本地目录不存在 则创建
 #选择cluster进行操作
 [{{db1.host.ip}}]
-GET:/tmp/x/a/b:{{session.file_2_get}}
+__get__ {{session.file_2_get}} /tmp/x/a/b

@@ -13,9 +13,9 @@
 #CONTENT-END
 #master传文件到proxy
 [192.168.253.128]
-PUT:{{session.file}}:/tmp/a/
+__put__ {{session.file}} /tmp/a/
 #proxy传文件到远端主机
 [proxy:192.168.253.128:192.168.253.128]
 global.filename=`basename {{session.file}}`
-#PUT命令中只允许变量替换，不能放入shell命令
-PUT:/tmp/a/{{global.filename}}:/tmp
+#__put__命令中只允许变量替换，不能放入shell命令
+__put__ /tmp/a/{{global.filename}} /tmp

@@ -1,5 +1,5 @@
 #使用proxy连接远端主机
-#PUT用于文件上传前必须确认文件在proxy是否存在
+#__put__用于文件上传前必须确认文件在proxy是否存在
 #默认proxy与master没有文件同步，需要额外的文件同步策略。如rsync，或者在命令行中对proxy分发文件，然后在传给远端主机。
 #需要启动一个proxy且设置conf/config.py的proxy_mark="AAA"
 #proxy与远端主机需要ssh能连通

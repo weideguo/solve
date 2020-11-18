@@ -1,7 +1,7 @@
 #下载操作可以放后台运行
 #直接对host操作
 [{{realhost.ip}}]
-GET:/tmp:{{session.file_2_get}}     &
+__get__ {{session.file_2_get}}  /tmp  &
 
 echo "download begin"
 wait
