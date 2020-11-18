@@ -77,17 +77,17 @@ playbook
 
   \#开头的注释。不要在注释中包含jinja模板，即双括号包含字段如{{xxx}}
 
-* __&lt;keyword&gt;__ 自定义扩展命令
+* \_\_&lt;keyword&gt;\_\_ 自定义扩展命令
   
   开头单词以 “__” 包围的命令行被当成扩展命令自定义实现，使用格式形同普通的shell，即 cmd arg1 args ...
   
-  暂时只实现 __put__ __get__ 两个命令
+  暂时只实现 \_\_put\_\_ \_\_get\_\_ 两个命令
   
-  __put__  &lt;path in remote host&gt; &lt;file to upload&gt;
+  \_\_put\_\_  &lt;path in remote host&gt; &lt;file to upload&gt;
   
   从solve所在的主机上传文件。PUT为关键字，使用" "分隔参数。第一个参数为本地文件的全路径，第二个参数为要保存在远端主机的路径。远端路径不存在则创建。远端文件存在则判断MD5码是否一致，一致则不再上传，不一致则重命名远端文件然后重新上传。命令之后不要存在空格。
 
-  __get__ &lt;file in remote host&gt; &lt;local path&gt;
+  \_\_get\_\_ &lt;file in remote host&gt; &lt;local path&gt;
   
   从远端主机下载文件到solve所在的主机。GET为关键字，使用" "分隔参数。第一个参数为远端主机文件的全路径，第二个参数为要保存在本地的路径。本地路径不存在则创建，本地文件已经存在则重命名然后下载。命令之后不要存在空格。
 
