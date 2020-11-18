@@ -11,8 +11,12 @@ from redis.exceptions import ConnectionError
 from .logger import logger_err
 
 
-def gen_background_log_set(cmd_uuid,redis_client,len=0,retry=60,interval=1):
-    """生成执行命令时设置日志的函数"""
+def gen_background_log_set(cmd_uuid,redis_client,len=0,interval=1,retry=60):
+    """
+    生成执行命令时设置日志的函数
+    retry       发生错误时重新运行次数  为0则无限直到成功 
+    interval    发生错误时重新运行间隔  为0则不重新运行   retry与此冲突则以这个优先
+    """
     def background_log_set(stdout, stderr):
         def update_log(out,tag):
             """真实用于设置日志的后台函数"""
@@ -67,14 +71,16 @@ def gen_background_log_set(cmd_uuid,redis_client,len=0,retry=60,interval=1):
                 
                 # 单行读取，每一行至少为"\n"
                 if not __new_log:
-                    r=0
-                    while new_log:
+                    _retry=0
+                    while new_log and interval and ((not retry) or _retry< retry):
                         #尝试一段时间 都失败再报错 redis sentinel 默认30s恢复
+                        _retry+=1
                         time.sleep(interval)
-                        r+=1
+                        logger_err.debug("background_log_set retry %d" % _retry)
                         new_log=set_new_log(new_log)
-                        if r>retry:
-                            raise Exception("can not write log to redis: ", new_log)
+                     
+                    if new_log:
+                        raise Exception("can not write log to redis: ", new_log)
                     break
                 
                 new_log=set_new_log(new_log)
@@ -105,12 +111,13 @@ def gen_background_log_set(cmd_uuid,redis_client,len=0,retry=60,interval=1):
 
 
 
-def connection_error_rerun(interval=5):
+def connection_error_rerun(interval=5,retry=0):
     """
-    当发生连接错误时函数的重新运行
+    装饰器 当发生连接错误时函数的重新运行
     """
     def __wrapper(func):                  
         def __wrapper2(*args, **kwargs):
+            _retry=0
             while True:
                 try:
                     func(*args, **kwargs)
@@ -118,14 +125,19 @@ def connection_error_rerun(interval=5):
                 except ConnectionError:
                 #except:
                     logger_err.debug(format_exc())
-                    time.sleep(interval)
-                    if args:
-                        func_name="%s.%s" % (args[0].__class__.__name__, func.__name__)
-                    else:
-                        func_name=func.__name__
                     
-                    logger_err.info("function:%s  retry" % func_name)
-                          
+                    if interval and ((not retry) or _retry< retry):
+                        _retry += 1
+                        time.sleep(interval)
+                        if args:
+                            func_name="%s.%s" % (args[0].__class__.__name__, func.__name__)
+                        else:
+                            func_name=func.__name__
+                        
+                        logger_err.info("function:%s  retry %d" % (func_name,_retry))
+                    else:
+                        break
+                
         return __wrapper2
     return __wrapper
     
@@ -148,7 +160,7 @@ def retry_wrap(f,error_class=BaseException,interval=5,retry=0,err_return=None,er
                 if interval and ((not retry) or _retry< retry):
                     _retry += 1
                     #print("function %s retry %d" % (f.__name__,_retry))
-                    logger_err.debug("PID %d ThreadID %d function %s retry %d" % (os.getpid(), threading.currentThread().ident ,f.__name__,_retry))
+                    logger_err.info("PID %d ThreadID %d function %s retry %d" % (os.getpid(), threading.currentThread().ident ,f.__name__,_retry))
                     time.sleep(interval)
                 else:
                     r=err_return
@@ -162,12 +174,15 @@ def retry_wrap(f,error_class=BaseException,interval=5,retry=0,err_return=None,er
 
 class RerunableThread(threading.Thread):
     """发生错误导致异常推出后可以重复执行的线程"""
-    def __init__(self, interval=5, target=None, *args,**kwargs):
+    def __init__(self, interval=5, retry=0, target=None, *args,**kwargs):
         threading.Thread.__init__(self)
         self.interval = interval
+        self.retry  = retry
         self.target = target
-        self.args = args
+        self.args   = args
         self.kwargs = kwargs
+        
+        self._retry  = 0
     
     
     def run(self):
@@ -176,7 +191,9 @@ class RerunableThread(threading.Thread):
         except:
             #print(format_exc())
             logger_err.debug(format_exc())
-            time.sleep(self.interval)
-            self.run()
+            if self.interval and ((not self.retry) or self._retry< self.retry):
+                self._retry += 1
+                time.sleep(self.interval)
+                self.run()
     
     

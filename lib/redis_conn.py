@@ -60,14 +60,6 @@ class RedisConn(object):
                      decode_responses=self.decode_responses, encoding_errors=self.encoding_errors,retry_on_timeout=self.retry_on_timeout,\
                      connection_pool_class=SentinelBlockingConnectionPool, max_connections=self.max_connections, timeout=self.timeout)
         
-        #sentinel = Sentinel(sentinels)
-        #if is_master:
-        #    client = sentinel.master_for(service_name, password=password, db=db,\
-        #                                decode_responses=self.decode_responses, encoding_errors=self.encoding_errors)
-        #else:
-        #    client = sentinel.slave_for(service_name, password=password, db=db, \
-        #                                decode_responses=self.decode_responses, encoding_errors=self.encoding_errors)
-        
         return client
         
         
@@ -85,9 +77,9 @@ class RedisConn(object):
         """
         with self.lock:
             #可以允许多个线程同时发起创建命令
-            #for conf,conn in self.conn_list:
-            #    if redis_config == conf:
-            #        return conn
+            for conf,conn in self.conn_list:
+                if redis_config == conf:
+                    return conn
             
             password=redis_config["password"]
             db=redis_config["db"]

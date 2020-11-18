@@ -87,7 +87,7 @@ class LocalHost(object):
             """
             p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
             
-            background_log_set=gen_background_log_set(cmd_uuid,self.redis_log_client)   ###????重新连后有一定概率出错
+            background_log_set=gen_background_log_set(cmd_uuid,self.redis_log_client)  
             
             stdout,stderr = background_log_set(p.stdout,p.stderr)
                         
