@@ -127,7 +127,7 @@ local_ip_list=["127.0.0.1","localhost"]  #标记为本地地址，对本地的�
 max_localhost_thread=20                  #本地模式运行时的最大并发数
 
                                          #以下都是对于单个redis db而言，n个db的实际数量要乘n
-shared_redis_pool_size=100               #主进程redis的连接池的大小  用于连接管理 任务管理等 
+shared_redis_pool_size=30                #主进程redis的连接池的大小  用于连接管理 任务管理等 
 localhost_redis_pool_size=10             #本地连接redis的连接池的大小   
 remote_host_redis_pool_size=5            #远程连接redis的连接池的大小   
 cluster_redis_pool_size=5                #每个执行对象执行时的连接池

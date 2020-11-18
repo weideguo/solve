@@ -30,8 +30,10 @@ class ClusterExecution(object):
         """
         if redis_connect:
             self.redis_connect=redis_connect
+            self.is_disconnect=False
         else:
             self.redis_connect=RedisConn(config.cluster_redis_pool_size)
+            self.is_disconnect=True
         
         self.redis_send_config=redis_config_list[0]
         self.redis_log_config=redis_config_list[1]
@@ -110,11 +112,12 @@ class ClusterExecution(object):
         self.cluster_id=""
         self.target="" 
         
-        for client in self.redis_client_list:
-            try:
-                client.connection_pool.disconnect()
-            except:
-                pass
+        if self.is_disconnect:
+            for client in self.redis_client_list:
+                try:
+                    client.connection_pool.disconnect()
+                except:
+                    pass
 
     
     def render(self,target,cmd):

@@ -155,6 +155,7 @@ class JobManager(object):
         只允许干净连接，即命令队列中不应该存在以前的旧命令
 
         """
+        #redis_connect=self.redis_connect   #全部进程使用全局共享连接池
         #redis_connect=RedisConn()          #每个进程共享连接池       
         redis_connect=None                  #每个远程连接对象自己创建独占的连接池
         while True:
