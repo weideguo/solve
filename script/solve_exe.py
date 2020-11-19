@@ -40,16 +40,24 @@ class SolveExe(object):
     job_info["begin_host"]=""                   #存在跳过时开始执行命令的主机
     
     
-    def __init__(self,redis_send_client,redis_log_client,redis_tmp_client,redis_job_client,job_info={}):
-        self.redis_send_client    = redis_send_client
-        self.redis_log_client     = redis_log_client
-        self.redis_tmp_client  = redis_tmp_client
-        self.redis_job_client     = redis_job_client
+    def __init__(self,job_info={}):
+
     
         for k in job_info:
             self.job_info[k] = job_info[k]
-    
+        
+        self.redis_connect=RedisConn()
+        self.redis_init()
+        
+        
+    def redis_init(self):
+        self.redis_send_client=self.redis_connect.init(config.redis_send)
+        self.redis_log_client=self.redis_connect.init(config.redis_log)
+        self.redis_tmp_client=self.redis_connect.init(config.redis_tmp)
+        self.redis_job_client=self.redis_connect.init(config.redis_job)
+        self.redis_config_client=self.redis_connect.init(config.redis_config)  
 
+    
     def get_session_var_name(self):
         """
         从playbook中提取session的参数名
@@ -119,27 +127,41 @@ class SolveExe(object):
                         """
                         杀死当前的执行对象
                         """
-                        redis_send_client.set(config.prefix_kill+cluster_id,time.time())
-                        redis_log_client.hset(config.prefix_sum+cluster_id,'stop_str','killing')
+                        self.redis_send_client.set(config.prefix_kill+cluster_id,time.time())
+                        self.redis_log_client.hset(config.prefix_sum+cluster_id,'stop_str','killing')
     
         result_sum={"complete":complete,"fail":fail,"uncomplete":uncomplete}
         return result_sum
+
+    
+    def is_job_done(self, job_result):
+        if job_result["uncomplete"] or (not job_result["complete"] and not job_result["uncomplete"] and not job_result["fail"]):
+            return False
+        else:
+            return True
+     
 
     def key_expire(self):
         self.redis_tmp_client.expire(self.session,config.tmp_config_expire_sec) 
 
 
     
-
 if __name__=="__main__":
     
-    rc=RedisConn()
-    redis_send_client=rc.init(config.redis_send)
-    redis_log_client=rc.init(config.redis_log)
-    redis_tmp_client=rc.init(config.redis_tmp)
-    redis_job_client=rc.init(config.redis_job)
-    redis_config_client=rc.init(config.redis_config)   
-
+    if (len(sys.argv)==2 and sys.argv[1] not in ["--block","-b"]) or (len(sys.argv)>2):
+        print("useage:")
+        print("%s [ --help | -h | --block | -b ]" % sys.argv[0])
+        exit()
+    
+    
+    block_tag=False    
+    if len(sys.argv)==2 and sys.argv[1] in ["--block","-b"]:
+        """
+        使用阻塞模式，即每次运行一行后阻塞
+        """
+        block_tag=True
+    
+    
     if sys.version_info<(3,0):
         input=raw_input
 
@@ -160,18 +182,6 @@ if __name__=="__main__":
             print("process abort,bye!")
             exit()
     
-    block_tag=False
-    if len(sys.argv) > 1:
-        if sys.argv[1] == '--help' or sys.argv[1] == '-h':
-            print("useage:")
-            print("%s [ --help | -h | --block | -b ]" % sys.argv[0])
-            exit()
-        if sys.argv[1] == '--block' or sys.argv[1] == '-b':
-            """
-            使用阻塞模式，即每次运行一行后阻塞
-            """
-            block_tag=True
-    
     new_info=get_var_interactive(["target","playbook"])
     
     if block_tag:
@@ -183,7 +193,8 @@ if __name__=="__main__":
             cluster_id=uuid.uuid1().hex
             new_info["target"]=target_list[0]+config.spliter+cluster_id
             block_key=config.prefix_block+cluster_id
-            redis_send_client.rpush(block_key,"0")
+            RedisConn().init(config.redis_send).rpush(block_key,"0")
+            #redis_send_client.rpush(block_key,"0")
             print(block_key)
     #exit()
     for k in new_info:
@@ -191,7 +202,7 @@ if __name__=="__main__":
             print("%s can not be null" % k)
             exit()
      
-    se=SolveExe(redis_send_client,redis_log_client,redis_tmp_client,redis_job_client,new_info)
+    se=SolveExe(new_info)
     
     print("--------------------------init--------------------------"+se.job_name) 
     
@@ -207,16 +218,9 @@ if __name__=="__main__":
     
     #开始执行    
     se.exe()  
-    
     job_result=se.check_job_result()
     
-    
-    def is_job_done(job_result):
-        if job_result["uncomplete"] or (not job_result["complete"] and not job_result["uncomplete"] and not job_result["fail"]):
-            return False
-        else:
-            return True
-        
+     
     @atexit.register
     def exit_opt():
         """
@@ -226,7 +230,7 @@ if __name__=="__main__":
         se.key_expire() 
         
         job_result=se.check_job_result(kill=True)
-        if is_job_done(job_result):
+        if se.is_job_done(job_result):
             #正常执行结束
             tag="done"
         else:
@@ -237,7 +241,7 @@ if __name__=="__main__":
         print("--------------------------%s--------------------------%s" % (tag,se.job_name))
     
     
-    while not is_job_done(job_result):
+    while not se.is_job_done(job_result):
         print(job_result)
         time.sleep(1)
         job_result=se.check_job_result()
