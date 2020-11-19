@@ -72,6 +72,25 @@ def file_row_count(file):
     return rownum
 
 
+def cmd_split(cmd_line):
+    """按照shell的格式分割命令行"""
+    cmd_line=cmd_line.strip()
+    cmd_list=[]
+    temp_str=""
+    for c in cmd_line:
+        if c != " ":
+            temp_str += c
+        elif temp_str:
+            cmd_list.append(temp_str)
+            temp_str=""
+        else:
+            temp_str=""
+            
+    if temp_str:
+        cmd_list.append(temp_str)
+    return cmd_list
+
+
 def Singleton(cls):
     """
     线程安全的单例模式装饰器

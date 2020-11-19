@@ -7,7 +7,7 @@ import salt.client
 from traceback import format_exc
 
 from conf import config
-from lib.utils import Singleton,get_host_ip,my_md5
+from lib.utils import Singleton,get_host_ip,my_md5,cmd_split
 from lib.mysalt import MySalt
 from lib.logger import logger,logger_err
 from ..abstract import abstract_conn
@@ -136,32 +136,35 @@ class SaltConn(AbstractConn):
         try:
             s=MySalt()
              
-            if re.match("PUT:.+?:.+?",cmd) or re.match("GET:.+?:.+?",cmd):
-                cmd_type=cmd.split(":")[0]
-                exe_result["cmd_type"]=cmd_type
-                self.set_log(exe_result,is_update=False)      #命令执行前
-
-                if cmd_type=="PUT":
-                    file_flag,local_file,remote_path=cmd.split(":")
-                     
-                    stdout,stderr,exit_code=self.__send_file(ip,local_file,remote_path,s,cmd_uuid)                 
-
-                elif cmd_type=="GET":
-                    file_flag,local_path,remote_file=cmd.split(":")
-                    r=s.get(ip,local_path,remote_file) 
-                    if r[ip]:
-                        stdout,stderr,exit_code=("","",0)
-                    else:
-                        stdout=""
-                        exit_code=1
-                        if not s.local.opts['file_recv']:
-                            stderr="[file_recv=True] must set on salt master's config file"
-                        elif os.path.isfile(local_path):                        
-                            stderr="local path is a file"
-                        elif not s.file_exists(ip,remote_file)[ip]:
-                            stderr="remote file not exist"
-                        else:
-                            stderr="some error happen when get file from remote host"
+            #if re.match("PUT:.+?:.+?",cmd) or re.match("GET:.+?:.+?",cmd):
+            #    cmd_type=cmd.split(":")[0]
+            #    exe_result["cmd_type"]=cmd_type
+            #    self.set_log(exe_result,is_update=False)      #命令执行前
+            #
+            #    if cmd_type=="PUT":
+            #        file_flag,local_file,remote_path=cmd.split(":")
+            #         
+            #        stdout,stderr,exit_code=self.__send_file(ip,local_file,remote_path,s,cmd_uuid)                 
+            #
+            #    elif cmd_type=="GET":
+            #        file_flag,local_path,remote_file=cmd.split(":")
+            #        r=s.get(ip,local_path,remote_file) 
+            #        if r[ip]:
+            #            stdout,stderr,exit_code=("","",0)
+            #        else:
+            #            stdout=""
+            #            exit_code=1
+            #            if not s.local.opts['file_recv']:
+            #                stderr="[file_recv=True] must set on salt master's config file"
+            #            elif os.path.isfile(local_path):                        
+            #                stderr="local path is a file"
+            #            elif not s.file_exists(ip,remote_file)[ip]:
+            #                stderr="remote file not exist"
+            #            else:
+            #                stderr="some error happen when get file from remote host"
+                            
+            if re.match("\s*__\w+__($|\s)",cmd):
+                exe_result,stdout,stderr,exit_code=self.__exe_extend(cmd, exe_result, s)
             else:
                 exe_result["cmd_type"]="CMD"
                 self.set_log(exe_result,is_update=False)      #命令执行前  
@@ -181,7 +184,49 @@ class SaltConn(AbstractConn):
         self.set_log(exe_result)               #命令执行完毕后更新日志
         logger.debug(str(exe_result)+" done")
 
-
+    
+    def __exe_extend((self, cmd_line, exe_result, s):
+        exe_result["cmd_type"]="EXTEND"            
+        self.set_log(exe_result,is_update=False)  
+        
+        cmd_uuid=exe_result["uuid"]
+        
+        try:    
+            #不能存在多余的空格
+            _cmd = cmd_split(cmd_line)
+        except:
+            stdout=""
+            stderr="parse cmd line error"
+            exit_code="1"                
+            return exe_result,stdout,stderr,exit_code
+            
+        cmd  = _cmd[0]
+        args = _cmd[1:]
+        
+        if cmd_type=="__put__":
+            local_file,remote_path=args[0],args[1]
+             
+            stdout,stderr,exit_code=self.__send_file(ip,local_file,remote_path,s,cmd_uuid)                 
+        
+        elif cmd_type=="__get__":
+            remote_file,local_path=args[0],args[1]
+            r=s.get(ip,local_path,remote_file) 
+            if r[ip]:
+                stdout,stderr,exit_code=("","",0)
+            else:
+                stdout=""
+                exit_code=1
+                if not s.local.opts['file_recv']:
+                    stderr="[file_recv=True] must set on salt master's config file"
+                elif os.path.isfile(local_path):                        
+                    stderr="local path is a file"
+                elif not s.file_exists(ip,remote_file)[ip]:
+                    stderr="remote file not exist"
+                else:
+                    stderr="some error happen when get file from remote host"  
+        return exe_result,stdout,stderr,exit_code
+        
+        
     def conn_manage(self):
         """ 
         单次连接状态管理

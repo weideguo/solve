@@ -14,7 +14,7 @@ from traceback import format_exc
 from lib.redis_conn import RedisConn
 from lib.wrapper import gen_background_log_set,connection_error_rerun
 from lib.logger import logger,logger_err
-from lib.utils import my_md5,get_host_ip
+from lib.utils import my_md5,get_host_ip,cmd_split
 from lib.myssh import MySSH
 from conf import config
 
@@ -229,24 +229,6 @@ class RemoteHost(MySSH):
         self.set_log(exe_result,is_update=False)  
         
         cmd_uuid=exe_result["uuid"]
-        
-        def cmd_split(cmd_line):
-            """按照shell的格式分割命令行"""
-            cmd_line=cmd_line.strip()
-            cmd_list=[]
-            temp_str=""
-            for c in cmd_line:
-                if c != " ":
-                    temp_str += c
-                elif temp_str:
-                    cmd_list.append(temp_str)
-                    temp_str=""
-                else:
-                    temp_str=""
-                    
-            if temp_str:
-                cmd_list.append(temp_str)
-            return cmd_list
             
         try:    
             #不能存在多余的空格
