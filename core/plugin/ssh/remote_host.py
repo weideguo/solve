@@ -16,8 +16,11 @@ from lib.wrapper import gen_background_log_set,connection_error_rerun
 from lib.logger import logger,logger_err
 from lib.utils import my_md5,get_host_ip,cmd_split
 from lib.myssh import MySSH
+from lib.password import Password
 from conf import config
 
+
+password=Password(aes_key=config.aes_key)
 
 
 class RemoteHost(MySSH):
@@ -31,6 +34,8 @@ class RemoteHost(MySSH):
     """
     
     def __init__(self,host_info,redis_config_list,t_number=config.max_concurrent_thread,redis_connect=None):
+        
+        host_info["passwd"] = password.decrypt(str(host_info.get("passwd","")))
         
         super(RemoteHost, self).__init__(host_info)       
         

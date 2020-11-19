@@ -7,7 +7,6 @@ import sys
 import paramiko
 from paramiko import SSHClient
 from lib.utils import my_md5
-from lib.password import password
 
 
 class MySSH(object):
@@ -18,11 +17,15 @@ class MySSH(object):
     下载文件
     """
     
-    def __init__(self,host_info,*arg,**kwargs):     
+    def __init__(self,host_info,*arg,**kwargs): 
+        """
+        host_info {"ip":"127.0.01","ssh_port":22,"user":"root","passwd":"root_passwd"}
+        """
+    
         self.hostname = host_info["ip"]
         self.port     = int(host_info.get("ssh_port", 22))
         self.username = host_info.get("user", "root")
-        self.password = password.decrypt(str(host_info.get("passwd","")))
+        self.password = host_info.get("passwd","")
         
         self.ssh_client=None
         

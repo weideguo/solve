@@ -2,7 +2,6 @@
 import sys
 import base64
 
-from conf import config
 
 def _bytes(_str):
     """str 转成 byte"""
@@ -73,12 +72,11 @@ class Password():
             raise Exception("crypt_type %s not support" % crypt_type)
         
         
-        
-password=Password(aes_key=config.aes_key)
-#password=Password(aes_key="""<HeK7PJpS=oE=,yN3"5;\\E=>U2lbXL|W""")    
-
-
 if __name__=="__main__":
+    #password=Password(aes_key="""<HeK7PJpS=oE=,yN3"5;\\E=>U2lbXL|W""")  
+    from conf import config
+    password=Password(aes_key=config.aes_key)
+    
     en_str=password.encrypt("111")
     password.decrypt(en_str)
 
