@@ -263,7 +263,7 @@ redis_send>rpush select@@@@@a20fb0fcd6ec11eaadc7000c295dd589 "aaa bbb ccc"
 
 ### 锁 ###
 ```shell
-#内部使用两种锁机制用于安全控制以及阻塞冗余操作
+#内部使用两种锁机制用于安全控制（防止启动远程连接时执行错误的过期命令）以及阻塞冗余操作（对同一主机上传多次相同文件通过复制代替）
 #查看主机的锁
 python script/solve_lock.py 10.0.0.1 
 #更详细的查看
