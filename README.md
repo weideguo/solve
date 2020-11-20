@@ -225,7 +225,7 @@ redis_send> rpush job_list job_dcf3e208d47011e99464000c295dd589
 #查看执行结果
 redis_log> hgetall log_job_dcf3e208d47011e99464000c295dd589
 ```
-```
+```shell
 #通过脚本模式运行
 #根据提示输入 target、playbook以及需要设置的session参数
 python script/solve_exe.py
