@@ -165,7 +165,7 @@ redis_send redis_log redis_job redis_config为配置文件conf/config.py中设�
 
 更多playbook与使用样例详见[playbook示例目录](./playbook/simple/)
 
-```
+```shell
 #playbook命令样例
 #跳转语句 左右只允许存在空格
 [10.0.0.1]
@@ -261,6 +261,19 @@ redis_send>rpush select@@@@@a20fb0fcd6ec11eaadc7000c295dd589 "aaa bbb ccc"
 ```
 
 
+### 锁 ###
+```shell
+#内部使用两种锁机制用于安全控制以及阻塞冗余操作
+#查看主机的锁
+python script/solve_lock.py 10.0.0.1 
+#更详细的查看
+python script/solve_lock.py -a 10.0.0.1
+#释放锁 需要根据提示输入
+python script/solve_lock.py -r 10.0.0.1 
+#强制释放锁 需要根据提示输入
+python script/solve_lock.py -f 10.0.0.1 
+```
+
 
 extend
 --------------
@@ -318,6 +331,6 @@ master/proxy服务之间的文件同步需要额外实现。（如：1.使用rsy
 ### redis config ###  
 ```
 #redis.conf
-#设置redis的timeout参数为一个较小值，可以回收空闲的连接，避免连接数过大
-timeout 100
+#可设置redis的timeout参数为一个较小值，可以回收空闲的连接（不是必须，已经实现连接复用）
+timeout 172800
 ```
