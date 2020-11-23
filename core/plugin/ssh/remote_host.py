@@ -14,7 +14,7 @@ from traceback import format_exc
 from lib.redis_conn import RedisConn
 from lib.wrapper import gen_background_log_set,connection_error_rerun
 from lib.logger import logger,logger_err
-from lib.utils import my_md5,get_host_ip,cmd_split
+from lib.utils import my_md5,get_host_ip,cmd_split,is_file_in_dir,safe_decode
 from lib.myssh import MySSH
 from lib.password import Password
 from conf import config
@@ -48,6 +48,9 @@ class RemoteHost(MySSH):
         self.cmd_key       = config.prefix_cmd+self.tag
         self.heartbeat_key = config.prefix_heart_beat+self.tag
         self.cloing_key    = config.prefix_closing+self.tag
+        
+        self.extends_dir    = "extends"                                             #存放扩展命令对应文件的相对目录
+        self.extends_postfixs = ["",".sh"]                                          #扩展命令对应文件的可选后缀
         
         self.redis_send_config=redis_config_list[0]
         self.redis_log_config=redis_config_list[1]
@@ -246,7 +249,7 @@ class RemoteHost(MySSH):
             
         cmd  = _cmd[0]
         args = _cmd[1:]
-                
+                        
         if cmd=="__put__":
             #上传文件的cmd 
             #__put__ /local_path/file_name /remote_path
@@ -266,7 +269,6 @@ class RemoteHost(MySSH):
                 stdout=""
                 stderr=msg
             exit_code=int(not is_success) 
-            
          
         elif cmd=="__get__":
             #下载文件的cmd 
@@ -287,15 +289,21 @@ class RemoteHost(MySSH):
                 stdout=""
                 stderr=msg
             exit_code=int(not is_success) 
-        
         else:
-            #未实现的命令
-            stdout=""
-            stderr="extend command [%s]  not define" % cmd
-            exit_code="127"               
-
-        return exe_result,stdout,stderr,exit_code
+            #扩展目录中的扩展命令
+            filename,__cmd=is_file_in_dir(cmd,self.extends_postfixs,os.path.join(config.base_dir,self.extends_dir))
+            __cmd=safe_decode(__cmd)
+            if __cmd:
+                full_cmd="%s(){ %s }; %s %s" % (cmd, __cmd, cmd, " ".join(args))
+                stdout,stderr,exit_code = self.exe_cmd(full_cmd)
+            else:
+                #未实现的命令
+                stdout=""
+                stderr="extend command [%s]  not define" % cmd
+                exit_code="127"               
         
+        return exe_result,stdout,stderr,exit_code
+    
     
     #确保当前执行的命令日志正确返回
     @connection_error_rerun()
