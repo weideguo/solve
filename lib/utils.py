@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import os
 import socket
 import hashlib
 import threading
@@ -89,6 +89,28 @@ def cmd_split(cmd_line):
     if temp_str:
         cmd_list.append(temp_str)
     return cmd_list
+
+
+def is_file_in_dir(shorname,postfixs,dir):
+    """指定文件夹中是否存在指定后缀的文件"""
+    
+    _dir = os.listdir(dir)
+    for postfix in postfixs:
+        if shorname+postfix in _dir:
+            content=""
+            with open(os.path.join(dir,shorname+postfix),"r") as f:
+                content=f.read()
+            return shorname+postfix,content
+    return "",""
+
+
+def safe_decode(input):
+    """转成unicode"""
+    try:
+        output=input.decode("utf8")
+    except:
+        output=input
+    return output
 
 
 def Singleton(cls):

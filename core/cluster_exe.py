@@ -9,10 +9,10 @@ from traceback import format_exc
 
 from jinja2 import Template
 
+from lib.utils import safe_decode
 from lib.logger import logger,logger_err
-from conf import config
 from lib.redis_conn import RedisConn
-
+from conf import config
 
 class ClusterExecution(object):
     """
@@ -131,16 +131,12 @@ class ClusterExecution(object):
             #c_r=c.replace(".","_____")                   #.被jinja2特殊使用 因此使用_____临时替代
             c_r=re.sub("\s*\.\s*","_____",c).strip()      #去除字符串的左右空格 以及.左右的空格
             cmd=cmd.replace(c,c_r)
-            try:
-                # python2转成uincode; python3直接为unicode，不需转换
-                data[c_r]=self.get_value(target,c).decode('utf8')
-            except:            
-                data[c_r]=self.get_value(target,c)
-        
-        #real_cmd=Template(cmd).render(data).encode('utf8')        
+            data[c_r]=safe_decode(self.get_value(target,c))
+              
         real_cmd=Template(cmd).render(data)      
         return real_cmd
         
+    
     def run(self,target,playbook,begin_line):
         """
         后台运行
@@ -222,10 +218,7 @@ class ClusterExecution(object):
                 while next_cmd and self.exe_next:
                     #去除所有命令的左右空格以及换行符，并转换成unicode格式
                     next_cmd=next_cmd.strip()
-                    try:
-                        next_cmd=next_cmd.decode("utf8")
-                    except:
-                        next_cmd=next_cmd
+                    next_cmd=safe_decode(next_cmd)
                     
                     self.current_uuid=uuid.uuid1().hex
                     if current_line < begin_line:

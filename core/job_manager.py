@@ -42,6 +42,8 @@ class JobManager(object):
         self.redis_connect=redis_connect
         
         self.redis_refresh()
+        
+        self.playbook_dir="playbook"    #存放playbook的目录 使用相对目录时使用
    
    
     def redis_refresh(self):
@@ -274,7 +276,7 @@ class JobManager(object):
         # 不为绝对路径时，以playbook目录为根目录
         # 在windows部署时只能使用相对路径
         #if not re.match("^/.*",playbook):
-        playbook=os.path.join(config.base_dir,"playbook",playbook)
+        playbook=os.path.join(config.base_dir,self.playbook_dir,playbook)
         log_job["playbook_rownum"]=file_row_count(playbook)
         log_job["playbook_md5"]=my_md5(file=playbook)
         
