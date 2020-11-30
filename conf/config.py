@@ -165,3 +165,17 @@ key_job_list="job_list"             #执行任务的队列
 #redis_job
 prefix_job="job_"                   #每个任务的信息 job_<job id> 插入 key_job_list 
 
+
+#######################################################################################################
+#禁止执行的命令 添加时请务必使用函数 re.match(cmd_pattern,cmd) 先行验证 
+#正则表达式，错误信息，退出码（等同于执行shell命令后的退出码）
+deny_commands=[
+("(.*(\s|\||;|&|\`)+|)rm\s+.*/(\s+.*|\||;|&||`$)", "too danger to execute", 1),    #带有 "rm /" 的命令
+(".*eval.*", "too danger to execute", 1),                                          #带有eval 的命令 
+(".*e(\'|\")*v(\'|\")*a(\'|\")*l.*", "too danger to execute", 1),                  #通过单引号 双引号拼接成eval                        #``中带有rm的命令
+]
+
+#只能适合常规的正则匹配
+#通过变量拼接绕过限制
+# a="e";b="val" && $a$b "who"  
+#

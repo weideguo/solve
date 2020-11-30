@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #一些函数的封装
 import os
+import re
 import time
 import threading
 from threading import Thread
@@ -196,4 +197,14 @@ class RerunableThread(threading.Thread):
                 time.sleep(self.interval)
                 self.run()
     
+
+def command_fliter(cmd,fliter_info):
+    """匹配则带有非None返回值，用于过滤一些危险命令"""
+    for pair in fliter_info:
+        cmd_pattern  = pair[0]
+        match_message= pair[1]
+        match_code   = pair[2]
+        if re.match(cmd_pattern,cmd):
+            return "",match_message,match_code
     
+    return None,None,None    

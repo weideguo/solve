@@ -12,7 +12,7 @@ from threading import Thread
 from traceback import format_exc
 
 from lib.redis_conn import RedisConn
-from lib.wrapper import gen_background_log_set,connection_error_rerun
+from lib.wrapper import gen_background_log_set,connection_error_rerun,command_fliter
 from lib.logger import logger,logger_err
 from lib.utils import my_md5,get_host_ip,cmd_split,is_file_in_dir,safe_decode
 from lib.myssh import MySSH
@@ -197,18 +197,20 @@ class RemoteHost(MySSH):
         logger.debug(str(exe_result)+" begin")
         
         try:
-            #扩展命令以 "__"包围前后 使用格式如下
-            #cmd="__xxx__ ..."
-            #cmd=" __xxx__ ..."
-            if re.match("\s*__\w+__($|\s)",cmd):
-                exe_result,stdout,stderr,exit_code=self.__exe_extend(cmd, exe_result)
-
-            else:
-                cmd_type="CMD"
-                exe_result["cmd_type"]=cmd_type
-                self.set_log(exe_result,is_update=False)      #命令执行前                   
-
-                stdout, stderr, exit_code=self.exe_cmd(cmd,background_log_set=gen_background_log_set(cmd_uuid,self.redis_log_client))
+            stdout, stderr, exit_code = command_fliter(cmd, config.deny_commands)
+            if (stdout, stderr, exit_code) == (None,None,None): 
+                #扩展命令以 "__"包围前后 使用格式如下
+                #cmd="__xxx__ ..."
+                #cmd=" __xxx__ ..."
+                if re.match("\s*__\w+__($|\s)",cmd):
+                    exe_result,stdout,stderr,exit_code=self.__exe_extend(cmd, exe_result)
+    
+                else:
+                    cmd_type="CMD"
+                    exe_result["cmd_type"]=cmd_type
+                    self.set_log(exe_result,is_update=False)      #命令执行前                   
+    
+                    stdout, stderr, exit_code=self.exe_cmd(cmd,background_log_set=gen_background_log_set(cmd_uuid,self.redis_log_client))
         except:
             logger_err.error(format_exc())
             stdout, stderr, exit_code="","some error happen when execute,please check the log",1

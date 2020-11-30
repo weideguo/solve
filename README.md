@@ -331,6 +331,9 @@ master/proxy服务之间的文件同步需要额外实现。（如：1.使用rsy
   
 * 多master模式    
   与多master-多相同proxy模式类似，但没有proxy用于连接主机，仅由master处理。master不要启动本地执行。       
+
+### 危险命令过滤 ###
+在配置文件conf/config.py修改参数deny_commands实现对指定命令特殊处理，从而实现过滤危险命令。  
   
 ### redis config ###  
 ```

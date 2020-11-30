@@ -10,7 +10,7 @@ from threading import Thread
 import subprocess
 from traceback import format_exc
 
-from lib.wrapper import gen_background_log_set,connection_error_rerun
+from lib.wrapper import gen_background_log_set,connection_error_rerun,command_fliter
 from lib.logger import logger,logger_err
 from lib.utils import get_host_ip
 from lib.redis_conn import RedisConn
@@ -80,19 +80,21 @@ class LocalHost(object):
         stdout,stderr="",""
         #self.redis_refresh()
         try:
-            """
-            c=subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            stdout,stderr=c.communicate()
-            exit_code=c.returncode
-            """
-            p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
-            
-            background_log_set=gen_background_log_set(cmd_uuid,self.redis_log_client)  
-            
-            stdout,stderr = background_log_set(p.stdout,p.stderr)
-                        
-            p.communicate()
-            exit_code=p.returncode
+            stdout, stderr, exit_code = command_fliter(cmd, config.deny_commands)
+            if (stdout, stderr, exit_code) == (None,None,None): 
+                """
+                c=subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                stdout,stderr=c.communicate()
+                exit_code=c.returncode
+                """
+                p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
+                
+                background_log_set=gen_background_log_set(cmd_uuid,self.redis_log_client)  
+                
+                stdout,stderr = background_log_set(p.stdout,p.stderr)
+                            
+                p.communicate()
+                exit_code=p.returncode
             
         except:
             logger_err.error(format_exc())
