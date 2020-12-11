@@ -124,6 +124,7 @@ is_copy_by_link=1                   #是否使用软链接代替复制
 spliter="@@@@@"                     #所有与uuid的分隔符   如cmd+spliter+uuid 日志 target
 
 local_ip_list=["127.0.0.1","localhost"]  #标记为本地地址，对本地的命令将使用本地模式运行，而不是通过ssh
+#local_ip_list=["127.0.0.1_aaa","localhost_aaa"]  #多服务架构时需要添加tag在ip后面 防止多服务间存在冲突
 max_localhost_thread=20                  #本地模式运行时的最大并发数
 
                                          #以下都是对于单个redis db而言，n个db的实际数量要乘n

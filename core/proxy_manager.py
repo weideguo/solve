@@ -37,22 +37,17 @@ class ProxyManager(JobManager):
             self.proxy_mark = get_host_ip()
         
         self.proxy_tag="%s:%s" % (config.proxy_tag,self.proxy_mark)
-        self.listen_tag=[]
-        for l in config.local_ip_list:
-            self.listen_tag.append(self.proxy_tag+":"+l)
         
-        self.listen_tag += config.local_ip_list
-        #为proxy时，在proxy本地不监听 127.0.0.1 localhost
-        #监听如 proxy:AAA:10.0.0.1 10.0.0.1
-        try:
-            self.listen_tag.remove("127.0.0.1")
-        except:
-            pass
-        try:
-            self.listen_tag.remove("localhost")
-        except:
-            pass
+        self.listen_tag = config.local_ip_list
+        #为proxy时 在proxy本地不监听 127.0.0.1 localhost 防止跟master的发生冲突
+        
+        for ip in ["127.0.0.1","localhost"]:
+            try:
+                self.listen_tag.remove(ip)
+            except:
+                pass
 
+    
     def __localhost(self):
         """
         proxy的本地执行
@@ -60,13 +55,15 @@ class ProxyManager(JobManager):
         """
         self.conn_localhost(self.listen_tag)
         
+    
     @connection_error_rerun()
     def __remot_host(self):
         """
         符合proxy的则启动ssh连接
         """
-        #init_str='proxy:10.0.0.1:192.168.16.1'
-        #init_str='proxy:10.0.0.1:192.168.16.1@@@@@ba8d8c646e6711ea8d01000c295dd589'
+        #init_str='192.168.16.1'
+        #init_str='192.168.16.1_aaa'
+        #init_str='192.168.16.1@@@@@ba8d8c646e6711ea8d01000c295dd589'
         #redis_connect=RedisConn()
         redis_connect=None
         while True:
@@ -80,14 +77,14 @@ class ProxyManager(JobManager):
                 init_host_uuid=init_host_list[1].strip()
             else:
                 init_host_uuid=uuid.uuid1().hex
-            
-            if init_host in self.listen_tag:
-                #为proxy的本地，不需要创建连接
-                logger.debug("< %s > run in local mode" % init_host)
-            else:
+                        
+            if ("proxy" in host_info and host_info["proxy"].strip()):
                 self.conn_host(init_host,redis_connect,init_host_uuid,proxy_mode=True)
+            else:
+                self.redis_log_client.hset(init_host_uuid,"exit_code","init failed")
+                self.redis_log_client.hset(init_host_uuid,"stderr","proxy host error: %s" % init_host)
+                
             
-
     def run_forever(self):
         """
         后台运行
