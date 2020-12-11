@@ -2,7 +2,7 @@
 #由于proxy与master的文件没有同步机制，要在proxy执行文件上传命令前需要先确保文件在proxy存在
 #可以主动从master上传文件到proxy
 #需要启动一个proxy且设置conf/config.py的proxy_mark="192.168.253.128"
-#其设置realhost_192.168.253.128
+#hmset realhost_10.0.0.1 ip 10.0.0.1 proxy 192.168.253.128
 #web表单控制
 #CONTENT-BEGIN
 #session:
@@ -15,7 +15,7 @@
 [192.168.253.128]
 __put__ {{session.file}} /tmp/a/
 #proxy传文件到远端主机
-[proxy:192.168.253.128:192.168.253.128]
+[10.0.0.1]
 global.filename=`basename {{session.file}}`
 #__put__命令中只允许变量替换，不能放入shell命令
 __put__ /tmp/a/{{global.filename}} /tmp

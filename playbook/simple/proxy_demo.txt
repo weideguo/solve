@@ -1,5 +1,5 @@
 #对proxy的本地执行
 #本地执行不能使用__put__/__get__命令用于文件上传下载
-#需要启动一个proxy且设置conf/config.py的proxy_mark="AAA"
-[proxy:AAA:127.0.0.1]
+#需要启动一个proxy且设置conf/config.py的local_ip_list与其他的不同 如 local_ip_list=["127.0.0.1_xxx"]
+[127.0.0.1_xxx]
 date
