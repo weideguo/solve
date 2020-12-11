@@ -77,13 +77,9 @@ class ProxyManager(JobManager):
                 init_host_uuid=init_host_list[1].strip()
             else:
                 init_host_uuid=uuid.uuid1().hex
-                        
-            if ("proxy" in host_info and host_info["proxy"].strip()):
-                self.conn_host(init_host,redis_connect,init_host_uuid,proxy_mode=True)
-            else:
-                self.redis_log_client.hset(init_host_uuid,"exit_code","init failed")
-                self.redis_log_client.hset(init_host_uuid,"stderr","proxy host error: %s" % init_host)
-                
+            
+            self.conn_host(init_host,redis_connect,init_host_uuid,proxy_mode=True)    
+            
             
     def run_forever(self):
         """

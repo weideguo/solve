@@ -106,7 +106,11 @@ class JobManager(object):
                 host_info=self.redis_config_client.hgetall(config.prefix_realhost+init_host)
                 host_info["tag"]=host_info["ip"]
                 host_info["ip"]=host_info["ip"].split("_")[0]
-                                    
+                          
+                if proxy_mode and not ("proxy" in host_info and host_info["proxy"].strip()) :
+                    self.redis_log_client.hset(init_host_uuid,"exit_code","init failed")
+                    self.redis_log_client.hset(init_host_uuid,"stderr","proxy host error: %s" % init_host)    
+                
                 if not ("ip" in host_info): 
                     self.redis_log_client.hset(init_host_uuid,"exit_code","host info err")
                     logger_err.error("< %s > init failed, host info error, ip not exist" % init_host)
