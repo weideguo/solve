@@ -126,15 +126,16 @@ target
 
 hash类型的redis key。执行对象本质即为参数的集合，用于在实际执行时对playbook进行变量替换，得到实际的要执行的命令。执行对象可以通过执行对象名的引用实现多层级参数。
 
-* 特殊执行对象 realhost_&lt;ip&gt;
+* 特殊执行对象 realhost_&lt;ip&gt; realhost_&lt;ip&gt;_&lt;tag&gt;
 
   以realhost_开头的特殊执行对象存储创建ssh连接的信息。如realhost_10.0.0.1，则存储10.0.0.1的创建ssh连接的信息，playbook使用`[10.0.0.1]`命令创建ssh连接时使用该配置信息。
+  带有tag主要用于标记同一ip不同配置，可以为任意值，如 realhost_10.0.0.1_xxx，playbook使用`[10.0.0.1_xxx]`命令创建ssh连接。
   
   字段说明：
 
   |   参数名    | 说明 | 必须 |
   | :---: | :----: | :--: |
-  | ip        | 创建ssh连接用的ip，也可以为<ip>_<tag>，tag主要用于标记同一ip不同配置          | 是 |
+  | ip        | 创建ssh连接用的ip，也可以为ip_tag（需要与key的名字一致）          | 是 |
   | user      | 创建ssh连接用的user，不设置则默认root          | -  |
   | ssh_port  | ssh的端口，不设置则默认22                      | -  |
   | passwd    | ssh的密码，在主机设置免密登陆时则不需要设置    | -  |
@@ -294,7 +295,7 @@ proxy模式用于作为master的代理管理主机连接。整体任务协调均
   2.修改配置文件conf/config.py的PROXY，即设置conf/config.conf的proxy模块
 * proxy与master的通信通过redis实现  
 * 默认启动的模式为master模式，不需要与其他节点有关联  
-* 主机通过proxy字段设置使用的代理，但优先使用ip字段，格式如 realhost_192.168.16.1 ip 192.168.16.1 proxy aaa ...
+* 主机通过proxy字段设置使用的代理，格式如 realhost_192.168.16.1 ip 192.168.16.1 proxy aaa ...
 * proxy与master文件的同步尚未实现，需要额外的文件同步之后（如使用rsync），才能对proxy管理的主机执行文件上传操作  
 
 ### fileserver ###
@@ -306,10 +307,10 @@ conf/config的fileserver参数控制是否启用。
 ### 本地执行 ###
 修改配置文件conf/config.py的local_ip_list，发往该ip列表的地址将不会使用ssh模式运行，而是直接在本地运行。  
 对于proxy模式，需要设置local_ip_list与master不相同，防止与master发生冲突。  
-命令缓存于队列cmd_127.0.0.1 cmd_127.0.0.1_xxx
+命令缓存于队列如：cmd_127.0.0.1 cmd_127.0.0.1_xxx
 
 ### 部署架构 ###
-本地执行在多master或者多proxy，需要设置py的local_ip_list不同防止本地执行混乱。    
+本地执行在多master或者多proxy，需要设置local_ip_list不同防止本地执行混乱。    
 master/proxy服务之间的文件同步需要额外实现。（如：1.使用rsync；2.启用fileserver，并在上传文件时同时上传所有服务；3.其他自行实现的同步策略）  
 
 * 单master模式  
