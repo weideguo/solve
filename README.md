@@ -134,7 +134,7 @@ hash类型的redis key。执行对象本质即为参数的集合，用于在实�
 
   |   参数名    | 说明 | 必须 |
   | :---: | :----: | :--: |
-  | ip        | 创建ssh连接用的ip                              | 是 |
+  | ip        | 创建ssh连接用的ip，也可以为<ip>_<tag>，tag主要用于标记同一ip不同配置          | 是 |
   | user      | 创建ssh连接用的user，不设置则默认root          | -  |
   | ssh_port  | ssh的端口，不设置则默认22                      | -  |
   | passwd    | ssh的密码，在主机设置免密登陆时则不需要设置    | -  |
@@ -294,10 +294,8 @@ proxy模式用于作为master的代理管理主机连接。整体任务协调均
   2.修改配置文件conf/config.py的PROXY，即设置conf/config.conf的proxy模块
 * proxy与master的通信通过redis实现  
 * 默认启动的模式为master模式，不需要与其他节点有关联  
-* 指定主机使用proxy管理，则格式如 realhost_proxy:10.0.0.1:192.168.16.1 ip proxy:10.0.0.1:192.168.16.1  
-* porxy:&lt;proxy_mark&gt;:&lt;host_ip&gt;  
+* 主机通过proxy字段设置使用的代理，但优先使用ip字段，格式如 realhost_192.168.16.1 ip 192.168.16.1 proxy aaa ...
 * proxy与master文件的同步尚未实现，需要额外的文件同步之后（如使用rsync），才能对proxy管理的主机执行文件上传操作  
-* 主机也可以通过proxy字段设置使用的代理，但优先使用ip字段，格式如 realhost_192.168.16.1 proxy 10.0.0.1 ...
 
 ### fileserver ###
 提供简单的文件管理restful接口，可以实现文件上传、下载、文件查看、目录创建，文件内容查看。  
@@ -307,12 +305,11 @@ conf/config的fileserver参数控制是否启用。
 
 ### 本地执行 ###
 修改配置文件conf/config.py的local_ip_list，发往该ip列表的地址将不会使用ssh模式运行，而是直接在本地运行。  
-对于proxy模式，则格式如：proxy:&lt;proxy_mark&gt;:127.0.0.1，对该主机执行时直接在proxy执行，而不是在proxy上通过ssh执行。  
-127.0.0.1或proxy:&lt;proxy_mark&gt;:127.0.0.1不需要预先设置，但也可以设置以用于参数渲染（proxy字段不生效，需要设置ip字段指定是在本地或代理的本地）。    
-命令缓存于队列cmd_127.0.0.1 或 cmd_proxy:&lt;proxy_mark&gt;:127.0.0.1  
+对于proxy模式，需要设置local_ip_list与master不相同，防止与master发生冲突。  
+命令缓存于队列cmd_127.0.0.1 cmd_127.0.0.1_xxx
 
 ### 部署架构 ###
-本地执行在多master或者多proxy会导致本地执行出现问题（在不同主机执行可能结果不一样，而且如果指定使用特定master/proxy会导致playbook不能适用架构变化，如发生master/proxy退出的情况），因而在这些情况谨慎考虑是否要启动本地执行。    
+本地执行在多master或者多proxy，需要设置py的local_ip_list不同防止本地执行混乱。    
 master/proxy服务之间的文件同步需要额外实现。（如：1.使用rsync；2.启用fileserver，并在上传文件时同时上传所有服务；3.其他自行实现的同步策略）  
 
 * 单master模式  
@@ -324,13 +321,13 @@ master/proxy服务之间的文件同步需要额外实现。（如：1.使用rsy
   
 * 单master-多相同proxy模式  
   与单master-多proxy模式类似，但一个独立网络部署多个proxy（proxy主要用于主机连接，可以避免主机过多时对proxy压力过大，以及提供高可用）。  
-  相同proxy由相同的proxy_mark标记。proxy不要启动本地执行。    
+  相同proxy由相同的proxy_mark标记。    
    
 * 多master-多相同proxy模式    
-  与单master-多相同proxy模式类似，但同时启动多个master（避免master压力过大，以及提供高可用）。master不要启动本地执行。    
+  与单master-多相同proxy模式类似，但同时启动多个master（避免master压力过大，以及提供高可用）。    
   
 * 多master模式    
-  与多master-多相同proxy模式类似，但没有proxy用于连接主机，仅由master处理。master不要启动本地执行。       
+  与多master-多相同proxy模式类似，但没有proxy用于连接主机，仅由master处理。       
 
 ### 危险命令过滤 ###
 在配置文件conf/config.py修改参数deny_commands实现对指定命令特殊处理，从而实现过滤危险命令。  
