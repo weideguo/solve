@@ -18,8 +18,8 @@ from conf import config
 """
 
 
-logger=simple_logger("standard",sys.stdout)
-logger_err=simple_logger("error",sys.stderr)
+logger=simple_logger("standard",sys.stdout,config.log_level)
+logger_err=simple_logger("error",sys.stderr,config.log_level)
 
 
 def gen_background_log_set(cmd_uuid,redis_client,len=0,interval=1,retry=60):
