@@ -107,6 +107,8 @@ if __name__=="__main__":
     except:
         pass
 
+    def simple_log(msg):
+        return "%s,000 - %s" % (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),msg)
     
     #启动前对redis的清理与设置
     #start restart 才使用
@@ -128,9 +130,11 @@ if __name__=="__main__":
             redis_send_client.hset(config_key,"fileserver_port",config.port)
         
         #清除相关key
-        if config.clear_start:
+        if config.clear_start and Manager != ProxyManager:
+            clear_keys=[config.key_conn_control,config.prefix_cmd,config.prefix_heart_beat]
+            print(simple_log("clear key %s" % str(clear_keys)))
             k_list=[]
-            for k_pattern in [config.key_conn_control,config.prefix_cmd,config.prefix_heart_beat]:
+            for k_pattern in clear_keys:
                 k_list +=redis_send_client.keys(k_pattern+"*")
             for k in k_list:
                 redis_send_client.delete(k)
@@ -193,7 +197,8 @@ if __name__=="__main__":
         
             #写日志
             with open(stdout_path,"a+") as f:
-                f.write("%s,000 - %s\n" % (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), "stop"))
+                #f.write("%s,000 - %s\n" % (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), "stop"))
+                f.write(simple_log("stop\n"))
 
             #python2.7时结束进程时需要使用kill -9
             import signal
