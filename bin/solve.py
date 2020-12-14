@@ -14,7 +14,8 @@ from daemon.runner import DaemonRunner
 base_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
 from lib.redis_conn import RedisConn
-from lib.logger import logger,logger_err
+#from lib.logger import logger,logger_err
+from lib.wrapper import logger,logger_err
 from core.job_manager import JobManager
 from core.proxy_manager import ProxyManager
 
@@ -92,8 +93,9 @@ if __name__=="__main__":
     try:
         opt=sys.argv[1].strip()
         if opt != "stop":
-            print("\033[1;32m %s \033[0m" % solve_logo)
-            print("%s mode \033[1;32m %s \033[0m" % (opt,start_mode))
+            if opt == "start":
+                print("\033[1;32m %s \033[0m" % solve_logo)
+                print("%s mode \033[1;32m %s \033[0m" % (opt,start_mode))
             try:
                 #for proxy mode
                 print("proxy tag  \033[1;32m %s \033[0m" % manager.proxy_tag)

@@ -10,8 +10,8 @@ from threading import Thread
 import subprocess
 from traceback import format_exc
 
-from lib.wrapper import gen_background_log_set,connection_error_rerun,command_fliter
-from lib.logger import logger,logger_err
+from lib.wrapper import gen_background_log_set,connection_error_rerun,command_fliter,logger,logger_err
+#from lib.logger import logger,logger_err
 from lib.utils import get_host_ip
 from lib.redis_conn import RedisConn
 from conf import config

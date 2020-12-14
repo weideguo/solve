@@ -12,8 +12,8 @@ from threading import Thread
 from traceback import format_exc
 
 from lib.redis_conn import RedisConn
-from lib.wrapper import gen_background_log_set,connection_error_rerun,command_fliter
-from lib.logger import logger,logger_err
+from lib.wrapper import gen_background_log_set,connection_error_rerun,command_fliter,logger,logger_err
+#from lib.logger import logger,logger_err
 from lib.utils import my_md5,get_host_ip,cmd_split,is_file_in_dir,safe_decode
 from lib.myssh import MySSH
 from lib.password import Password

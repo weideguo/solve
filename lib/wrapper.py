@@ -2,14 +2,24 @@
 #一些函数的封装
 import os
 import re
+import sys
 import time
 import threading
 from threading import Thread
 from traceback import format_exc
 
 from redis.exceptions import ConnectionError
+from .logger import simple_logger
+from conf import config
 
-from .logger import logger_err
+
+"""
+在此存放一些全局使用的封装后的对象 函数
+"""
+
+
+logger=simple_logger("standard",sys.stdout)
+logger_err=simple_logger("error",sys.stderr)
 
 
 def gen_background_log_set(cmd_uuid,redis_client,len=0,interval=1,retry=60):

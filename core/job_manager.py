@@ -11,8 +11,8 @@ from traceback import format_exc
 from .localhost import LocalHost
 from .cluster_exe import ClusterExecution
 from lib.utils import my_md5,file_row_count
-from lib.logger import logger,logger_err
-from lib.wrapper import connection_error_rerun
+#from lib.logger import logger,logger_err
+from lib.wrapper import connection_error_rerun,logger,logger_err
 from lib.redis_conn import RedisConn
 from conf import config
 

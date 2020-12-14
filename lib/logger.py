@@ -5,22 +5,16 @@ import sys
 import logging
 import threading
 
-#logger = logging.getLogger(threading.current_thread().getName())
-logger = logging.getLogger("standard")
-logger.setLevel(logging.DEBUG)
 
-format = logging.Formatter("%(asctime)s - %(message)s")     # output format 
-sh = logging.StreamHandler(stream=sys.stdout)               # output to standard output
-sh.setFormatter(format)
-logger.addHandler(sh)
+def simple_logger(name,stream=sys.stdout,level=logging.DEBUG,format="%(asctime)s - %(message)s"):
+    """获取简易的日志对象 只是线程安全"""
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    
+    format = logging.Formatter(format)                      # output format 
+    sh = logging.StreamHandler(stream=stream)               
+    sh.setFormatter(format)
+    logger.addHandler(sh)
+    
+    return logger
 
-
-logger_err = logging.getLogger("error")
-logger_err.setLevel(logging.DEBUG)
-sh_err = logging.StreamHandler(stream=sys.stderr)
-sh_err.setFormatter(format)
-logger_err.addHandler(sh_err)
-
-"""
-Python 的模块就是天然的单例模式，所以多次import不会生成多个实例化对象
-"""

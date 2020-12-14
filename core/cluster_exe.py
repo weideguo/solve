@@ -10,7 +10,7 @@ from traceback import format_exc
 from jinja2 import Template
 
 from lib.utils import safe_decode
-from lib.logger import logger,logger_err
+from lib.wrapper import logger,logger_err
 from lib.redis_conn import RedisConn
 from conf import config
 

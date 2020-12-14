@@ -7,8 +7,8 @@ from traceback import format_exc
 from conf import config
 from .job_manager import JobManager
 from lib.utils import get_host_ip
-from lib.logger import logger,logger_err
-from lib.wrapper import connection_error_rerun
+#from lib.logger import logger,logger_err
+from lib.wrapper import connection_error_rerun,logger,logger_err
 from lib.redis_conn import RedisConn
 
 class ProxyManager(JobManager):

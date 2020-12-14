@@ -9,7 +9,7 @@ from traceback import format_exc
 from conf import config
 from lib.utils import Singleton,get_host_ip,my_md5,cmd_split
 from lib.mysalt import MySalt
-from lib.logger import logger,logger_err
+from lib.wrapper import logger,logger_err
 from ..abstract import abstract_conn
 from ..abstract.abstract_conn import AbstractConn
 
