@@ -203,12 +203,12 @@ class SaltConn(AbstractConn):
         cmd  = _cmd[0]
         args = _cmd[1:]
         
-        if cmd_type=="__put__":
+        if cmd=="__put__":
             local_file,remote_path=args[0],args[1]
              
             stdout,stderr,exit_code=self.__send_file(ip,local_file,remote_path,s,cmd_uuid)                 
         
-        elif cmd_type=="__get__":
+        elif cmd=="__get__":
             remote_file,local_path=args[0],args[1]
             r=s.get(ip,local_path,remote_file) 
             if r[ip]:
