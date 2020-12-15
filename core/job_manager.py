@@ -141,6 +141,7 @@ class JobManager(object):
                 self.redis_log_client.hset(init_host_uuid,"stdout","connect exist,init skip")        
                 logger.debug("< %s > init skipped" % init_host)    
         except:
+            self.redis_send_client.delete(config.prefix_check_flag+init_host)               #发生异常释放锁 
             self.redis_log_client.hset(init_host_uuid,"exit_code","init failed")
             self.redis_log_client.hset(init_host_uuid,"stderr",format_exc())
             logger_err.error(format_exc())
