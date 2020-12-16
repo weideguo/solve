@@ -226,6 +226,15 @@ class RemoteHost(MySSH):
         logger.debug(str(exe_result)+" done")
         #logger.debug("----------------------------------")
 
+    
+    def __single_run_real(self,cmd,cmd_uuid):
+        """
+        线程控制的单个命令的执行
+        """
+        try:
+            self.__single_run(cmd,cmd_uuid)
+        except:
+            logger_err.error(format_exc())
         self.thread_q.get()                                   #停止阻塞下一个线程            
     
     
@@ -353,7 +362,7 @@ class RemoteHost(MySSH):
                     else:
                         cmd_uuid=uuid.uuid1().hex
                     
-                    t=Thread(target=self.__single_run,args=(cmd,cmd_uuid))
+                    t=Thread(target=self.__single_run_real,args=(cmd,cmd_uuid))
                     t.start()
                     
                     if self.t_thread_q.full():

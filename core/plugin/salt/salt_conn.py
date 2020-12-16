@@ -135,36 +135,9 @@ class SaltConn(AbstractConn):
         
         try:
             s=MySalt()
-             
-            #if re.match("PUT:.+?:.+?",cmd) or re.match("GET:.+?:.+?",cmd):
-            #    cmd_type=cmd.split(":")[0]
-            #    exe_result["cmd_type"]=cmd_type
-            #    self.set_log(exe_result,is_update=False)      #命令执行前
-            #
-            #    if cmd_type=="PUT":
-            #        file_flag,local_file,remote_path=cmd.split(":")
-            #         
-            #        stdout,stderr,exit_code=self.__send_file(ip,local_file,remote_path,s,cmd_uuid)                 
-            #
-            #    elif cmd_type=="GET":
-            #        file_flag,local_path,remote_file=cmd.split(":")
-            #        r=s.get(ip,local_path,remote_file) 
-            #        if r[ip]:
-            #            stdout,stderr,exit_code=("","",0)
-            #        else:
-            #            stdout=""
-            #            exit_code=1
-            #            if not s.local.opts['file_recv']:
-            #                stderr="[file_recv=True] must set on salt master's config file"
-            #            elif os.path.isfile(local_path):                        
-            #                stderr="local path is a file"
-            #            elif not s.file_exists(ip,remote_file)[ip]:
-            #                stderr="remote file not exist"
-            #            else:
-            #                stderr="some error happen when get file from remote host"
                             
             if re.match("\s*__\w+__($|\s)",cmd):
-                exe_result,stdout,stderr,exit_code=self.__exe_extend(cmd, exe_result, s)
+                exe_result,stdout,stderr,exit_code=self.__exe_extend(cmd, exe_result, ip, s)
             else:
                 exe_result["cmd_type"]="CMD"
                 self.set_log(exe_result,is_update=False)      #命令执行前  
@@ -185,7 +158,7 @@ class SaltConn(AbstractConn):
         logger.debug(str(exe_result)+" done")
 
     
-    def __exe_extend((self, cmd_line, exe_result, s):
+    def __exe_extend((self, cmd_line, exe_result, ip, s):
         exe_result["cmd_type"]="EXTEND"            
         self.set_log(exe_result,is_update=False)  
         
