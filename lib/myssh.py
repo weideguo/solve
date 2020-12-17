@@ -40,7 +40,7 @@ class MySSH(object):
         client.connect(hostname=self.hostname, port=self.port, username=self.username, password=self.password)
         self.ssh_client=client
          
-    def exe_cmd(self,cmd,background_log_set=None):
+    def exe_cmd(self,cmd,background_log_set=None,*arg,**kwargs):
         """
         执行命令
         """
@@ -56,7 +56,7 @@ class MySSH(object):
         exit_code=stdout.channel.recv_exit_status()
         return out,err,exit_code
         
-    def copy_file(self,exist_remote_file,remote_file,local_md5,local_filesize,is_copy_by_link=True,set_info=None,set_step=None):
+    def copy_file(self,exist_remote_file,remote_file,local_md5,local_filesize,is_copy_by_link=True,set_info=None,set_step=None,*arg,**kwargs):
         """
         复制文件，可以通过创建链接代替
         """
@@ -92,7 +92,7 @@ class MySSH(object):
         
         return remote_md5,local_md5,remote_md5==local_md5,"copy file"
     
-    def put_file(self,local_md5,local_file,remote_path,set_info=None,set_step=None):
+    def put_file(self,local_md5,local_file,remote_path,set_info=None,set_step=None,*arg,**kwargs):
         """
         从本地上传文件到远端 文件名不变
         远端目录如果不存在 则创建一个
@@ -133,7 +133,7 @@ class MySSH(object):
         ftp_client.close()
         return local_md5,remote_md5,local_md5==remote_md5,msg
              
-    def get_file(self,local_path,remote_file,set_info=None,set_step=None):
+    def get_file(self,local_path,remote_file,set_info=None,set_step=None,*arg,**kwargs):
         """
         下载文件到本地 文件名不变
         如果本地文件存在 则使用时间戳重命名现有文件
@@ -173,7 +173,7 @@ class MySSH(object):
         ftp_client.close()
         return local_md5,remote_md5,local_md5==remote_md5,""
     
-    def is_remote_file(self,ftp_client,remote_file,local_md5="",set_step=None):
+    def is_remote_file(self,ftp_client,remote_file,local_md5="",set_step=None,*arg,**kwargs):
         """
         判断远端文件是否存在以及md5是否一致
         """
@@ -215,7 +215,7 @@ class MySSH(object):
             except:
                 return False
     
-    def remote_mkdirs(self,ftp_client,remote_path):
+    def remote_mkdirs(self,ftp_client,remote_path,*arg,**kwargs):
         """
         由远端完整路径在远端创建目录
         类似 mkdir -p
@@ -246,7 +246,7 @@ class MySSH(object):
             
             ftp_client.mkdir(dir_list[-1])
     
-    def md5_remote(self,ftp_client,fullname):
+    def md5_remote(self,ftp_client,fullname,*arg,**kwargs):
         """
         计算远端的MD5
         """
