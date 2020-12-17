@@ -133,7 +133,7 @@ class MySSH(object):
         ftp_client.close()
         return local_md5,remote_md5,local_md5==remote_md5,msg
              
-    def get_file(self,local_path,remote_file,set_info,set_step=None):
+    def get_file(self,local_path,remote_file,set_info=None,set_step=None):
         """
         下载文件到本地 文件名不变
         如果本地文件存在 则使用时间戳重命名现有文件

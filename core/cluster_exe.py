@@ -338,6 +338,11 @@ class ClusterExecution(object):
                     current_line=current_line+1
             
             last_uuid=self.current_uuid
+            
+            if self.exe_uuid_list:
+                #执行到最后一行存在后台命令 则默认运行一次wait
+                self.__single_exe(host="",cmd="wait",c_uuid="")
+
             last_cmd_info=self.redis_log_client.hgetall(last_uuid)
                 
             if not stop_str:
