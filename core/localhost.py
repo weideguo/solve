@@ -11,14 +11,16 @@ import subprocess
 from traceback import format_exc
 
 from lib.wrapper import gen_background_log_set,connection_error_rerun,command_fliter,logger,logger_err
-#from lib.logger import logger,logger_err
 from lib.utils import get_host_ip
 from lib.redis_conn import RedisConn
+
+from core.abstract.abstract_host import AbstractHost
+
 from conf import config
 
 
 
-class LocalHost(object):
+class LocalHost(AbstractHost):
     """
     对本地的执行
     """
@@ -35,10 +37,7 @@ class LocalHost(object):
         
         self.redis_refresh()
         
-        #127.0.0.1 localhost
-        #proxy:10.0.0.1:127.0.0.1 proxy:10.0.0.1:localhost
         self.listen_tag=listen_tag
-        #self.tag=self.listen_tag[0]
     
         self.thread_q=Queue.Queue(t_number)   #单个主机的并发
     
@@ -48,74 +47,47 @@ class LocalHost(object):
         self.redis_log_client=self.redis_connect.refresh(self.redis_log_config,force=True)
     
     
+    #重载AbstractHost函数
+    def exe_cmd(self,cmd,background_log_set,ip_tag):
+        p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
+                
+        stdout,stderr = background_log_set(p.stdout,p.stderr)
+                    
+        p.communicate()
+        exit_code=p.returncode
+
+        return stdout, stderr, exit_code    
+    
+    
     def __heart_beat(self):
         """
         心跳
         """
         while True:
             try:
-                for tag in self.listen_tag:
-                    self.redis_send_client.set(config.prefix_heart_beat+tag,time.time())
-                    self.redis_send_client.expire(config.prefix_heart_beat+tag,config.host_check_success_time)
+                for ip_tag in self.listen_tag:
+                    self.redis_send_client.set(config.prefix_heart_beat+ip_tag,time.time())
+                    self.redis_send_client.expire(config.prefix_heart_beat+ip_tag,config.host_check_success_time)
             except:
                 time.sleep(5)
             
             time.sleep(config.heart_beat_interval)
                 
-            
-    def __single_run(self,cmd,cmd_uuid,tag):
-        """
-        本地执行只支持cmd命令
-        不能使用扩展的PUT/GET命令
-        """
-        exe_result={}
-        exe_result["begin_timestamp"]=time.time()
-        exe_result["cmd"]=cmd
-        exe_result["uuid"]=cmd_uuid
-        exe_result["exe_host"]=tag
-        exe_result["from_host"]=get_host_ip()
-        exe_result["cmd_type"]="CMD"
-        self.set_log(tag,exe_result,is_update=False)
-        logger.debug(str(exe_result)+" begin")
-        stdout,stderr="",""
-        #self.redis_refresh()
+    
+    def __single_run(self,cmd,cmd_uuid,ip_tag):
         try:
-            stdout, stderr, exit_code = command_fliter(cmd, config.deny_commands)
-            if (stdout, stderr, exit_code) == (None,None,None): 
-                """
-                c=subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-                stdout,stderr=c.communicate()
-                exit_code=c.returncode
-                """
-                p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
-                
-                background_log_set=gen_background_log_set(cmd_uuid,self.redis_log_client)  
-                
-                stdout,stderr = background_log_set(p.stdout,p.stderr)
-                            
-                p.communicate()
-                exit_code=p.returncode
-            
+            #本地执行不执行扩展命令
+            self.single_run(cmd,cmd_uuid,ip_tag,extend_pattern="")
         except:
             logger_err.error(format_exc())
-            stdout, stderr, exit_code="","some error happen when execute,please check the log",1
-        
-        exe_result["stdout"]=stdout
-        exe_result["stderr"]=stderr
-        exe_result["exit_code"]=exit_code  
-        exe_result["end_timestamp"]=time.time()
-        
-        self.set_log(tag,exe_result,is_update=True)
-        logger.debug(str(exe_result)+" done")
-        
-        self.thread_q.get()          #停止阻塞下一个线程   
+        self.thread_q.get()
+
     
-    
-    def __forever_run(self,tag):
+    def __forever_run(self,ip_tag):
         """
         无限接收命令
         """
-        key = config.prefix_cmd + tag
+        key = config.prefix_cmd + ip_tag
         while True:
             self.thread_q.put(1)                #控制并发数
             try:
@@ -142,7 +114,7 @@ class LocalHost(object):
                     else:
                         cmd_uuid=uuid.uuid1().hex
                     
-                    t=Thread(target=self.__single_run,args=(cmd,cmd_uuid,tag))
+                    t=Thread(target=self.__single_run,args=(cmd,cmd_uuid,ip_tag))
                     t.start()
                         
                 else:
@@ -154,19 +126,7 @@ class LocalHost(object):
                 self.thread_q.get()    
     
     
-    @connection_error_rerun()
-    def set_log(self,tag,exe_result,is_update=True):
-        """
-        设置日志
-        """
-        log_uuid=exe_result["uuid"]
-        if is_update:
-            self.redis_log_client.expire(log_uuid,config.cmd_log_expire_sec)      #获取返回值后设置日志过期时间
-        else:
-            self.redis_log_client.rpush(config.prefix_log_host+tag,log_uuid)
-        self.redis_log_client.hmset(log_uuid,exe_result)
-    
-    
+    #重载AbstractHost函数
     def forever_run(self):
         t1=Thread(target=self.__heart_beat)
         t_list=[t1]
