@@ -27,9 +27,10 @@ class AbstractHost(object):
     extends_postfixs = "extends"                                      #存放扩展命令对应文件的相对目录
     extends_dir = ["",".sh"]                                          #扩展命令对应文件的可选后缀
     
-    def __init__(self,redis_log_client,*args, **kargs):
-        """继承类应该初始化以下对象"""
-        self.redis_log_client=redis_log_client
+    def __init__(self,*args, **kargs):
+        """继承类根据需要调用的函数可能需要初始化以下对象 """
+        self.redis_log_client=None
+        self.redis_send_client=None
         
     ######################################################
     ##需要重载的函数  具体的实现方式不同
@@ -294,8 +295,110 @@ class AbstractHost(object):
         else:
             self.redis_log_client.rpush(config.prefix_log_host+ip_tag,log_uuid)
         self.redis_log_client.hmset(log_uuid,exe_result)
+    
+    
+    def get_func_args(self,ip_tag):
+        """
+        获取命令
+        """
+        t_allcmd=None
+        cmd_key=config.prefix_cmd+ip_tag
+        try:    
+            t_allcmd=self.redis_send_client.blpop(cmd_key)    
+            #使用阻塞获取 好处是能及时响应 
+        except:
+            #redis连接失败立即发出告警信号
+            raise Exception("get command error")
+        
+        cmd,cmd_uuid=None,None
+        if t_allcmd:                           
+            allcmd=t_allcmd[1]
+            #阻塞的过程中连接可能已经被关闭 所以需要再次判断
+            if not self.run_flag:
+                allcmd=""
+        
+            if allcmd:
+                allcmd=allcmd.split(config.spliter)        
+                cmd=allcmd[0]
+                if len(allcmd)>1:
+                    cmd_uuid=allcmd[1]
+                else:
+                    cmd_uuid=uuid.uuid1().hex   
+        
+        return cmd,cmd_uuid,ip_tag  
 
+    
+    def heart_beat(self,log_out=None):
+        """
+        心跳
+        """
+        while self.run_flag:
+            try:
+                for ip_tag in self.parallel_list:
+                    if log_out:
+                        log_out("%s heart beat" % self.ip_tag)
+                    self.redis_send_client.set(config.prefix_heart_beat+ip_tag,time.time())
+                    self.redis_send_client.expire(config.prefix_heart_beat+ip_tag,config.host_check_success_time)
+                    time.sleep(config.heart_beat_interval)     
+            except:
+                time.sleep(5)
+              
+    
+    def close_conn(self):
+        """
+        关闭连接 
+        """
+        #使用订阅阻塞获取需要kill的ip 
+        pub=self.redis_send_client.pubsub()
+        pub.psubscribe(config.key_kill_host)
+        while True:             
+            pub.listen()
+            try:
+                kill_info=pub.parse_response(block=True) 
+            except:
+                break
+            
+            kill_tag=kill_info[-1]
 
-
-
+            if kill_tag==self.ip_tag:            
+                break
+        
+        self.run_flag=False       
+        try:
+            self.redis_send_client.set(self.cloing_key,time.time())    #标记host处于关闭状态，不再执行新命令
+        except:
+            pass
+        
+        #等待后台的并发运行执行结束
+        while not self.b_thread_q.empty():
+            t=self.b_thread_q.get()
+            t.join()
+        
+        try:
+            #self.ftp_client.close()
+            self.ssh_client.close()
+        except:
+            pass
+        
+        logger.info("%s is closed" % self.ip_tag)        
+        
+        #关闭订阅连接 其他线程才能从线程池获取连接客户端
+        pub.close()
+        
+        #self.thread_q.put(1,0)
+        if not self.redis_send_client.llen(self.cmd_key):
+            #用于释放阻塞
+            self.redis_send_client.rpush(self.cmd_key,"")
+        
+        self.redis_send_client.delete(self.heartbeat_key)
+        self.redis_send_client.expire(self.cloing_key,config.closing_host_flag_expire_sec)    
+        self.redis_send_client.delete(self.cmd_key)          #清空未执行的队列防止启动时错误地运行
+        
+        if self.is_disconnect:
+            #释放连接 防止连接数一直增大
+            for client in [self.redis_client_list]:
+                try:
+                    client.connection_pool.disconnect()
+                except:
+                    pass                
         
