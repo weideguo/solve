@@ -44,7 +44,10 @@ class AbstractConn(object):
         self.redis_send_client=redis_connect.refresh(self.redis_send_config)
         self.redis_log_client=redis_connect.refresh(self.redis_log_config) 
         
-        self.thread_q=Queue.Queue(config.max_concurrent_thread)         #控制线程生成 
+        #self.thread_q=Queue.Queue(config.max_concurrent_thread)         #控制线程生成 
+        
+        self.thread_q=Queue.Queue(config.max_concurrent_all)
+        self.host_queue_info={}      #控制单个主机的并发
         
         self.__forever_run()
     
@@ -73,7 +76,16 @@ class AbstractConn(object):
         命令执行线程控制
         """
         try:
-            self.single_exe(cmd,cmd_uuid,ip_tag)
+            if not self.host_queue_info.get(ip_tag):
+                self.host_queue_info[ip_tag]=Queue.Queue(config.max_concurrent_thread) 
+            if not self.host_queue_info[ip_tag].full():
+                self.host_queue_info[ip_tag].put(1)
+                self.single_exe(cmd,cmd_uuid,ip_tag)
+                self.host_queue_info[ip_tag].get()
+            else:
+                #单个主机的并发达到上限
+                self.redis_send_client.rpush(config.prefix_cmd+ip_tag, cmd+config.spliter+cmd_uuid)
+                time.sleep(0.1)
         except:
             logger_err.debug(format_exc())
 

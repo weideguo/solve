@@ -112,7 +112,7 @@ class JobManager(object):
                     self.redis_log_client.hset(init_host_uuid,"exit_code","host info err")
                     logger_err.error("< %s > init failed, host info error, ip not exist" % init_host)
     
-                elif not self.redis_send_client.llen(config.prefix_cmd+init_host):                
+                elif not self.redis_send_client.llen(config.prefix_cmd+init_host) or not config.host_start_without_cmd:                
                         
                     logger.debug("init host info %s" % str(host_info))
             
