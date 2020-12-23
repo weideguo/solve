@@ -2,7 +2,6 @@
 import os
 import re
 import time
-import uuid
 import salt.client
 from traceback import format_exc
 
@@ -113,14 +112,7 @@ class SaltConn(AbstractConn, AbstractHost):
         
     
     #重载AbstractConn的函数
-    def single_exe(self,ip_tag,allcmd):
-        allcmd=allcmd.split(config.spliter)
-        cmd=allcmd[0]
-        try:
-            cmd_uuid=allcmd[1]
-        except IndexError:
-            cmd_uuid=uuid.uuid1().hex 
-        
+    def single_exe(self,cmd,cmd_uuid,ip_tag):        
         self.single_run(cmd,cmd_uuid, ip_tag)
     
     
