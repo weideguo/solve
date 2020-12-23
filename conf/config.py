@@ -91,8 +91,8 @@ remote_model="core.plugin.ssh.remote_host.RemoteHost"
 可以每个实例化后的对象对应一个远端主机                       
 也可以通过判断只实例化一个对象进行命令分发协调 单例模式      
 
-core.plugin.ssh.remote_host.RemoteHost                使用ssh实现
-core.plugin.ssh2.remote_host.RemoteHost                使用ssh单例模式实现，
+core.plugin.ssh.remote_host.RemoteHost                使用ssh实现 保持连接
+core.plugin.ssh2.remote_host.RemoteHost               使用ssh单例模式实现 不保持连接
 core.plugin.salt.salt_conn.SaltConn                   使用salt单例模式实现，首次启动前需要通过链接设置salt上传/下载目录与主机目录的映射
                                                       #python 2.7 / salt 2018.3.3 (Oxygen)
 """
