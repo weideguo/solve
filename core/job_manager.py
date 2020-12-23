@@ -99,18 +99,15 @@ class JobManager(object):
         return is_alive
     
     
-    def conn_host(self,init_host,redis_connect,init_host_uuid,proxy_mode=False):
+    def conn_host(self,init_host,redis_connect,init_host_uuid):
         try:
             #如果连接存在 则不必再创建 否则则新建连接 
             if not self.is_host_alive(init_host):
                 host_info=self.redis_config_client.hgetall(config.prefix_realhost+init_host)
+                host_info["uuid"]=init_host_uuid
                 host_info["tag"]=host_info["ip"]
                 host_info["ip"]=host_info["ip"].split("_")[0]
-                          
-                if proxy_mode and not ("proxy" in host_info and host_info["proxy"].strip()) :
-                    self.redis_log_client.hset(init_host_uuid,"exit_code","init failed")
-                    self.redis_log_client.hset(init_host_uuid,"stderr","proxy host error: %s" % init_host)    
-                
+                           
                 if not ("ip" in host_info): 
                     self.redis_log_client.hset(init_host_uuid,"exit_code","host info err")
                     logger_err.error("< %s > init failed, host info error, ip not exist" % init_host)
@@ -119,7 +116,7 @@ class JobManager(object):
                         
                     logger.debug("init host info %s" % str(host_info))
             
-                    try:
+                    try: 
                         self.redis_send_client.set(config.prefix_initing+init_host,time.time())
                         h=RemoteHost(host_info,[self.redis_send_config,self.redis_log_config])
                         h.forever_run()

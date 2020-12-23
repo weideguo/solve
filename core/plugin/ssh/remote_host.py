@@ -43,6 +43,7 @@ class RemoteHost(MySSH, AbstractHost, AbstractThread):
         
         self.ip =host_info["ip"]
         self.ip_tag=host_info.get("tag") or self.ip
+        #self.host_uuid=host_info["uuid"]   #使用uuid可以更精确控制单个主机 当一个ip存在多个连接时
         
         self.cmd_key       = config.prefix_cmd+self.ip_tag
         self.heartbeat_key = config.prefix_heart_beat+self.ip_tag

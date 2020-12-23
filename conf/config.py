@@ -80,20 +80,20 @@ local_ip_list=[ h.strip() for h in str(get_config("common","local_ip_list")).spl
 #local_ip_list=["127.0.0.1","localhost"]                       
 
 ###################################################################################################
-
-remote_model="core.plugin.ssh.remote_host.RemoteHost" #远端主机实现模块
+#远端主机实现模块
+remote_model="core.plugin.ssh.remote_host.RemoteHost" 
+#remote_model="core.plugin.ssh2.remote_host.RemoteHost" 
 #remote_model="core.plugin.salt.salt_conn.SaltConn"     
+
 """
-模块的类中
-__init__(self,host_info,redis_send_pool,redis_log_pool) 接受的三个参数：主机的信息(dict) 接受命令的redis连接池 执行结果存放的redis连接池
-至少要实现方法forever_run()以供上层调用
+模块的类中至少要实现方法forever_run()以供上层调用
 
-可以每个实例化后的对象对应一个远端主机                        使用ssh分发命令时使用该方法
-也可以通过判断只实例化一个对象进行命令分发协调 单例模式       使用salt分发命令时使用该方法
-
+可以每个实例化后的对象对应一个远端主机                       
+也可以通过判断只实例化一个对象进行命令分发协调 单例模式      
 
 core.plugin.ssh.remote_host.RemoteHost                使用ssh实现
-core.plugin.salt.salt_conn.SaltConn                   使用salt实现,首次启动前需要通过链接设置salt上传/下载目录与主机目录的映射
+core.plugin.ssh2.remote_host.RemoteHost                使用ssh单例模式实现，
+core.plugin.salt.salt_conn.SaltConn                   使用salt单例模式实现，首次启动前需要通过链接设置salt上传/下载目录与主机目录的映射
                                                       #python 2.7 / salt 2018.3.3 (Oxygen)
 """
 
@@ -103,7 +103,7 @@ log_level=10                        #参考logging模块的值 logging.DEBUG=10 
 remote_process=3                    #使用多少个进程创建远程连接。进程之间竞争从队列获取创建信息以创建远程对象。不会影响实际并发数，设置跟cpu核心一致以便最大限度使用cpu。
 clear_start=1                       #启动时清除 连接队列 未执行命令 心跳
 heart_beat_interval=10              #主机心跳间隔
-max_concurrent_thread=3             #单个主机的最大并发数
+max_concurrent_thread=3             #单个主机的最大并发数  使用单利模式的远端主机实现时这个参数应该设置大一些
 cmd_log_expire_sec=60*60*24         #单条命令日志的保存时间 默认时间单位都为秒
 kill_cluster_expire_sec=60          #kill_<cluster id>键的保存时间
 closing_host_flag_expire_sec=10     #closing_<ip>键的保存时间

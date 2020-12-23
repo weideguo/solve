@@ -66,6 +66,8 @@ class ClusterExecution(object):
         self.sum_key=config.prefix_sum+self.cluster_id 
         self.log_target=config.prefix_log_target+self.cluster_id
         
+        self.connect_host_info={}         #cluster涉及到的连接
+        
         
     def redis_refresh(self):
         self.redis_send_client=self.redis_connect.refresh(self.redis_send_config)
@@ -111,6 +113,13 @@ class ClusterExecution(object):
         self.current_uuid=""
         self.cluster_id=""
         self.target="" 
+        
+        """
+        #通过uuid关闭cluster涉及的连接
+        for host in self.connect_host_info:
+            host_uuid=connect_host_info[host]
+            self.redis_send_client.publish(config.key_kill_host,host_uuid) 
+        """
         
         if self.is_disconnect:
             for client in self.redis_client_list:
@@ -429,10 +438,17 @@ class ClusterExecution(object):
         """
         将连接信息插入队列 控制主机的连接 并切换当前接受命令的主机        
         """
-
-        self.current_host=cmd.replace("[","").replace("]","").strip()
-
+        #self.current_host=cmd.replace("[","").replace("]","").strip()
+        self.current_host=cmd.strip()[1:-1].strip()
+        
         if self.current_host:
+            """
+            #只有之前没创建的连接才创建
+            if self.current_host not in self.connect_host_info:
+                self.connect_host_info[self.current_host]=current_uuid
+            else:
+                self.redis_send_client.rpush(config.key_conn_control,self.current_host+config.spliter+current_uuid)
+            """
             #将主机ip放入初始化队列 由其他线程后台初始化连接
             self.redis_send_client.rpush(config.key_conn_control,self.current_host+config.spliter+current_uuid)
             self.redis_log_client.hset(current_uuid,"uuid",current_uuid)

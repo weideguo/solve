@@ -78,7 +78,7 @@ class ProxyManager(JobManager):
             else:
                 init_host_uuid=uuid.uuid1().hex
             
-            self.conn_host(init_host,redis_connect,init_host_uuid,proxy_mode=True)    
+            self.conn_host(init_host,redis_connect,init_host_uuid)    
             
             
     def run_forever(self):

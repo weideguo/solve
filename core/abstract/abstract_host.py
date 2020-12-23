@@ -31,6 +31,8 @@ class AbstractHost(object):
         """继承类根据需要调用的函数可能需要初始化以下对象 """
         self.redis_log_client=None
         self.redis_send_client=None
+        self.ip_tag=""
+        #self.host_uuid=""
         
     ######################################################
     ##需要重载的函数  具体的实现方式不同
@@ -359,7 +361,8 @@ class AbstractHost(object):
                 break
             
             kill_tag=kill_info[-1]
-
+            
+            #if kill_tag==self.host_uuid: 
             if kill_tag==self.ip_tag:            
                 break
         
