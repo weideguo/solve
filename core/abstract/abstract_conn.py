@@ -92,7 +92,6 @@ class AbstractConn(object):
         self.thread_q.get(block=False) 
     
     
-    
     def _forever_run(self):
         """
         处理方法入口  
@@ -104,17 +103,20 @@ class AbstractConn(object):
                 for k in self.redis_send_client.keys(config.prefix_cmd+"*"):
                     self.thread_q.put(1)
                     allcmd = self.redis_send_client.lpop(k)
-                    ip_tag = k.split(config.prefix_cmd)[1]
-                    
-                    allcmd=allcmd.split(config.spliter)
-                    cmd=allcmd[0]
-                    try:
-                        cmd_uuid=allcmd[1]
-                    except IndexError:
-                        cmd_uuid=uuid.uuid1().hex 
-                    
-                    t=Thread(target=self.__single_exe,args=(cmd,cmd_uuid,ip_tag))
-                    t.start()
+                    if allcmd:
+                        ip_tag = k.split(config.prefix_cmd)[1]
+                        
+                        allcmd=allcmd.split(config.spliter)
+                        cmd=allcmd[0]
+                        try:
+                            cmd_uuid=allcmd[1]
+                        except IndexError:
+                            cmd_uuid=uuid.uuid1().hex 
+                        
+                        t=Thread(target=self.__single_exe,args=(cmd,cmd_uuid,ip_tag))
+                        t.start()
+                    else:
+                        self.thread_q.get(block=False) 
             else:
                 #为空时控制频率  
                 time.sleep(1) 
