@@ -114,12 +114,10 @@ class ClusterExecution(object):
         self.cluster_id=""
         self.target="" 
         
-        """
         #通过uuid关闭cluster涉及的连接
         for host in self.connect_host_info:
-            host_uuid=connect_host_info[host]
+            host_uuid=self.connect_host_info[host]
             self.redis_send_client.publish(config.key_kill_host,host_uuid) 
-        """
         
         if self.is_disconnect:
             for client in self.redis_client_list:
@@ -401,7 +399,16 @@ class ClusterExecution(object):
 
         if not c_uuid:
             c_uuid=uuid.uuid1().hex
-
+        
+        if config.cluster_connect_control:
+            if self.redis_send_client.exists(config.prefix_heart_beat+host):
+                #有连接的先用已经存在的连接 用于兼容本地连接
+                exe_tag=host
+            else:
+                exe_tag=self.connect_host_info[host]
+        else:
+            exe_tag=host
+        
         logger.debug("-------------- <%s %s> %s %s %s accept" % (self.target,self.cluster_id,host,cmd,c_uuid))
         
         if re.match("^wait$",cmd.strip()):
@@ -423,10 +430,10 @@ class ClusterExecution(object):
             check_reault_block=False 
             #print c_uuid,self.exe_uuid_list,self.target 
             cmd=re.sub("&\s*?$","",cmd)
-            self.redis_send_client.rpush(config.prefix_cmd+host,cmd+config.spliter+c_uuid)
+            self.redis_send_client.rpush(config.prefix_cmd+exe_tag,cmd+config.spliter+c_uuid)
             r=""
         else:        
-            self.redis_send_client.rpush(config.prefix_cmd+host,cmd+config.spliter+c_uuid)        
+            self.redis_send_client.rpush(config.prefix_cmd+exe_tag,cmd+config.spliter+c_uuid)        
             r=self.__check_result([c_uuid])[0]["stdout"].replace("\n","")   
  
         logger.debug("-------------- <%s %s> %s %s %s complete" % (self.target,self.cluster_id,host,cmd,c_uuid))        
@@ -442,26 +449,30 @@ class ClusterExecution(object):
         self.current_host=cmd.strip()[1:-1].strip()
         
         if self.current_host:
-            """
-            #只有之前没创建的连接才创建
-            if self.current_host not in self.connect_host_info:
-                self.connect_host_info[self.current_host]=current_uuid
+            
+            if config.cluster_connect_control: 
+                if self.current_host not in self.connect_host_info:
+                    #cluster控制连接与关闭时，只有之前没创建的连接才创建
+                    self.connect_host_info[self.current_host]=current_uuid
+                    self.redis_send_client.rpush(config.key_conn_control,self.current_host+config.spliter+current_uuid)
             else:
+                #将主机ip放入初始化队列 由其他线程后台初始化连接
                 self.redis_send_client.rpush(config.key_conn_control,self.current_host+config.spliter+current_uuid)
-            """
-            #将主机ip放入初始化队列 由其他线程后台初始化连接
-            self.redis_send_client.rpush(config.key_conn_control,self.current_host+config.spliter+current_uuid)
+                
             self.redis_log_client.hset(current_uuid,"uuid",current_uuid)
 
             #阻塞到host启动完毕
             def get_heart_beat():
-                heart_beat=self.redis_send_client.get(config.prefix_heart_beat+self.current_host)
-                if not heart_beat:
-                    heart_beat=0
-                return heart_beat
+                heart_beat=self.redis_send_client.get(config.prefix_heart_beat+current_uuid) or 0
+                #用于兼容本地连接
+                heart_beat1=self.redis_send_client.get(config.prefix_heart_beat+self.current_host) or 0
+                return heart_beat or heart_beat1
 
             retry_flag=0
-            while time.time()-float(get_heart_beat())>config.host_check_success_time and retry_flag<config.host_check_wait \
+            #while time.time()-float(get_heart_beat())>config.host_check_success_time and retry_flag<config.host_check_wait \
+            #      and self.exe_next and (not self.redis_log_client.hget(current_uuid,"exit_code")):
+            #存在心跳即可 不必判断时间？
+            while not float(get_heart_beat()) and retry_flag<config.host_check_wait \
                   and self.exe_next and (not self.redis_log_client.hget(current_uuid,"exit_code")):
                 time.sleep(config.host_check_time)
                 retry_flag = retry_flag+1
@@ -523,8 +534,8 @@ class ClusterExecution(object):
         key_select_all=config.prefix_select+"_all"+config.spliter+current_uuid
         key_select=config.prefix_select+config.spliter+current_uuid
         #使用临时变量存放
-        self.redis_send_client.set(key_select_all,g_value)
-        self.redis_send_client.expire(key_select_all, config.tmp_config_expire_sec)
+        self.redis_send_client.set(key_select_all,g_value, config.tmp_config_expire_sec)
+        #self.redis_send_client.expire(key_select_all, config.tmp_config_expire_sec)
         #阻塞等待
         self.redis_log_client.hset(current_uuid,"step","waiting select")
         block_tag=self.redis_send_client.blpop(key_select, config.tmp_config_expire_sec)

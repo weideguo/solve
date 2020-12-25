@@ -111,7 +111,7 @@ localhost_redis_pool_size=10        #本地连接redis的连接池的大小
 remote_host_redis_pool_size=5       #远程连接redis的连接池的大小   
 cluster_redis_pool_size=5           #每个执行对象执行时的连接池
 
-
+cluster_connect_control=False       #单个cluster的连接自己管理 cluster的任务执行介绍后自行关闭 为True时只能选择 remote_model="core.plugin.ssh.remote_host.RemoteHost" 且不要手动创建连接
 clear_start=1                       #启动时清除 连接队列 未执行命令 心跳
 host_start_without_cmd=True         #使用单利模式的远端主机实现时应该为False 创建连接时不能存在命令队列
 

@@ -79,23 +79,46 @@ class JobManager(object):
         判断SSH是否已经连接
         一个主机只能运行允许一个并发进行判断
         """
-
-        check_flag=self.redis_send_client.get(config.prefix_check_flag+ip)
-       
-        #拿不到判断的flag则默认服务是连接的
-        if check_flag:
-            is_alive=True
-
+        if config.cluster_connect_control:
+            #当使用cluster控制连接关闭时 不加锁 
+            #只有本地连接有ip的心跳  非本地有uuid的心跳
+            lock=False
+        
+        if lock:
+            check_flag=self.redis_send_client.set(config.prefix_check_flag+ip,1,nx=True)
         else:
-            if lock:
-                self.redis_send_client.set(config.prefix_check_flag+ip,1)
+            check_flag=not self.redis_send_client.get(config.prefix_check_flag+ip)
             
-            if not self.redis_send_client.exists(config.prefix_heart_beat+ip):
-                is_alive=False
-            else:
-                is_alive=True
-                self.redis_send_client.delete(config.prefix_check_flag+ip)
-
+        #拿不到判断的flag则默认服务是连接的 存在心跳则服务是连接的 
+        if not check_flag or self.redis_send_client.exists(config.prefix_heart_beat+ip):
+            is_alive=True
+        else:
+            is_alive=False
+        
+        #check_flag=self.redis_send_client.get(config.prefix_check_flag+ip)
+        #
+        #拿不到判断的flag则默认服务是连接的
+        #if check_flag:
+        #    is_alive=True
+        #
+        #else:
+        #    if lock:
+        #        self.redis_send_client.set(config.prefix_check_flag+ip,1)
+        #    
+        #    if not self.redis_send_client.exists(config.prefix_heart_beat+ip):
+        #        is_alive=False
+        #    else:
+        #        is_alive=True
+        #        self.redis_send_client.delete(config.prefix_check_flag+ip)
+        
+        #当使用cluster控制连接关闭时，除了本地连接其他所有新请求的连接都创建
+        #if config.cluster_connect_control:
+        #    #连接存在且没有主机信息则被认为是本地连接，在该模式本地连接不能设置主机信息
+        #    if is_alive and not self.redis_config_client.hgetall(config.prefix_realhost+ip):
+        #        return True
+        #    else:
+        #        return False
+            
         return is_alive
     
     
@@ -104,7 +127,8 @@ class JobManager(object):
             #如果连接存在 则不必再创建 否则则新建连接 
             if not self.is_host_alive(init_host):
                 host_info=self.redis_config_client.hgetall(config.prefix_realhost+init_host)
-                host_info["uuid"]=init_host_uuid
+                if config.cluster_connect_control:
+                    host_info["uuid"]=init_host_uuid
                 host_info["tag"]=host_info["ip"]
                 host_info["ip"]=host_info["ip"].split("_")[0]
                            

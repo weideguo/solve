@@ -72,7 +72,7 @@ class LocalHost(AbstractHost,AbstractThread):
                   
     #重载AbstractHost函数        
     def forever_run(self):
-        t1=Thread(target=self.heart_beat)
+        t1=Thread(target=self.heart_beat,args=(None,config.host_check_success_time*3))
         self.thread_list.append(t1)
         self.serve_forever()           
             

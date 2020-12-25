@@ -58,7 +58,7 @@ class AbstractHost(object):
     #####################################################
         
             
-    def single_run(self,cmd,cmd_uuid,ip_tag,extend_pattern="\s*__\w+__($|\s)"):
+    def single_run(self,cmd,cmd_uuid,ip_tag,extend_pattern="\s*__\w+__($|\s)",real_ip=None):
         """
         单个命令的执行
         
@@ -71,7 +71,7 @@ class AbstractHost(object):
         exe_result["begin_timestamp"]=begin_timestamp
         exe_result["cmd"]=cmd
         exe_result["uuid"]=cmd_uuid
-        exe_result["exe_host"]=ip_tag
+        exe_result["exe_host"]=real_ip or ip_tag
         exe_result["from_host"]=get_host_ip()
         
         logger.debug(str(exe_result)+" begin")
@@ -330,7 +330,7 @@ class AbstractHost(object):
         return cmd,cmd_uuid,ip_tag  
 
     
-    def heart_beat(self,log_out=None):
+    def heart_beat(self,log_out=None,expire_time=config.host_check_success_time):
         """
         心跳
         """
@@ -339,9 +339,10 @@ class AbstractHost(object):
                 for ip_tag in self.parallel_list:
                     if log_out:
                         log_out("%s heart beat" % self.ip_tag)
-                    self.redis_send_client.set(config.prefix_heart_beat+ip_tag,time.time())
-                    self.redis_send_client.expire(config.prefix_heart_beat+ip_tag,config.host_check_success_time)
-                    time.sleep(config.heart_beat_interval)     
+                    #self.redis_send_client.set(config.prefix_heart_beat+ip_tag,time.time())
+                    #self.redis_send_client.expire(config.prefix_heart_beat+ip_tag,expire_time)
+                    self.redis_send_client.set(config.prefix_heart_beat+ip_tag,time.time(),expire_time)
+                time.sleep(config.heart_beat_interval)     
             except:
                 time.sleep(5)
               

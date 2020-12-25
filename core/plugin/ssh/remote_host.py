@@ -42,8 +42,10 @@ class RemoteHost(MySSH, AbstractHost, AbstractThread):
         super(RemoteHost, self).__init__(host_info)       
         
         self.ip =host_info["ip"]
-        self.ip_tag=host_info.get("tag") or self.ip
-        #self.host_uuid=host_info["uuid"]   #使用uuid可以更精确控制单个主机 当一个ip存在多个连接时
+        self._ip_tag=host_info.get("tag") or self.ip
+        self.ip_tag=host_info.get("uuid") or self._ip_tag     #使用uuid可以更精确控制单个主机 当一个ip存在多个连接时
+            
+        logger.info("remote host listen on %s" % self.ip_tag)  
         
         self.cmd_key       = config.prefix_cmd+self.ip_tag
         self.heartbeat_key = config.prefix_heart_beat+self.ip_tag
@@ -82,7 +84,7 @@ class RemoteHost(MySSH, AbstractHost, AbstractThread):
     #重载AbstractThread的函数
     def real_func(self,cmd,cmd_uuid,ip_tag,*args,**kwargs):
         if cmd:
-            self.single_run(cmd,cmd_uuid,ip_tag) 
+            self.single_run(cmd,cmd_uuid,ip_tag,real_ip=self._ip_tag) 
         
     
     #重载AbstractHost提供给上层的入口函数
