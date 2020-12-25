@@ -180,8 +180,8 @@ class JobManager(object):
         redis_connect=None                  #每个远程连接对象自己创建独占的连接池
         while True:
             
-            init_host=self.redis_send_client.blpop(config.key_conn_control) 
-            init_host_list=init_host[1].split(config.spliter)
+            _init_host=self.redis_send_client.blpop(config.key_conn_control)[1] 
+            init_host_list=_init_host.split(config.spliter)
             init_host=init_host_list[0].strip()
             if len(init_host_list)>1:
                 init_host_uuid=init_host_list[1].strip()
@@ -209,7 +209,7 @@ class JobManager(object):
                 
                 if "proxy" in host_info and host_info["proxy"].strip():
                     proxy_list_name=config.proxy_tag+":"+host_info["proxy"].strip()
-                    self.redis_send_client.rpush(proxy_list_name,init_host)
+                    self.redis_send_client.rpush(proxy_list_name,_init_host)
                     logger.debug("< %s > will init connect by proxy, not here" % init_host)
                 
                 elif init_host:
