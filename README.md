@@ -135,11 +135,15 @@ hash类型的redis key。执行对象本质即为参数的集合，用于在实�
 
   |   参数名    | 说明 | 必须 |
   | :---: | :----: | :--: |
-  | ip        | 创建ssh连接用的ip，也可以为ip_tag（需要与key的名字一致）          | 是 |
-  | user      | 创建ssh连接用的user，不设置则默认root          | -  |
-  | ssh_port  | ssh的端口，不设置则默认22                      | -  |
-  | passwd    | ssh的密码，在主机设置免密登陆时则不需要设置    | -  |
-  | proxy     | 使用的代理名，对应proxy的mark，不设置则为直连  | -  |
+  | ip        | 创建ssh连接用的ip，也可以为ip_tag（需要与key的名字一致）                 | 是 |
+  | user      | 创建ssh连接用的user，不设置则默认root                                    | -  |
+  | ssh_port  | ssh的端口，不设置则默认22                                                | -  |
+  | passwd    | ssh的密码，在主机设置免密登陆时则不需要设置                              | -  |
+  | proxy     | solve的代理，不是ssh代理。使用的代理名，对应proxy的mark，不设置则为直连  | -  |
+
+  免密登陆：默认加载 ~/.ssh/ 下的 id_rsa 或 id_dsa 或 id_ecdsa
+  
+  SSH代理： 默认使用文件 ~/.ssh/config 的代理设置，即ProxyCommand。代理机需要设置免密连接。（需要设置加载 ~/.ssh/ 下的文件 id_rsa 或 id_dsa 或 id_ecdsa ）
 
 * 普通执行对象
   

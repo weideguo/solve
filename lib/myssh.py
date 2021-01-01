@@ -5,7 +5,7 @@ import time
 import sys
 
 import paramiko
-from paramiko import SSHClient
+from paramiko import SSHClient,SSHConfig
 from lib.utils import my_md5
 
 
@@ -29,6 +29,9 @@ class MySSH(object):
         
         self.ssh_client=None
         
+        self.ssh_config="~/.ssh/config"
+        self.key_filename=None
+           
     def init_conn(self):
         """
         初始化连接
@@ -37,7 +40,18 @@ class MySSH(object):
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         #默认使用运行该程序用户的ssh目录即 ~/.ssh 进行免密认证。如文件 ~/.ssh/id_rsa
         #同时也支持ssh-agent加载其他位置的私钥文件，先加载后启动该程序
-        client.connect(hostname=self.hostname, port=self.port, username=self.username, password=self.password)
+        
+        proxy=None
+        config = SSHConfig()
+        f=os.path.expanduser(self.ssh_config)
+        if os.path.isfile(f):
+            config.parse(open(f))
+            host=config.lookup(self.hostname)
+            #配置文件中存在proxycommand则使用SSH代理，否则SSH直连
+            if "proxycommand" in host:
+                proxy = paramiko.ProxyCommand(host["proxycommand"])
+        
+        client.connect(hostname=self.hostname, port=self.port, username=self.username, password=self.password,sock=proxy,key_filename=self.key_filename)
         self.ssh_client=client
          
     def exe_cmd(self,cmd,background_log_set=None,*arg,**kwargs):
