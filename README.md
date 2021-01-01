@@ -143,7 +143,7 @@ hash类型的redis key。执行对象本质即为参数的集合，用于在实�
 
   免密登陆：默认加载 ~/.ssh/ 下的 id_rsa 或 id_dsa 或 id_ecdsa
   
-  SSH代理： 默认使用文件 ~/.ssh/config 的代理设置，即ProxyCommand。代理机需要设置免密连接。（需要设置加载 ~/.ssh/ 下的文件 id_rsa 或 id_dsa 或 id_ecdsa ）
+  SSH代理： 默认使用文件 ~/.ssh/config 的代理设置，Host需要对应ip，只需要ProxyCommand模块的设置。代理机必须设置免密连接。（需要设置加载 ~/.ssh/ 下的文件 id_rsa 或 id_dsa 或 id_ecdsa ）
 
 * 普通执行对象
   
