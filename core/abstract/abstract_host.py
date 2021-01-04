@@ -379,8 +379,7 @@ class AbstractHost(object):
             t.join()
         
         try:
-            #self.ftp_client.close()
-            self.ssh_client.close()
+            self.close()
         except:
             pass
         

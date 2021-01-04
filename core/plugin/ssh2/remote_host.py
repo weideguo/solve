@@ -43,7 +43,7 @@ def _copy_file(exist_remote_file,remote_file,local_md5,local_filesize=None,is_co
     host_info=redis_config_client.hgetall(config.prefix_realhost+ip_tag)
     myssh=init_ssh(host_info)
     r=myssh.copy_file(exist_remote_file,remote_file,local_md5,local_filesize,is_copy_by_link,set_info,set_step,ip_tag)
-    myssh.ssh_client.close()
+    myssh.close()
     return r    
     
     
@@ -51,7 +51,7 @@ def _put_file(local_md5,local_file,remote_path,set_info=None,set_step=None,ip_ta
     host_info=redis_config_client.hgetall(config.prefix_realhost+ip_tag)
     myssh=init_ssh(host_info)
     r=myssh.put_file(local_md5,local_file,remote_path,set_info,set_step,ip_tag)
-    myssh.ssh_client.close()
+    myssh.close()
     return r
     
 
@@ -59,7 +59,7 @@ def _get_file(local_path,remote_file,set_info,set_step=None,ip_tag=None):
     host_info=redis_config_client.hgetall(config.prefix_realhost+ip_tag)
     myssh=init_ssh(host_info)
     r=myssh.get_file(local_path,remote_file,set_info,set_step,ip_tag)
-    myssh.ssh_client.close()
+    myssh.close()
     return r
 
 
@@ -67,7 +67,7 @@ def _exe_cmd(cmd,background_log_set=None,ip_tag=None):
     host_info=redis_config_client.hgetall(config.prefix_realhost+ip_tag)
     myssh=init_ssh(host_info)
     r=myssh.exe_cmd(cmd,background_log_set,ip_tag)
-    myssh.ssh_client.close()
+    myssh.close()
     return r
     
 
