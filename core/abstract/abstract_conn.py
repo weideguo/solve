@@ -2,16 +2,17 @@
 import time
 import uuid
 import sys
-if sys.version_info>(3,0):
-    import queue as Queue
-else:
-    import Queue
+#if sys.version_info>(3,0):
+#    import queue as Queue
+#else:
+#    import Queue
 import threading
 from threading import Thread
 
 from lib.utils import Singleton
 from lib.redis_conn import RedisConn
 from lib.wrapper import logger,logger_err
+from lib.compat import Queue
 
 from conf import config
 

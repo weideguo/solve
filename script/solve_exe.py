@@ -15,6 +15,7 @@ import redis
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from conf import config
 from lib.redis_conn import RedisConn
+from lib.compat import input
 
 class SolveExe(object):
     """
@@ -162,8 +163,8 @@ if __name__=="__main__":
         block_tag=True
     
     
-    if sys.version_info<(3,0):
-        input=raw_input
+    #if sys.version_info<(3,0):
+    #    input=raw_input
 
     def get_var_interactive(var_list):
         """

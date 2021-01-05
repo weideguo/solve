@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 import sys
-if sys.version_info>(3,0):
-    import queue as Queue
-else:
-    import Queue
+#if sys.version_info>(3,0):
+#    import queue as Queue
+#else:
+#    import Queue
 import threading
 from threading import Thread
 from traceback import format_exc
 
 from lib.wrapper import logger,logger_err
+from lib.compat import Queue
 
 class AbstractThread(object):
     """

@@ -9,6 +9,7 @@ import copy
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from conf import config
 from lib.redis_conn import RedisConn
+from lib.compat import input
 
 
 class SolveLock(object):
@@ -95,8 +96,8 @@ if __name__ == "__main__":
         print("%s [ --help | -h | -a | -r | -f ] <host>" % sys.argv[0])
         exit(1)
          
-    if sys.version_info<(3,0):
-        input=raw_input
+    #if sys.version_info<(3,0):
+    #    input=raw_input
          
     #host=input("host: ")
     host=sys.argv[-1]

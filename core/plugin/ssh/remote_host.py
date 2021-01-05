@@ -4,10 +4,10 @@ import re
 import uuid
 import time
 import sys
-if sys.version_info>(3,0):
-    import queue as Queue
-else:
-    import Queue
+#if sys.version_info>(3,0):
+#    import queue as Queue
+#else:
+#    import Queue
 from threading import Thread
 from traceback import format_exc
 
@@ -15,6 +15,7 @@ from lib.redis_conn import RedisConn
 from lib.wrapper import logger,logger_err
 from lib.myssh import MySSH
 from lib.password import Password
+from lib.compat import Queue
 
 from core.abstract.abstract_host import AbstractHost
 from core.abstract.parallel import AbstractThread

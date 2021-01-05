@@ -2,10 +2,10 @@
 import uuid
 import time
 import sys
-if sys.version_info>(3,0):
-    import queue as Queue
-else:
-    import Queue
+#if sys.version_info>(3,0):
+#    import queue as Queue
+#else:
+#    import Queue
 from threading import Thread
 import subprocess
 from traceback import format_exc
@@ -13,6 +13,7 @@ from traceback import format_exc
 from lib.wrapper import gen_background_log_set,connection_error_rerun,command_fliter,logger,logger_err
 from lib.utils import get_host_ip
 from lib.redis_conn import RedisConn
+from lib.compat import Queue
 
 from core.abstract.abstract_host import AbstractHost
 from core.abstract.parallel import AbstractThread

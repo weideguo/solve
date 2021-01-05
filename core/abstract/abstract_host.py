@@ -4,15 +4,16 @@ import re
 import uuid
 import time
 import sys
-if sys.version_info>(3,0):
-    import queue as Queue
-else:
-    import Queue
+#if sys.version_info>(3,0):
+#    import queue as Queue
+#else:
+#    import Queue
 from threading import Thread
 from traceback import format_exc
 
 from lib.wrapper import gen_background_log_set,connection_error_rerun,command_fliter,logger,logger_err
 from lib.utils import my_md5,get_host_ip,cmd_split,is_file_in_dir,safe_decode
+from lib.compat import Queue
 
 from conf import config
 
