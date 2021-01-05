@@ -25,8 +25,8 @@ class AbstractHost(object):
     """
     执行命令的抽象类 所有具体实现都应该继承这个类
     """
-    extends_postfixs = "extends"                                      #存放扩展命令对应文件的相对目录
-    extends_dir = ["",".sh"]                                          #扩展命令对应文件的可选后缀
+    extends_postfixs = ["",".sh"]                                     #存放扩展命令对应文件的相对目录
+    extends_dir = "extends"                                           #扩展命令对应文件的可选后缀
     
     def __init__(self,*args, **kargs):
         """继承类根据需要调用的函数可能需要初始化以下对象 """
