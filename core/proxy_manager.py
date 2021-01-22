@@ -5,13 +5,13 @@ from multiprocessing import Process
 from traceback import format_exc
 
 from conf import config
-from .job_manager import JobManager
+from .base_manager import BaseManager
 from lib.utils import get_host_ip
-#from lib.logger import logger,logger_err
 from lib.wrapper import connection_error_rerun,logger,logger_err
 from lib.redis_conn import RedisConn
 
-class ProxyManager(JobManager):
+
+class ProxyManager(BaseManager):
     """
     作为proxy执行时的主机管理
     proxy与master的通信使用redis实现
@@ -29,31 +29,12 @@ class ProxyManager(JobManager):
         super(ProxyManager, self).__init__(redis_connect,redis_config_list) 
         
         #优先从配置文件获取，获取失败，则使用ip地址
-        try:
-            self.proxy_mark = config.proxy_mark
-            if not self.proxy_mark:
-                raise
-        except:
-            self.proxy_mark = get_host_ip()
+        self.proxy_mark = getattr(config,"proxy_mark","") or get_host_ip()
         
-        self.proxy_tag="%s:%s" % (config.proxy_tag,self.proxy_mark)
+        self.proxy_tag = "%s:%s" % (config.proxy_tag,self.proxy_mark)
         
-        self.listen_tag = config.local_ip_list
         #为proxy时 在proxy本地不监听 127.0.0.1 localhost 防止跟master的发生冲突
-        
-        for ip in ["127.0.0.1","localhost"]:
-            try:
-                self.listen_tag.remove(ip)
-            except:
-                pass
-
-    
-    def __localhost(self):
-        """
-        proxy的本地执行
-        监听 cmd_proxy:10.0.0.1:127.0.0.1  cmd_proxy:10.0.0.1:localhost
-        """
-        self.conn_localhost(self.listen_tag)
+        self.listen_tag = [ ip for ip in listen_tag if ip not in ["127.0.0.1","localhost"] ]
         
     
     @connection_error_rerun()
@@ -84,14 +65,16 @@ class ProxyManager(JobManager):
     def run_forever(self):
         """
         后台运行
-        conn_localhost proxy的本地执行
+        localhost      proxy的本地执行
         __remot_host   proxy的远程连接
         """
-        self.is_listen_tag_clean(listen_tag=self.listen_tag)
+        #self.is_listen_tag_clean(listen_tag=self.listen_tag)
+        self.is_listen_tag_clean()
         
         p_list=[]
         
-        p1=Process(target=self.__localhost)
+        #p1=Process(target=self.localhost,args=(self.listen_tag,))
+        p1=Process(target=self.localhost)
         p_list.append(p1)
         
         #远程主机众多时需要使用多进程分担，充分利用cpu
