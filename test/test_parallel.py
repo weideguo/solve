@@ -1,12 +1,14 @@
-#coding:utf8
+# -*- coding: utf-8 -*-
+import random
+import time
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.abstract.parallel import AbstractThread
-
-import time
 from conf import config
-
 from lib.redis_conn import RedisConn
-import random
+
+
 _redis_connect=RedisConn()       
 redis_send_client=_redis_connect.refresh(config.redis_send)  
 
