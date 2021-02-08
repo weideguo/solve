@@ -9,10 +9,12 @@ from traceback import format_exc
 
 from jinja2 import Template
 
+from .playbook_parser import simple_parser
 from lib.utils import safe_decode
 from lib.wrapper import logger,logger_err
 from lib.redis_conn import RedisConn
 from conf import config
+
 
 class ClusterExecution(object):
     """
@@ -217,132 +219,130 @@ class ClusterExecution(object):
             return stop_str,pause_tag
         
         
-        try:
-            with open(playbook,"r") as f:
+        try:   
+            current_line=0
+            for next_cmd in simple_parser(playbook):
+                current_line=current_line+1
+                if not self.exe_next:
+                    break
                 
-                next_cmd=f.readline()
-                current_line=1            
-                while next_cmd and self.exe_next:
-                    #去除所有命令的左右空格以及换行符，并转换成unicode格式
-                    next_cmd=next_cmd.strip()
-                    next_cmd=safe_decode(next_cmd)
-                    
-                    self.current_uuid=uuid.uuid1().hex
-                    if current_line < begin_line:
-                        #主机切换的命令正常运行
-                        if re.match("^\[.*\]$",next_cmd):
-                            cmd=next_cmd
-                        else:
-                            cmd=""
-                    else:
+                #去除所有命令的左右空格以及换行符，并转换成unicode格式
+                next_cmd=next_cmd.strip()
+                next_cmd=safe_decode(next_cmd)
+                
+                self.current_uuid=uuid.uuid1().hex
+                if current_line < begin_line:
+                    #主机切换的命令正常运行
+                    if re.match("^\[.*\]$",next_cmd):
                         cmd=next_cmd
-                    
-                    self.redis_log_client.rpush(self.log_target,self.current_uuid)
-                    """
-                    每一行命令的日志id都放入日志队列 
-                    根据日志队列、playbook即可获知执行到哪一行结束
-                    以及每一行的执行结果
-                    """
-                    
-                    if re.match("^#",cmd) or re.match("^$",cmd):
-                        #空白以及注释行单独判断
-                        stop_str,pause_tag = pause(self.block_key,pause_tag)
-                        
-                        if stop_str:
-                            
-                            self.redis_log_client.hset(self.current_uuid,"exit_code",stop_str)
-                            self.redis_log_client.hset(self.current_uuid,"stderr",stop_str)
-                            self.redis_log_client.hset(self.current_uuid,"stdout","")
-                            self.exe_next=False                   
-                            self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
-                            break
-                        
-                        #结束暂停判断
-                    
-                        #跳过注释以及空白行
-                        logger.debug("origin command: %s ---- <%s %s> will not execute" % (next_cmd,self.target,self.cluster_id))
-                        
                     else:
-                        self.redis_log_client.hset(self.current_uuid,"start_timestamp",time.time())       
-                        self.redis_log_client.hset(self.current_uuid,"origin_cmd",cmd)
+                        cmd=""
+                else:
+                    cmd=next_cmd
+                
+                self.redis_log_client.rpush(self.log_target,self.current_uuid)
+                """
+                每一行命令的日志id都放入日志队列 
+                根据日志队列、playbook即可获知执行到哪一行结束
+                以及每一行的执行结果
+                """
+                
+                if re.match("^#",cmd) or re.match("^$",cmd):
+                    #空白以及注释行单独判断
+                    stop_str,pause_tag = pause(self.block_key,pause_tag)
                     
-                        logger.debug("origin command: %s ------------ <%s %s> %s" % (cmd,self.target,self.cluster_id,self.current_uuid))
-                        try:
-                            cmd=self.render(target,cmd)
-                        except:
-                            logger_err.error(format_exc())
-                            self.redis_log_client.hset(self.current_uuid,"exit_code","render error")
-                            self.redis_log_client.hset(self.current_uuid,"stderr","render error")
-                            self.redis_log_client.hset(self.current_uuid,"stdout","")
-                            self.exe_next=False                   
-                            self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
-                            break
-    
-                        cmd=cmd.strip()
+                    if stop_str:
+                        
+                        self.redis_log_client.hset(self.current_uuid,"exit_code",stop_str)
+                        self.redis_log_client.hset(self.current_uuid,"stderr",stop_str)
+                        self.redis_log_client.hset(self.current_uuid,"stdout","")
+                        self.exe_next=False                   
+                        self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
+                        break
                     
-                        self.redis_log_client.hset(self.current_uuid,"render_cmd",cmd)
-    
-                        logger.debug("render command: %s ------------ <%s %s> %s" % (cmd,self.target,self.cluster_id,self.current_uuid))
-                        
-                        #进行暂停判断 先渲染后暂停
-                        stop_str,pause_tag = pause(self.block_key,pause_tag)
-                        
-                        if stop_str:
-                            
-                            self.redis_log_client.hset(self.current_uuid,"exit_code",stop_str)
-                            self.redis_log_client.hset(self.current_uuid,"stderr",stop_str)
-                            self.redis_log_client.hset(self.current_uuid,"stdout","")
-                            self.exe_next=False                   
-                            self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
-                            break
-                        
-                            
-                        #结束暂停判断
+                    #结束暂停判断
+                
+                    #跳过注释以及空白行
+                    logger.debug("origin command: %s ---- <%s %s> will not execute" % (next_cmd,self.target,self.cluster_id))
                     
-                        #[ip_addr] 主机切换命令 
-                        if re.match("^\[.*\]$",cmd):
-                            self.__host_change(cmd,self.current_uuid)                        
-                            self.__check_result([self.current_uuid])
-                        
-                        #没有预先切换主机则终止
-                        elif not self.current_host:
-                            self.redis_log_client.hset(self.current_uuid,"exit_code","current_host null")
-                            self.redis_log_client.hset(self.current_uuid,"stderr","should execute [<ip>] before any command")
-                            self.redis_log_client.hset(self.current_uuid,"stdout","")
-                            self.exe_next=False
-                            self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)                            
-                            break
-                        
-                        #脚本全局变量设置
-                        #elif re.match("^global\..+=",cmd):
-                        elif re.match("^"+config.prefix_global+"\..+=",cmd):
-                            self.__global_var(cmd,self.current_uuid)
-                        
-                        #选择变量设置
-                        #elif re.match("^select\..+=",cmd):
-                        elif re.match("^"+config.prefix_select+"\..+=",cmd):
-                            if not self.__select_var(cmd,self.current_uuid):
-                                self.exe_next=False
-                                stop_str="select failed"
-                                break
+                else:
+                    self.redis_log_client.hset(self.current_uuid,"start_timestamp",time.time())       
+                    self.redis_log_client.hset(self.current_uuid,"origin_cmd",cmd)
+                
+                    logger.debug("origin command: %s ------------ <%s %s> %s" % (cmd,self.target,self.cluster_id,self.current_uuid))
+                    try:
+                        cmd=self.render(target,cmd)
+                    except:
+                        logger_err.error(format_exc())
+                        self.redis_log_client.hset(self.current_uuid,"exit_code","render error")
+                        self.redis_log_client.hset(self.current_uuid,"stderr","render error")
+                        self.redis_log_client.hset(self.current_uuid,"stdout","")
+                        self.exe_next=False                   
+                        self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
+                        break
     
-                        #普通命令 简单的shell命令
-                        else:
-                            self.__single_exe(self.current_host,cmd,self.current_uuid)
+                    cmd=cmd.strip()
+                
+                    self.redis_log_client.hset(self.current_uuid,"render_cmd",cmd)
+    
+                    logger.debug("render command: %s ------------ <%s %s> %s" % (cmd,self.target,self.cluster_id,self.current_uuid))
                     
-                        self.redis_log_client.hset(self.current_uuid,"stop_timestamp",time.time())
-    
-                    #从redis获取信息，判断是否进行kill操作终止之后的命令
-                    if self.redis_send_client.get(self.kill_key):        
-                        self.redis_send_client.expire(self.kill_key,config.kill_cluster_expire_sec)
+                    #进行暂停判断 先渲染后暂停
+                    stop_str,pause_tag = pause(self.block_key,pause_tag)
+                    
+                    if stop_str:
+                        
+                        self.redis_log_client.hset(self.current_uuid,"exit_code",stop_str)
+                        self.redis_log_client.hset(self.current_uuid,"stderr",stop_str)
+                        self.redis_log_client.hset(self.current_uuid,"stdout","")
+                        self.exe_next=False                   
+                        self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
+                        break
+                    
+                        
+                    #结束暂停判断
+                
+                    #[ip_addr] 主机切换命令 
+                    if re.match("^\[.*\]$",cmd):
+                        self.__host_change(cmd,self.current_uuid)                        
+                        self.__check_result([self.current_uuid])
+                    
+                    #没有预先切换主机则终止
+                    elif not self.current_host:
+                        self.redis_log_client.hset(self.current_uuid,"exit_code","current_host null")
+                        self.redis_log_client.hset(self.current_uuid,"stderr","should execute [<ip>] before any command")
+                        self.redis_log_client.hset(self.current_uuid,"stdout","")
                         self.exe_next=False
-                        logger.info("get kill signal in <%s %s>" % (self.target,self.cluster_id))
-                        stop_str="killed" 
-    
+                        self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)                            
+                        break
                     
-                    self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
-                    next_cmd=f.readline()    
-                    current_line=current_line+1
+                    #脚本全局变量设置
+                    #elif re.match("^global\..+=",cmd):
+                    elif re.match("^"+config.prefix_global+"\..+=",cmd):
+                        self.__global_var(cmd,self.current_uuid)
+                    
+                    #选择变量设置
+                    #elif re.match("^select\..+=",cmd):
+                    elif re.match("^"+config.prefix_select+"\..+=",cmd):
+                        if not self.__select_var(cmd,self.current_uuid):
+                            self.exe_next=False
+                            stop_str="select failed"
+                            break
+    
+                    #普通命令 简单的shell命令
+                    else:
+                        self.__single_exe(self.current_host,cmd,self.current_uuid)
+                
+                    self.redis_log_client.hset(self.current_uuid,"stop_timestamp",time.time())
+    
+                #从redis获取信息，判断是否进行kill操作以终止之后的命令
+                if self.redis_send_client.get(self.kill_key):        
+                    self.redis_send_client.expire(self.kill_key,config.kill_cluster_expire_sec)
+                    self.exe_next=False
+                    logger.info("get kill signal in <%s %s>" % (self.target,self.cluster_id))
+                    stop_str="killed" 
+                
+                self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
             
             last_uuid=self.current_uuid
             
