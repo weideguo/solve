@@ -187,12 +187,12 @@ echo {{session.my_session_test}}
 #单行命令
 mysql -u{{const.db_user}} -p{{const.db_passwd}} -h127.0.0.1 -P{{db_port}} -e"show databases"
 #上传文件 远端目录不存在则创建 文件名跟本地一样 
-#通过md5判断是否一致 远端文件存但md5不一样则被重命令
+#通过md5判断是否一致 远端文件存但md5不一样则被重命名（加时间戳后缀）
 __put__ /tmp/my_local_file /tmp
 __put__ {{session.local_file}} {{session.remote_path}}
 #上传也可以后台运行
 __put__ {{session.local_file}} {{session.remote_path}} &
-#下载文件 本地目录不存在则创建 文件名跟远端的一样 本地文件存在则被重命令
+#下载文件 本地目录不存在则创建 文件名跟远端的一样 本地文件存在则被重命名（加时间戳后缀）
 __get__ /tmp/my_remote_file /tmp
 __get__ {{session.remote_file}} {{session.local_path}} 
 #下载也可以后台运行
