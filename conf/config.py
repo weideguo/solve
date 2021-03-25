@@ -148,6 +148,7 @@ prefix_select="select"              #输入变量对应的key开头 playbook中�
 prefix_sum="sum_"                   #每次每个执行对象所执行的汇总
 prefix_log_target="log_target_"     #每个执行对象执行命令的队列key
 prefix_log_host="log_host_"         #log_host_<host ip> 每个主机的执行信息
+prefix_log_now="log_now_"           #主机正在运行的命令信息
 prefix_put="put_"                   #put_<host ip> 存储已经上传文件的信息
 prefix_log_job="log_job_"           #每个任务的日志信息
 
