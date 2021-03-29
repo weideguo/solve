@@ -63,7 +63,7 @@ playbook
 
 * wait
   
-  wait为关键字，阻塞至所有后台运行全命令结束。默认playbook的命令逐行运行，后一行命令在前一行命令执行结束后再运行，可以使用<single-line shell command> &实现将单行命令放入后台运行，从而不必阻塞后一行命令。
+  wait为关键字，阻塞至所有后台运行全命令结束。默认playbook的命令逐行运行，后一行命令在前一行命令执行结束后再运行，可以使用<single-line shell command> &实现将单行命令放入后台运行，从而不必阻塞后一行命令。默认在playbook的最后执行一次wait，以确保后台命令执行结束，因而最后的wait可以省略。
 
 * global.&lt;global_var_name&gt;=&lt;other string&gt;\`&lt;shell command&gt;`&lt;other string&gt;
   
@@ -204,6 +204,10 @@ echo "222" && sleep 13 &
 echo "333" && sleep 14 &
 #等待所有后台运行的结束 左右只允许存在空格
 wait
+#分发的命令需要后台运行时，则需要在尾部多加一个&
+#一个&为命令分发系统使用，另外一个&为实际执行时使用
+#这种返回之只是一个虚构的值，需要再次确认是否运行正确，如检查进程是否存在，因而其他命令不应该依赖该命令的执行结果。
+cd /data/redis && bin/redis-server redis.conf & &
 ```
 ```
 #创建job

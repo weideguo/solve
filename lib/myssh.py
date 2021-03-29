@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import re
 import os
 import time
 import sys
@@ -59,6 +59,13 @@ class MySSH(object):
         """
         执行命令
         """
+        #执行的命令为后台执行时
+        if re.match(".*&$",cmd.strip()):
+            channel = self.ssh_client._transport.open_session()
+            channel.exec_command(cmd)
+            #后台执行获取不了stdout stderr exit_code，在此构建一个虚假值
+            return b'you should check if this process has executed correctly',b'',0
+                    
         stdin, stdout, stderr = self.ssh_client.exec_command(cmd)
         
         if background_log_set:

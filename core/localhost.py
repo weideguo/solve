@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
+import re
 import uuid
 import time
 import sys
-#if sys.version_info>(3,0):
-#    import queue as Queue
-#else:
-#    import Queue
 from threading import Thread
 import subprocess
 from traceback import format_exc
@@ -55,8 +52,14 @@ class LocalHost(AbstractHost,AbstractThread):
     
     #重载AbstractHost函数
     def exe_cmd(self,cmd,background_log_set,ip_tag):
+        
         p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
-                
+        
+        if re.match(".*&$",cmd.strip()):
+            #执行的命令为后台执行时
+            #后台执行获取不了stdout stderr exit_code，在此构建一个虚假值
+            return b'you should check if this process has executed correctly',b'',0
+        
         stdout,stderr = background_log_set(p.stdout,p.stderr)
                     
         p.communicate()
