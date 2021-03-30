@@ -350,9 +350,9 @@ class AbstractHost(object):
                 time.sleep(5)
               
     
-    def close_conn(self):
+    def close_conn(self, wait=False):
         """
-        关闭连接 
+        关闭连接 正在执行的命令不会被终止，因而可能需要用系统kill命令进行终止
         """
         #使用订阅阻塞获取需要kill的ip 
         pub=self.redis_send_client.pubsub()
@@ -376,10 +376,11 @@ class AbstractHost(object):
         except:
             pass
         
-        #等待后台的并发运行执行结束
-        while not self.b_thread_q.empty():
-            t=self.b_thread_q.get()
-            t.join()
+        if wait:
+            #等待后台的并发运行执行结束 默认不等待 以避免执行的命令不能结束时造成大量线程不释放
+            while not self.b_thread_q.empty():
+                t=self.b_thread_q.get()
+                t.join()
         
         try:
             self.close()
