@@ -133,7 +133,7 @@ if __name__=="__main__":
         
         #清除相关key
         if config.clear_start and Manager != ProxyManager:
-            clear_keys=[config.key_conn_control,config.prefix_cmd,config.prefix_heart_beat]
+            clear_keys=[config.key_conn_control,config.prefix_cmd,config.prefix_heart_beat,config.prefix_log_now]
             print(simple_log("clear key %s" % str(clear_keys)))
             k_list=[]
             for k_pattern in clear_keys:

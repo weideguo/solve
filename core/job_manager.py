@@ -100,7 +100,7 @@ class JobManager(BaseManager):
                 if self.redis_send_client.exists(config.prefix_initing+ip):
                     #在一段时间之前刚启动 因此不要关闭
                     logger.debug("< %s > is init in near time,will not close" % ip)
-                elif self.redis_log_client.exists(config.prefix_log_now+ip):
+                elif self.redis_send_client.exists(config.prefix_log_now+ip):
                     #存在还在运行的命令 因此不要关闭
                     logger.debug("< %s > host runing now,will not close." % ip)
                 else:

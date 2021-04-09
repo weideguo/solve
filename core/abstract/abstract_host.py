@@ -294,10 +294,10 @@ class AbstractHost(object):
         """
         log_uuid=exe_result["uuid"]
         if is_update:
-            self.redis_log_client.hdel(config.prefix_log_now+ip_tag,log_uuid)                 #执行结束，删除正在执行的命令信息
+            self.redis_send_client.hdel(config.prefix_log_now+ip_tag,log_uuid)                #执行结束，删除正在执行的命令信息
             self.redis_log_client.expire(log_uuid,config.cmd_log_expire_sec)                  #获取返回值后设置日志过期时间
         else:
-            self.redis_log_client.hset(config.prefix_log_now+ip_tag,log_uuid,time.time())     #设置正在执行的命令信息
+            self.redis_send_client.hset(config.prefix_log_now+ip_tag,log_uuid,time.time())    #设置正在执行的命令信息
             self.redis_log_client.rpush(config.prefix_log_host+ip_tag,log_uuid)
         self.redis_log_client.hmset(log_uuid,exe_result)
     
