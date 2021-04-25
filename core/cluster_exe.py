@@ -196,7 +196,7 @@ class ClusterExecution(object):
             if pause_tag:
                 self.redis_log_client.hset(self.current_uuid,"step","pausing")
                 block_tag=self.redis_send_client.blpop(key, timeout=config.tmp_config_expire_sec)
-                self.redis_log_client.hdel(self.current_uuid,"step","pausing done")
+                self.redis_log_client.hdel(self.current_uuid,"step")
                 if block_tag:
                     
                     try:
