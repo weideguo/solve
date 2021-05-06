@@ -3,7 +3,7 @@
 
 # Base images 
 FROM python:3.5
-LABEL maintainer="wdg(https://github.com/zouzhicun)"
+LABEL maintainer="wdg(https://github.com/weideguo)"
 
 ENV REDIS_HOST=127.0.0.1
 ENV REDIS_PORT=6379

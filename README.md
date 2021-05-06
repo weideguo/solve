@@ -2,9 +2,9 @@
 
 # SOLVE ![](./solve.ico)
 
-<!-- 暂时不展示 [![travis-ci](https://img.shields.io/travis/zouzhicun/solve.svg)](https://travis-ci.org/zouzhicun/solve) -->
-[![Python 2.7|3.5|3.7](https://img.shields.io/badge/python-2.7%7C3.5%7C3.7-blue.svg)](https://github.com/zouzhicun/solve) 
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/zouzhicun/solve/blob/master/LICENSE) 
+<!-- 暂时不展示 [![travis-ci](https://img.shields.io/travis/weideguo/solve.svg)](https://travis-ci.org/weideguo/solve) -->
+[![Python 2.7|3.5|3.7](https://img.shields.io/badge/python-2.7%7C3.5%7C3.7-blue.svg)](https://github.com/weideguo/solve) 
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/weideguo/solve/blob/master/LICENSE) 
 
 
 Simple command deliver server, base on SSH. 
@@ -44,7 +44,7 @@ python bin/solve.py restart
 ### usage ###
 设置好[playbook](#playbook)和[执行对象](#target)之后  
 * python script/solve_exe.py   #由[脚本](./script/solve_exe.py)构建[任务](#job)运行
-* 通过web服务实现可视化交互，详见[solve-stack](https://github.com/zouzhicun/solve-stack)
+* 通过web服务实现可视化交互，详见[solve-stack](https://github.com/weideguo/solve-stack)
 
 
 playbook
