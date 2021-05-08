@@ -2,8 +2,14 @@
 # Version 1.0
 
 # Base images 
-FROM python:3.5
+FROM python:3.7
 LABEL maintainer="wdg(https://github.com/weideguo)"
+
+ARG INDEX_URL="https://pypi.org/simple/"
+ARG TRUSTED_HOST="pypi.org"
+
+ENV INDEX_URL=${INDEX_URL}
+ENV TRUSTED_HOST=${TRUSTED_HOST}
 
 ENV REDIS_HOST=127.0.0.1
 ENV REDIS_PORT=6379
@@ -19,6 +25,6 @@ RUN chmod 755 docker-entrypoint.sh
 RUN cp docker-entrypoint.sh /usr/local/bin/
 
 #RUN pip install -r requirements.txt ; echo "skip DEPRECATION info"
-RUN pip install -r requirements.txt  --index-url https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com ; echo "skip DEPRECATION info"
+RUN pip install -r requirements3.7.txt  --index-url ${INDEX_URL} --trusted-host ${TRUSTED_HOST} ; echo "skip DEPRECATION info"
 
-CMD ["docker-entrypoint.sh"]
+CMD ["docker-entrypoint.sh"] 
