@@ -51,17 +51,27 @@ class LocalHost(AbstractHost,AbstractThread):
     
     
     #重载AbstractHost函数
-    def exe_cmd(self,cmd,background_log_set,ip_tag):
+    def exe_cmd(self,cmd,background_log_set=None,*arg,**kwargs):
         
         p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
         
         if re.match(".*&$",cmd.strip()):
             #执行的命令为后台执行时
             #后台执行获取不了stdout stderr exit_code，在此构建一个虚假值
-            return b'you should check if this process has executed correctly',b'',0
+            return "you should check if this process has executed correctly","",0
         
-        stdout,stderr = background_log_set(p.stdout,p.stderr)
-                    
+        if background_log_set:
+            stdout,stderr = background_log_set(p.stdout,p.stderr)
+        else:
+            stdout = p.stdout.read()
+            stderr = p.stderr.read()
+            try:
+                # python2 b"" -> u""
+                stdout = stdout.decode("utf8")
+                stderr = stderr.decode("utf8")
+            except:
+                pass
+                 
         p.communicate()
         exit_code=p.returncode
 
@@ -76,7 +86,7 @@ class LocalHost(AbstractHost,AbstractThread):
                   
     #重载AbstractHost函数        
     def forever_run(self):
-        t1=Thread(target=self.heart_beat,args=(None,config.host_check_success_time*3))
+        t1=Thread(target=self.heart_beat,args=(None,config.host_check_success_time*3,False))
         self.thread_list.append(t1)
         self.serve_forever()           
             

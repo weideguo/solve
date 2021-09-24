@@ -59,21 +59,29 @@ class MySSH(object):
         """
         执行命令
         """
-        #执行的命令为后台执行时
-        if re.match(".*&$",cmd.strip()):
-            channel = self.ssh_client._transport.open_session()
-            channel.exec_command(cmd)
-            #后台执行获取不了stdout stderr exit_code，在此构建一个虚假值
-            return b'you should check if this process has executed correctly',b'',0
-                    
+        
         stdin, stdout, stderr = self.ssh_client.exec_command(cmd)
         
+        #执行的命令为后台执行时
+        if re.match(".*&$",cmd.strip()):
+            #没有必要 并发执行也只有一个ssh连接
+            #channel = self.ssh_client._transport.open_session()
+            #channel.exec_command(cmd)
+            #后台执行获取不了stdout stderr exit_code，在此构建一个虚假值
+            return "you should check if this process has executed correctly","",0
+                            
         if background_log_set:
             #使用传入的函数动态处理stdout stderr
             out,err=background_log_set(stdout, stderr)
         else:
             out=stdout.read()
             err=stderr.read()
+            try:
+                # python2 b"" -> u""
+                out=out.decode("utf8")
+                err=err.decode("utf8")
+            except:
+                pass
         
         exit_code=stdout.channel.recv_exit_status()
         return out,err,exit_code

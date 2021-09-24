@@ -125,6 +125,7 @@ wait_exit_code=100                  #执行wait命令时遇到终止命令的退
 put_wait_time=1                     #上传文件单次判断等待时间
 put_wait=60*60                      #上传文件等待次数 如果存在其他上传 则等待
 heart_beat_interval=10              #主机心跳间隔
+heart_beat_type=1                   #主机心跳类型  1：每次发送"echo 1"进行检测连接的状态；其他：不主动判断连接的状态
 host_check_time=1                   #检查主机连接状态的时间间隔
 host_check_wait=5*60                #检查主机连接次数 超过则终止
 host_check_success_time=15          #heart_beat时间差小于此判断连接成功 使用salt时这个至应该大一些 因为更新的间隔可能大于heart_beat_interval

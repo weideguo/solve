@@ -43,19 +43,19 @@ class AbstractHost(object):
     
     def copy_file(self,*args,**kwargs):
         """复制文件"""
-        raise Exception('.copy_file() must be overridden')
+        raise Exception(".copy_file() must be overridden")
     
     def put_file(self,*args,**kwargs):
         """上传文件"""
-        raise Exception('.put_file() must be overridden')
+        raise Exception(".put_file() must be overridden")
     
     def get_file(self,*args,**kwargs):
         """下载文件"""
-        raise Exception('.get_file() must be overridden')
+        raise Exception(".get_file() must be overridden")
     
     def exe_cmd(self,*args,**kwargs):
         """执行命令"""
-        raise Exception('.exe_cmd() must be overridden') 
+        raise Exception(".exe_cmd() must be overridden") 
     #####################################################
         
             
@@ -333,15 +333,30 @@ class AbstractHost(object):
         return cmd,cmd_uuid,ip_tag  
 
     
-    def heart_beat(self,log_out=None,expire_time=config.host_check_success_time):
+    def heart_beat(self, log_out=None, expire_time=config.host_check_success_time, session_check=True):
         """
         心跳
         """
         while self.run_flag:
+            if session_check:
+                if config.heart_beat_type == 1:
+                    try:
+                        self.exe_cmd("echo 1")
+                    except:
+                        self.run_flag = False
+                        if log_out:
+                            log_out("%s session not active, will close" % self.ip_tag)
+                        try:
+                            self.redis_send_client.publish(config.key_kill_host, self.ip_tag) 
+                        except:
+                            pass
+                            
+                        break
+        
             try:
                 for ip_tag in self.parallel_list:
                     if log_out:
-                        log_out("%s heart beat" % self.ip_tag)
+                        log_out("%s heart beat" % ip_tag)
                     #self.redis_send_client.set(config.prefix_heart_beat+ip_tag,time.time())
                     #self.redis_send_client.expire(config.prefix_heart_beat+ip_tag,expire_time)
                     self.redis_send_client.set(config.prefix_heart_beat+ip_tag,time.time(),expire_time)
