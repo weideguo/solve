@@ -506,8 +506,9 @@ class ClusterExecution(object):
         
         os_type = platform.system()
 
-        #存在`shell_command` 则分发到主机
-        if (re.match(".*`.+`.*",g_value) and os_type == "Linux") or (re.match(".*%.+%.*",g_value) and os_type == "Windows"):
+        #存在`shell_command` $(shell_command) 则分发到主机
+        if (os_type == "Linux" and (re.match(".*`.+`.*",g_value) or re.match(".*\$\(.+\).*",g_value) ) ) or \
+           (os_type == "Windows" and re.match(".*%.+%.*",g_value) ):
 
             tmp_cmd="echo %s" % (g_value)
 
