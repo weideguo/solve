@@ -63,11 +63,11 @@ playbook
 
 * wait
   
-  wait为关键字，阻塞至所有后台运行全命令结束。默认playbook的命令逐行运行，后一行命令在前一行命令执行结束后再运行，可以使用<single-line shell command> &实现将单行命令放入后台运行，从而不必阻塞后一行命令。默认在playbook的最后执行一次wait，以确保后台命令执行结束，因而最后的wait可以省略。
+  wait为关键字，阻塞至所有后台运行全命令结束。默认playbook的命令逐行运行，后一行命令在前一行命令执行结束后再运行，可以使用`<single-line shell command> &`实现将单行命令放入后台运行，从而不必阻塞后一行命令。默认在playbook的最后执行一次wait，以确保后台命令执行结束，因而最后的wait可以省略。
 
 * ``global.<global_var_name>=<other string>`<shell command>`<other string>``
   
-  全局参数可以通过执行shell命令的返回值获取。即符号"="之后的字符串当成shell命令运行后的结果。如$(shell command)也是一样支持。
+  全局参数可以通过执行shell命令的返回值获取。即符号"="之后的字符串当成shell命令运行后的结果。如`$(shell command)`也是一样支持。
 
 * ``select.<select_var_name>=<other string>`<shell command>`<other string>``
 
