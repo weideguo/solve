@@ -72,19 +72,36 @@ def file_row_count(file):
     return rownum
 
 
-def cmd_split(cmd_line):
-    """按照shell的格式分割命令行"""
+def cmd_split(cmd_line, arg_num=0):
+    """
+    按照shell的格式分割命令行
+    cmd_line 原始字符串
+    arg_num  参数个数，0为全部按照空格划分，n为按照空格获取n-1个参数，剩余全部为最后一个
+    """
     cmd_line=cmd_line.strip()
     cmd_list=[]
     temp_str=""
     for c in cmd_line:
-        if c != " ":
-            temp_str += c
-        elif temp_str:
-            cmd_list.append(temp_str)
-            temp_str=""
+        if arg_num:
+            if len(cmd_list)>=arg_num:
+                temp_str += c
+            else:
+                if c != " ":
+                    temp_str += c
+                elif temp_str:
+                    cmd_list.append(temp_str)
+                    temp_str=""
+                else:
+                    temp_str=""                
+                           
         else:
-            temp_str=""
+            if c != " ":
+                temp_str += c
+            elif temp_str:
+                cmd_list.append(temp_str)
+                temp_str=""
+            else:
+                temp_str=""
             
     if temp_str:
         cmd_list.append(temp_str)

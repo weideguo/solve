@@ -56,6 +56,11 @@ class AbstractHost(object):
     def exe_cmd(self,*args,**kwargs):
         """执行命令"""
         raise Exception(".exe_cmd() must be overridden") 
+    
+    def save_file(self,*args,**kwargs):
+        """保存内容到远端文件"""
+        raise Exception(".save_file() must be overridden") 
+    
     #####################################################
         
             
@@ -140,8 +145,8 @@ class AbstractHost(object):
         
         cmd_uuid=exe_result["uuid"]
             
-        try:    
-            #不能存在多余的空格
+        try:
+            # 默认全部按照命令行格式分割，因此不应该存在多余的空格，如果有多余空格存在，请自行分割
             _cmd = cmd_split(cmd_line)
         except:
             stdout=""
@@ -191,6 +196,25 @@ class AbstractHost(object):
                 stdout=""
                 stderr=msg
             exit_code=int(not is_success) 
+        
+        elif cmd=="__save__":
+            # __save__ filename content
+            _cmd = cmd_split(cmd_line,2)
+            args = _cmd[1:]
+            filaname=args[0]
+            file_content=args[1]
+            
+            try:
+                self.save_file(filaname,file_content)
+                stdout=""
+                stderr=""
+                exit_code=0
+            except:
+                stdout=""
+                stderr="save file failed, check log for more detail"
+                exit_code=1
+                logger_err.error(format_exc())
+        
         else:
             #扩展目录中的扩展命令
             filename,__cmd=is_file_in_dir(cmd,self.extends_postfixs,os.path.join(config.base_dir,self.extends_dir))
@@ -202,7 +226,7 @@ class AbstractHost(object):
                 #未实现的命令
                 stdout=""
                 stderr="extend command [%s]  not define" % cmd
-                exit_code="127"               
+                exit_code=127               
         
         return exe_result,stdout,stderr,exit_code           
             

@@ -67,7 +67,7 @@ playbook
 
 * ``global.<global_var_name>=<other string>`<shell command>`<other string>``
   
-  全局参数可以通过执行shell命令的返回值获取。即符号"="之后的字符串当成shell命令运行后的结果。如`$(shell command)`也是一样支持。
+  全局参数可以通过执行shell命令的返回值获取。即符号“=”之后的字符串当成shell命令运行后的结果。如`$(shell command)`也是一样支持。
 
 * ``select.<select_var_name>=<other string>`<shell command>`<other string>``
 

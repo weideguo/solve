@@ -18,6 +18,8 @@ if __name__=="__main__":
     #listen_tag=["proxy:192.168.153.128:127.0.0.1"]
     
     lh=LocalHost([redis_send_config,redis_log_config],listen_tag) 
-    lh.forever_run()
     
+    lh.save_file("/tmp/x/x1/x2.txt","ef中文又何妨v\"eqr g\nfqe\'rqer")
 
+
+    lh.forever_run()

@@ -1,0 +1,4 @@
+[{{db1.host.ip}}]
+global.filename=/tmp/a/aa/`date +%Y%m%d_%H%M%S`_$RANDOM.sql
+__save__ {{global.filename}} {{session.sql}}
+echo {{global.filename}}

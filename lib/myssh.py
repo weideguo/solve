@@ -297,10 +297,40 @@ class MySSH(object):
             exit_code=-100        
         
         if exit_code != 0:
-            md5 = my_md5(afile=ftp_client.open(fullname))
+            md5 = my_md5(afile=ftp_client.open(fullname,"rb"))
         
         return md5
+    
+    def save_file(self,remote_file,content,mode="w",*arg,**kwargs):
+        """
+        保存内容到远端文件
+        """
+        ftp_client=self.ssh_client.open_sftp()
+        remote_path=os.path.dirname(remote_file)
+        self.remote_mkdirs(ftp_client,remote_path)
+        
+        if self.is_remote_file(ftp_client,remote_file):
+            ftp_client.rename(remote_file,remote_file+"_"+str(time.time()))
+        
+        if self.is_remote_dir(ftp_client,remote_file):
+            # 要创建的文件在远端为目录
+            raise Exception("remote filename is a dir")
+        
+        with ftp_client.open(remote_file,mode) as f:                
+            f.write(content)
+        
+        ftp_client.close()
 
+    def is_remote_dir(self,ftp_client,remote_path):
+        """
+        判断路径在远端是否为目录
+        """
+        try:
+            ftp_client.listdir(remote_path) 
+            return True
+        except:
+            return False
+           
     def close(self):
         """
         释放连接

@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import os
 import re
 import uuid
 import time
+import shutil
 import sys
 from threading import Thread
 import subprocess
@@ -77,11 +79,25 @@ class LocalHost(AbstractHost,AbstractThread):
 
         return stdout, stderr, exit_code    
     
+    #重载AbstractHost函数
+    def save_file(self,filename,content,mode="w",*arg,**kwargs):
+        path=os.path.dirname(filename)
+        os.makedirs(path,exist_ok=True) 
+        if os.path.isdir(filename):
+            raise Exception("filename is a dir")
+        
+        if os.path.isfile(filename):
+            shutil.move(filename, filename+"_"+str(time.time()))
+        
+        with open(filename,mode) as f:
+            f.write(content)
+            
                         
     #重载AbstractThread的函数        
     def real_func(self,cmd,cmd_uuid,ip_tag,*args,**kwargs):
         if cmd:
-            self.single_run(cmd,cmd_uuid,ip_tag,extend_pattern="")            
+            # 本地执行只实现部分扩展命令
+            self.single_run(cmd,cmd_uuid,ip_tag,extend_pattern=".*__save__.*")            
             
                   
     #重载AbstractHost函数        

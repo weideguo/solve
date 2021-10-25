@@ -25,3 +25,5 @@ if __name__ == "__main__":
     is_copy_by_link=True
     
     ssh.copy_file(exist_remote_file,remote_file,local_filesize,local_md5,is_copy_by_link)
+
+    ssh.save_file("/tmp/x/x1/x2.txt","ef中文又何妨v\"eqr g\nfqe\'rqer")
