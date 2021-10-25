@@ -65,11 +65,11 @@ playbook
   
   wait为关键字，阻塞至所有后台运行全命令结束。默认playbook的命令逐行运行，后一行命令在前一行命令执行结束后再运行，可以使用<single-line shell command> &实现将单行命令放入后台运行，从而不必阻塞后一行命令。默认在playbook的最后执行一次wait，以确保后台命令执行结束，因而最后的wait可以省略。
 
-* `global.<global_var_name>=<other string>\`<shell command>\`<other string>`
+* ``global.<global_var_name>=<other string>`<shell command>`<other string>``
   
   全局参数可以通过执行shell命令的返回值获取。即符号"="之后的字符串当成shell命令运行后的结果。如$(shell command)也是一样支持。
 
-* `select.<select_var_name>=<other string>\`<shell command>\`<other string>`
+* ``select.<select_var_name>=<other string>`<shell command>`<other string>``
 
   与global参数使用类似，不同为其值为获取shell命令的返回值，再进行手动选择的值，用于交互执行。
 
@@ -91,6 +91,10 @@ playbook
   
   从远端主机下载文件到solve所在的主机。`__get__`为关键字，使用空格分隔参数。第一个参数为远端主机文件的全路径，第二个参数为要保存在本地的路径。本地路径不存在则创建，本地文件已经存在则重命名然后下载。命令之后不要存在空格。
 
+  `__save__ <full filename> <file content>`
+  
+  可以将复杂的字符串保存到远端或本地的文件中，如字符串中包含单引号、双引号、空格、换行、`$`等特殊字符。无需任何转义，换行符需要通过参数引入，如session参数引入。
+
   其他扩展命令
   
   其他的扩展命令对应扩展目录extends下的文件，可用于自定义封装轻量级shell命令集合同时无需先预先上传文件（比较复杂的shell脚本建议上传后运行）。如 `__abc__`则类似于使用文件 `__abc__`或 `__abc__.sh` 执行。
@@ -102,7 +106,7 @@ playbook
 
   使用格式为`{{global.<global_var_name>}}`
 
-  运行时替换为`global.<global_var_name>=<other string>\`<shell command>\`<other string>`全局参数的设置值
+  运行时替换为``global.<global_var_name>=<other string>`<shell command>`<other string>``全局参数的设置值
 
 * select参数
 
