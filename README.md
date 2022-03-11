@@ -44,7 +44,7 @@ python bin/solve.py restart
 ### usage ###
 设置好[playbook](#playbook)和[执行对象](#target)之后  
 * python script/solve_exe.py   #由[脚本](./script/solve_exe.py)构建[任务](#job)运行
-* 通过web服务实现可视化交互，详见[solve-stack](https://github.com/weideguo/solve-stack)
+* 通过web服务实现可视化交互，详见[solvestack](https://github.com/weideguo/solvestack)
 
 
 playbook
