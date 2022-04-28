@@ -12,18 +12,14 @@ from threading import Thread
 from traceback import format_exc
 
 from lib.redis_conn import RedisConn
-from lib.wrapper import logger,logger_err
+from lib.wrapper import logger,logger_err,password
 from lib.myssh import MySSH
-from lib.password import Password
 from lib.compat import Queue
 
 from core.abstract.abstract_host import AbstractHost
 from core.abstract.parallel import AbstractThread
 
 from conf import config
-
-
-password=Password(aes_key=config.aes_key)
 
 
 class RemoteHost(MySSH, AbstractHost, AbstractThread):

@@ -9,7 +9,10 @@ from threading import Thread
 from traceback import format_exc
 
 from redis.exceptions import ConnectionError
+
 from .logger import simple_logger
+from .password import Password
+
 from conf import config
 
 
@@ -217,4 +220,8 @@ def command_fliter(cmd,fliter_info):
         if re.match(cmd_pattern,cmd):
             return "",match_message,match_code
     
-    return None,None,None    
+    return None,None,None
+
+
+password=Password(aes_key=config.aes_key)
+    

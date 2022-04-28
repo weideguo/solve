@@ -11,7 +11,7 @@ from jinja2 import Template
 
 from .playbook_parser import simple_parser
 from lib.utils import safe_decode
-from lib.wrapper import logger,logger_err
+from lib.wrapper import logger,logger_err,password
 from lib.redis_conn import RedisConn
 from conf import config
 
@@ -140,7 +140,8 @@ class ClusterExecution(object):
             #c_r=c.replace(".","_____")                   #.被jinja2特殊使用 因此使用_____临时替代
             c_r=re.sub("\s*\.\s*","_____",c).strip()      #去除字符串的左右空格 以及.左右的空格
             cmd=cmd.replace(c,c_r)
-            data[c_r]=safe_decode(self.get_value(target,c))
+            data[c_r]=password.decrypt(safe_decode(self.get_value(target,c)))
+            
               
         real_cmd=Template(cmd).render(data)      
         return real_cmd
