@@ -276,7 +276,7 @@ class ClusterExecution(object):
                     except:
                         logger_err.error(format_exc())
                         self.redis_log_client.hset(self.current_uuid,"exit_code","render error")
-                        self.redis_log_client.hset(self.current_uuid,"stderr","render error")
+                        self.redis_log_client.hset(self.current_uuid,"stderr",format_exc())
                         self.redis_log_client.hset(self.current_uuid,"stdout","")
                         self.exe_next=False                   
                         self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
