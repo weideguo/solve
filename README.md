@@ -3,7 +3,7 @@
 # SOLVE ![](./solve.ico)
 
 <!-- 暂时不展示 [![travis-ci](https://img.shields.io/travis/weideguo/solve.svg)](https://travis-ci.org/weideguo/solve) -->
-[![Python 2.7|3.5|3.7](https://img.shields.io/badge/python-2.7%7C3.5%7C3.7-blue.svg)](https://github.com/weideguo/solve) 
+[![Python 2.7|3.5|3.7|3.9](https://img.shields.io/badge/python-2.7%7C3.5%7C3.7%7C3.9-blue.svg)](https://github.com/weideguo/solve) 
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/weideguo/solve/blob/master/LICENSE) 
 
 
