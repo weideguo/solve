@@ -17,7 +17,6 @@ start
 
 ### dependency servers ###
 * redis (>= 2.0.0)
-* salt (使用salt分发时才必须, [README.salt.md](./README.salt.md))
 
 
 ### prerun ###
