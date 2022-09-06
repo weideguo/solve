@@ -139,7 +139,7 @@ class ClusterExecution(object):
         for c in re.findall("(?<={{).+?(?=}})",cmd):
             #c_r=c.replace(".","_____")                   #.被jinja2特殊使用 因此使用_____临时替代
             c_r=re.sub("\s*\.\s*","_____",c).strip()      #去除字符串的左右空格 以及.左右的空格
-            cmd=cmd.replace(c,c_r)
+            cmd=cmd.replace("{{%s}}" % c, "{{%s}}" % c_r)
             data[c_r]=password.decrypt(safe_decode(self.get_value(target,c)))
             
               
