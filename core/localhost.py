@@ -63,7 +63,7 @@ class LocalHost(AbstractHost,AbstractThread):
             return "you should check if this process has executed correctly","",0
         
         if background_log_set:
-            stdout,stderr = background_log_set(p.stdout,p.stderr)
+            stdout,stderr = background_log_set(p.stdout,p.stderr,p.pid)
         else:
             stdout = p.stdout.read()
             stderr = p.stderr.read()

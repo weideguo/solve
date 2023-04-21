@@ -31,7 +31,8 @@ def gen_background_log_set(cmd_uuid,redis_client,len=0,interval=1,retry=60):
     retry       发生错误时重新运行次数  为0则无限直到成功 
     interval    发生错误时重新运行间隔  为0则不重新运行   retry与此冲突则以这个优先
     """
-    def background_log_set(stdout, stderr):
+    def background_log_set(stdout, stderr, pid=""):
+        redis_client.hset(cmd_uuid,"pid", pid)
         def update_log(out,tag):
             """真实用于设置日志的后台函数"""
             new_log=None    #未写入redis的日志
