@@ -227,10 +227,11 @@ if __name__=="__main__":
             except:
                 pass
 
-    
-    run = MyDaemonRunner(Solve())
-    run.do_action()
-    #在此之后的所有操作会被跳过
-    #不要放任何操作在此之后
-
+    if config.daemonize:
+        run = MyDaemonRunner(Solve())
+        run.do_action()
+        #在此之后的所有操作会被跳过
+        #不要放任何操作在此之后
+    else:
+        Solve().run()
     

@@ -98,6 +98,7 @@ core.plugin.salt.salt_conn.SaltConn                   使用salt单例模式实�
 """
 
 ###################################################################################################
+daemonize=False                     #是否使用后台运行模式，docker环境使用可能启动失败，不启用时传入参数只能为start，stop、restart不支持
 log_level=10                        #参考logging模块的值 logging.DEBUG=10 logging.INFO=20
 
 remote_process=3                    #使用多少个进程创建远程连接。进程之间竞争从队列获取创建信息以创建远程对象。不会影响实际并发数，设置跟cpu核心一致以便最大限度使用cpu。
