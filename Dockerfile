@@ -16,6 +16,7 @@ ENV REDIS_PORT=6379
 #ENV REDIS_PASSWORD=xxx
 #ENV LC_ALL=en_US.UTF-8
 
+RUN rm /etc/localtime && ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 RUN mkdir -p /data/solve
 
 ADD ./  /data/solve/
