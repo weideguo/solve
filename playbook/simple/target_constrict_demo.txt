@@ -1,0 +1,5 @@
+[{{db_from.host.ip}}]
+mysql -u root -h 127.0.0.1 -P 1039 -Bse "{{session.db_from_sql}}"
+
+[{{db_to.host.ip}}]
+mysql -u root -h 127.0.0.1 -P 1039 -Bse "{{session.db_to_sql}}"
