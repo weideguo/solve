@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import time
+import uuid
 import threading
 from threading import Thread
 from traceback import format_exc
@@ -223,6 +224,29 @@ def command_fliter(cmd,fliter_info):
     
     return None,None,None
 
+
+def command_split(allcmd_raw,spliter,uuid_len):
+    """将形如 
+    echo 1@@@@ab724848bc2311eeb28b005056337d90 
+    分割成 
+    echo 1 
+    ab724848bc2311eeb28b005056337d90
+    如果命令没有带uuid，则生成一个
+    """
+    spliter_len=len(spliter)
+    #uuid_len=config.uuid_len
+    if len(allcmd_raw)>spliter_len+uuid_len:
+        uuid_raw=allcmd_raw[-uuid_len:]
+        spliter_raw=allcmd_raw[-(uuid_len+spliter_len):-uuid_len]
+        if spliter_raw==spliter and re.match("^[0-9a-z]{%d}$" % uuid_len,uuid_raw):
+            cmd=allcmd_raw[:-(uuid_len+spliter_len)]
+            cmd_uuid=uuid_raw
+            
+    if not cmd_uuid:
+        cmd=allcmd_raw
+        cmd_uuid=uuid.uuid1().hex 
+    
+    return cmd,cmd_uuid  
 
 password=Password(aes_key=config.aes_key)
     

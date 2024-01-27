@@ -11,7 +11,7 @@ import sys
 from threading import Thread
 from traceback import format_exc
 
-from lib.wrapper import gen_background_log_set,connection_error_rerun,command_fliter,logger,logger_err
+from lib.wrapper import gen_background_log_set,connection_error_rerun,command_fliter,logger,logger_err,command_split
 from lib.utils import my_md5,get_host_ip,cmd_split,is_file_in_dir,safe_decode
 from lib.compat import Queue
 
@@ -337,7 +337,7 @@ class AbstractHost(object):
             #使用阻塞获取 好处是能及时响应 
         except:
             #redis连接失败立即发出告警信号
-            raise Exception("get command error")
+            raise Exception("get command error\n%s" % format_exc())
         
         cmd,cmd_uuid=None,None
         if t_allcmd:                           
@@ -347,12 +347,7 @@ class AbstractHost(object):
                 allcmd=""
         
             if allcmd:
-                allcmd=allcmd.split(config.spliter)        
-                cmd=allcmd[0]
-                if len(allcmd)>1:
-                    cmd_uuid=allcmd[1]
-                else:
-                    cmd_uuid=uuid.uuid1().hex   
+                cmd,cmd_uuid=command_split(allcmd,config.spliter,config.uuid_len)
         
         return cmd,cmd_uuid,ip_tag  
 

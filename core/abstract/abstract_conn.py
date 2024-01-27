@@ -11,7 +11,7 @@ from threading import Thread
 
 from lib.utils import Singleton
 from lib.redis_conn import RedisConn
-from lib.wrapper import logger,logger_err
+from lib.wrapper import logger,logger_err,command_split
 from lib.compat import Queue
 
 from conf import config
@@ -107,12 +107,7 @@ class AbstractConn(object):
                     if allcmd:
                         ip_tag = k.split(config.prefix_cmd)[1]
                         
-                        allcmd=allcmd.split(config.spliter)
-                        cmd=allcmd[0]
-                        try:
-                            cmd_uuid=allcmd[1]
-                        except IndexError:
-                            cmd_uuid=uuid.uuid1().hex 
+                        cmd,cmd_uuid=command_split(allcmd,config.spliter,config.uuid_len)
                         
                         t=Thread(target=self.__single_exe,args=(cmd,cmd_uuid,ip_tag))
                         t.start()

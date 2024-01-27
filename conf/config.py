@@ -135,7 +135,7 @@ host_close_check_interval=60*60     #检查是否关闭连接的时间间隔
 
 is_copy_by_link=1                   #是否使用软链接代替复制
 spliter="@@@@@"                     #所有与uuid的分隔符   如cmd+spliter+uuid 日志 target
-
+uuid_len=32
 
 #######################################################################################################
 #redis_config
