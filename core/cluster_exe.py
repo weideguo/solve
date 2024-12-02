@@ -419,6 +419,7 @@ class ClusterExecution(object):
             self.redis_log_client.hset(self.current_uuid,"stderr","")
             if self.exe_next==False:
                 self.redis_log_client.hset(self.current_uuid,"exit_code",config.wait_exit_code)
+                self.redis_log_client.hset(self.current_uuid,"stderr","wait command result check failed")
             else:
                 self.redis_log_client.hset(self.current_uuid,"exit_code",0)    
             #self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
@@ -586,6 +587,8 @@ class ClusterExecution(object):
                             continue_check=False
                         else:
                             continue_check=True
+                            # 防止检查频率过高
+                            time.sleep(config.command_check_interval)
            
             else:
                 ignore_last_err=True        #不检测结果 则恒忽略此步的执行结果以继续下一步操作

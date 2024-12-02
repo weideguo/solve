@@ -103,7 +103,7 @@ log_level=10                        #参考logging模块的值 logging.DEBUG=10 
 
 remote_process=3                    #使用多少个进程创建远程连接。进程之间竞争从队列获取创建信息以创建远程对象。不会影响实际并发数，设置跟cpu核心一致以便最大限度使用cpu。
 max_concurrent_thread=3             #单个主机的最大并发数  
-max_concurrent_all=100              #使用单利模式的远端主机实现时生效，这个参数应该设置大一些，每个进程的线程控制
+max_concurrent_all=100              #使用单例模式的远端主机实现时生效，这个参数应该设置大一些，每个进程的线程控制
 max_localhost_thread=20             #本地模式运行时的最大并发数
 
                                     #以下都是对于单个redis db而言，n个db的实际数量要乘n
@@ -114,7 +114,7 @@ cluster_redis_pool_size=5           #每个执行对象执行时的连接池
 
 cluster_connect_control=False       #单个cluster的连接自己管理 cluster的任务执行介绍后自行关闭 为True时只能选择 remote_model="core.plugin.ssh.remote_host.RemoteHost" 且不要手动创建连接
 clear_start=1                       #启动时清除 连接队列 未执行命令 心跳
-host_start_without_cmd=True         #使用单利模式的远端主机实现时应该为False 创建连接时不能存在命令队列
+host_start_without_cmd=True         #使用单例模式的远端主机实现时应该为False 创建连接时不能存在命令队列
 
 cmd_log_expire_sec=60*60*24         #单条命令日志的保存时间 默认时间单位都为秒
 kill_cluster_expire_sec=60          #kill_<cluster id>键的保存时间
@@ -127,6 +127,7 @@ put_wait_time=1                     #上传文件单次判断等待时间
 put_wait=60*60                      #上传文件等待次数 如果存在其他上传 则等待
 heart_beat_interval=10              #主机心跳间隔
 heart_beat_type=1                   #主机心跳类型  1：每次发送"echo 1"进行检测连接的状态；其他：不主动判断连接的状态
+command_check_interval=0.1          #检查命令执行结果的间隔
 host_check_time=1                   #检查主机连接状态的时间间隔
 host_check_wait=5*60                #检查主机连接次数 超过则终止
 host_check_success_time=15          #heart_beat时间差小于此判断连接成功 使用salt时这个至应该大一些 因为更新的间隔可能大于heart_beat_interval
