@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 import socket
 import hashlib
 import threading
@@ -106,6 +107,26 @@ def cmd_split(cmd_line, arg_num=0):
     if temp_str:
         cmd_list.append(temp_str)
     return cmd_list
+
+
+def cmd_options_split(option_str):
+    """
+    将形如`-compress=1 -type=file -try=4` 处理成 {"compress":"1","type":"file","try":"4"}
+    """
+    options = {}
+    for o in option_str.strip().split(" "):
+        if o:
+            if len(o.split("="))==2 and (re.match("-\w+=\w+",o) or re.match("--\w+=\w+",o)):
+                o = o[1:]
+                if o[1] == "-":
+                    o = o[1:]
+                _o = o.split("=")
+                options[_o[0]] = _o[1]
+            else:
+                raise Exception("option format error[%s]" % o)
+    
+    return options
+    
 
 
 def is_file_in_dir(shorname,postfixs,dir):
