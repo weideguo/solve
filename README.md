@@ -96,28 +96,30 @@ playbook
   
   可以将复杂的字符串保存到远端或本地的文件中，如字符串中包含单引号、双引号、空格、换行、`$`等特殊字符。无需任何转义，换行符需要通过参数引入，如session参数引入。
 
-  `__scp__ <from realhost>:<from full path> <to path> <options>`  或 `__scp__ <from full path> <to realhost>:<to path> <options>` 
+  `__sync__ <from ip_tag>:<from full path> <to path> <options>`  或 `__sync__ <from full path> <to ip_tag>:<to path> <options>` 
 
+  内置文件、目录复制方法。不支持后台运行。<from ip_tag>与<to ip_tag>相同时只判断目录是否相同。
   options
 
   | option   | 描述                                               | 支持try类型 | 值格式               | 默认值 |
   | -------- | -------------------------------------------------- | ----------- | -------------------- | ------ |
-  | try      | 进行传输的方法顺序，上一个失败则使用下一个方法传输 | -           | 1234                 | 1234   |
+  | try      | 进行传输的方法顺序，上一个失败则使用下一个方法传输 | -           | 1234组合             | 1234   |
   | compress | 传输时是否压缩                                     | 1,2,3       | 1 是 0 否            | 是     |
-  | proxy    | 是否其他使用代理                                   | 3           | 对应realhost的主机名 | 空     |
-  | bwlimit  | 带宽限制                                           | 1,2         | 数字+k/m/g           | 空     |
-  | partial  | 是否断点续传                                       | 1,2         | 1 是 0 否            | 是     |
+  | bwlimit  | 带宽限制                                           | 1,2,3       | 数字+k/m/g           | 空     |
+  | partial  | 是否断点续传                                       | 1,2,4       | 1 是 0 否            | 是     |
   | check    | 传输结果校验，为文件则校验md5，为目录则校验大小    | 1,2,3,4     | 1 是 0 否            | 否     |
   | progress | stdout中是否显示进度                               | 1,2,3       | 1 是 0 否            | 是     |
+  | proxy    | 是否其他使用代理                                   | 3           | 对应realhost的主机名 | 空     |
+  | batch    | 每次从源端读取多少字节                             | 3           | 数字                 | 524288 |
 
-  try类型说明  
+  try类型说明    
   * 1 在当前执行命令的主机运行scp。  
   * 2 在scp交互的另外一台主机执行命令的主机运行scp。  
   * 3 使用代理执行数据传输，默认为solve运行的主机，可以通过proxy使用其他主机作为代理。  
   * 4 使用python的内置方法通过solve运行的主机代理传输。只支持文件，日志带有已经传输的数据量大小。    
 
    样例  
-   ` __scp__ /a/b/c 10.0.0.1:/a/b  -compress=1 -try=1234 -proxy=192.168.0.1 -bwlimit=10m -partial=1 -check=1 --progress=1`  将目录或文件/a/b/c传输到10.0.0.1:/a/b下，目录或文件名保持原来的名字  
+   ` __sync__ /a/b/c 10.0.0.1:/a/b  -compress=1 -try=1234 -proxy=192.168.0.1 -bwlimit=10m -partial=1 -check=1 --progress=1`  将目录或文件/a/b/c传输到10.0.0.1:/a/b下，目录或文件名保持原来的名字  
 
   其他扩展命令
   

@@ -332,13 +332,14 @@ class ClusterExecution(object):
                             break
                     
                     #文件传输
-                    elif re.match("^__scp__ ",cmd):
+                    elif re.match("^__sync__ ",cmd):
                         try:
-                            self.__scp_exe(cmd)
+                            self.__sync_exe(cmd)
                         except Exception as e:
                             logger_err.error(format_exc())
                             self.redis_log_client.hset(self.current_uuid,"exit_code","scp error")
-                            self.redis_log_client.hset(self.current_uuid,"stderr",format_exc())
+                            #self.redis_log_client.hset(self.current_uuid,"stderr",format_exc())
+                            self.redis_log_client.hset(self.current_uuid,"stderr",str(e))
                             self.redis_log_client.hset(self.current_uuid,"stdout","")
                             break
                     
@@ -623,14 +624,21 @@ class ClusterExecution(object):
         return r_list
 
 
-    def __is_path_file(self, exe_host, full_path):
+    def __path_info(self, exe_host, full_path):
         cmd = "ls -ld %s" % full_path
         r = self.__single_exe(exe_host,cmd)
         if r:
-            return r[0]=="-"
+            if r[0]=="-":
+                return "file"
+            elif r[0]=="d":
+                return "dir"
+            elif r[0]=="l":
+                return "link"         # 软链接，硬链接当成普通文件对待
+            else:
+                return "undefine"
         else:
             # 路径不存在时
-            return False
+            return ""
         
     
     def __get_path_size(self, exe_host, full_path):
@@ -640,10 +648,10 @@ class ClusterExecution(object):
         return size
 
     
-    def __scp_exe(self,cmd_line):
-        # __scp__ /from_file_or_dir to_host:/to_dir   # 使用realhost的名字而不是ip，因此可以带tag
-        # __scp__ /from_file_or_dir to_host:/to_dir  -compress=1 -try=4 -proxy=10.0.0.1 -bwlimit=10m -partial=1 -check=1 --progress=1
-        # __scp__ from_host:/from_file_or_dir /to_dir
+    def __sync_exe(self,cmd_line):
+        # __sync__ /from_file_or_dir to_host:/to_dir   # 使用realhost的名字而不是ip，因此可以带tag
+        # __sync__ /from_file_or_dir to_host:/to_dir  -compress=1 -try=4 -proxy=10.0.0.1 -bwlimit=10m -partial=1 -check=1 --progress=1 -batch=524288
+        # __sync__ from_host:/from_file_or_dir /to_dir
         _cmd = cmd_split(cmd_line,3)
         
         is_compress = True
@@ -653,9 +661,10 @@ class ClusterExecution(object):
         is_partial = True
         is_check = False
         is_progress = True
+        batch_size = 512*1024
         
         if len(_cmd) < 3:
-            raise Exception("__scp__ command length must not less than 3")
+            raise Exception("__sync__ command length must not less than 3")
         elif len(_cmd) == 4:
             cmd_options = cmd_options_split(_cmd[3])
             is_compress = int(cmd_options["compress"])==1 if "compress" in cmd_options else is_compress  
@@ -665,123 +674,158 @@ class ClusterExecution(object):
             is_partial = int(cmd_options["partial"])==1 if "partial" in cmd_options  else is_partial
             is_check = int(cmd_options["check"])==1 if "check" in cmd_options else is_check
             is_progress = int(cmd_options["progress"])==1 if "progress" in cmd_options else is_progress
+            batch_size = int(cmd_options["batch"]) if "batch" in cmd_options else batch_size
         
-        if bwlimit and not re.match("\d+\.?\d*[kmg]b?$",bwlimit):
-            raise Exception("__scp__ bwlimit format error")
+        if bwlimit and not re.match("\d+\.?\d*[kmg]$",bwlimit):
+            raise Exception("__sync__ bwlimit format error")
         
         current_host = self.current_host
         from_info = _cmd[1].split(":")
         if len(from_info) > 2:
-            raise Exception("__scp__ from info format error")
+            raise Exception("__sync__ from_info format error")
         if len(from_info) == 2:
-            from_realhost = from_info[0]
+            from_host = from_info[0]
             from_file_or_dir = from_info[1]
-            remote_realhost = from_realhost
+            remote_host = from_host
         else:
-            from_realhost =  current_host
+            from_host =  current_host
             from_file_or_dir = from_info[0]
         
         to_info = _cmd[2].split(":")        
         if len(to_info) > 2:
-            raise Exception("__scp__ to info format error")
+            raise Exception("__sync__ to_info format error")
         elif len(to_info) == 2:
-            to_realhost = to_info[0]
+            to_host = to_info[0]
             to_dir = to_info[1]
-            remote_realhost = to_realhost
+            remote_host = to_host
         else:
-            to_realhost =  current_host
+            to_host =  current_host
             to_dir = to_info[0]
-        
-        logger.debug("from host [%s] to host [%s] current host [%s] remote host [%s]" % (from_realhost,to_realhost,self.current_host,remote_realhost))
-        
-        if (len(to_info) != 2 and len(from_info) != 2) or (len(to_info) == 2 and len(from_info) == 2):
-            raise Exception("__scp__ from info or to info format error")
-        
-        
-        from_passwd = password.decrypt(safe_decode(self.redis_config_client.hget(config.prefix_realhost+from_realhost,"passwd")))
-        from_user = safe_decode(self.redis_config_client.hget(config.prefix_realhost+from_realhost,"user"))
-        from_ip = safe_decode(self.redis_config_client.hget(config.prefix_realhost+from_realhost,"ip"))
-        from_ssh_port = safe_decode(self.redis_config_client.hget(config.prefix_realhost+from_realhost,"ssh_port"))
-        
-        to_passwd = password.decrypt(safe_decode(self.redis_config_client.hget(config.prefix_realhost+to_realhost,"passwd")))
-        to_user = safe_decode(self.redis_config_client.hget(config.prefix_realhost+to_realhost,"user"))
-        to_ip = safe_decode(self.redis_config_client.hget(config.prefix_realhost+to_realhost,"ip"))
-        to_ssh_port = safe_decode(self.redis_config_client.hget(config.prefix_realhost+to_realhost,"ssh_port"))
         
         from_dir = os.path.dirname(from_file_or_dir)
         from_base = os.path.basename(from_file_or_dir)
         to_full = os.path.join(to_dir,from_base)
         
-        from_size = self.__get_path_size(from_realhost,from_file_or_dir)
+        logger.debug("from_host [%s] to_host [%s] current_host [%s] remote_host [%s]" % (from_host,to_host,self.current_host,remote_host))
+        
+        if (len(to_info) != 2 and len(from_info) != 2) or (len(to_info) == 2 and len(from_info) == 2):
+            raise Exception("__sync__ from_info or to_info format error")
+        
+        if from_host == to_host:
+            exit_code = 0
+            stderr = ""
+            stdout = "from_host same as to_host"
+            if to_dir[-1] == "/":
+                to_dir = to_dir[:-1]
+            
+            if from_dir != to_dir:
+                exit_code = 1
+                stderr = "from_dir [%s] not same as to_dir [%s]" % (from_dir,to_dir)
+                self.exe_next = False
+                
+            self.redis_log_client.hset(self.current_uuid,"exit_code",exit_code)
+            self.redis_log_client.hset(self.current_uuid,"stderr",stderr)
+            self.redis_log_client.hset(self.current_uuid,"stdout",stdout)
+            return
+        
+        from_passwd = password.decrypt(safe_decode(self.redis_config_client.hget(config.prefix_realhost+from_host,"passwd")))
+        from_user = safe_decode(self.redis_config_client.hget(config.prefix_realhost+from_host,"user"))
+        from_ip = safe_decode(self.redis_config_client.hget(config.prefix_realhost+from_host,"ip"))
+        from_ssh_port = safe_decode(self.redis_config_client.hget(config.prefix_realhost+from_host,"ssh_port"))
+        
+        to_passwd = password.decrypt(safe_decode(self.redis_config_client.hget(config.prefix_realhost+to_host,"passwd")))
+        to_user = safe_decode(self.redis_config_client.hget(config.prefix_realhost+to_host,"user"))
+        to_ip = safe_decode(self.redis_config_client.hget(config.prefix_realhost+to_host,"ip"))
+        to_ssh_port = safe_decode(self.redis_config_client.hget(config.prefix_realhost+to_host,"ssh_port"))
+        
+        # remote_host 可能还没有连接
+        self.__host_change("[%s]" % remote_host,self.current_uuid)  # 需要检查连接，否则可能出现命令队列先存在
+        self.redis_log_client.hdel(self.current_uuid,"exit_code")       # 需要移除主机连接的返回码，否则因为存在返回码导致会执行下一行命令
+        self.current_host = current_host       
+        
+        # 源端只要路径存在即可，可以为链接
+        from_path_info = self.__path_info(from_host,from_file_or_dir)
+        if not from_path_info:
+            raise Exception("__sync__ from_file_or_dir not exists")
+        
+        # 目标端必须为路径，不支持软链接
+        to_path_info = self.__path_info(to_host,to_dir)
+        if not to_path_info:
+            raise Exception("__sync__ to_dir not exists") 
+        elif to_path_info not in ["dir"]:
+            raise Exception("__sync__ to_dir not a dir") 
+        
+        is_from_file = from_path_info == "file"
+        
+        from_size = self.__get_path_size(from_host,from_file_or_dir)
         self.redis_log_client.hset(self.current_uuid,"total_size",from_size)
         
         rsync_option = "-av"
         tar_option = ""
+        ssh_proxy_pv = ""
         if is_compress:
             rsync_option = rsync_option+"z"
             tar_option = tar_option+" -z"
         if is_partial:
             rsync_option = rsync_option+" --partial"
+        
         if bwlimit:
             rsync_option = rsync_option+" --bwlimit="+bwlimit
+            if not ssh_proxy_pv:
+                ssh_proxy_pv = " | pv "
+            
+            ssh_proxy_pv = ssh_proxy_pv + " -L "+bwlimit
 
-        ssh_proxy_progress = ""
+        #ssh_proxy_progress = ""
         if is_progress:
             rsync_option = rsync_option+" --progress"
-            checkpoint = int(int(from_size)/(10*1024*10)) + 1           # 确保最多只显示10-1次进度
-            ssh_proxy_progress = '''--checkpoint=%s --checkpoint-action=exec="du -sb %s" ''' % (checkpoint,to_full)
+            
+            if not ssh_proxy_pv:
+                ssh_proxy_pv = " | pv "
+            
+            _from_size = int(from_size)
+            if _from_size > 100*1024*1024*1024:
+                interval = 5*60
+            elif _from_size > 10*1024*1024*1024:
+                interval = 60
+            elif _from_size > 1024*1024*1024:
+                interval = 5
+            elif _from_size > 100*1024*1024:
+                interval = 2
+            else:
+                interval = 1
+            ssh_proxy_pv = ssh_proxy_pv + " -nb -i %s" % interval    
+ 
         
-        is_file = self.__is_path_file(from_realhost,from_file_or_dir) 
-        
-        # remote_realhost 可能还没有连接
-        self.__host_change("[%s]" % remote_realhost,self.current_uuid)  # 需要检查连接，否则可能出现命令队列先存在
-        self.redis_log_client.hdel(self.current_uuid,"exit_code")       # 需要移除主机连接的返回码，否则因为存在返回码导致会执行下一行命令
-        self.current_host = current_host
-        
-        # todo 使用交互方式输入密码
-        
-        def __scp_current(real_try):
+        # 使用交互方式输入密码？
+        def __scp__(exe_host, from_host, real_try):
             # 在current_host运行 
             real_try = real_try+1
             self.redis_log_client.hset(self.current_uuid,"scp_desc","count:%s" % real_try)
-            logger.debug("from host [%s] to host [%s] current host [%s] remote host [%s] operate host [%s]" % (from_realhost,to_realhost,self.current_host,remote_realhost,self.current_host))
-            if self.current_host == from_realhost:
+            logger.debug("from_host [%s] to_host [%s] current_host [%s] remote_host [%s] exe_host [%s]" % (from_host,to_host,self.current_host,remote_host,exe_host))
+            if exe_host == from_host:
                 # 执行命令的主机为文件存放的主机
-                cmd_current_host = """rsync %s --rsh='sshpass -p "%s" ssh -oStrictHostKeyChecking=no -p %s' %s %s@%s:%s""" % \
+                cmd_scp = """rsync %s --rsh='sshpass -p "%s" ssh -oStrictHostKeyChecking=no -p %s' %s %s@%s:%s""" % \
                                       (rsync_option,to_passwd,to_ssh_port,from_file_or_dir,to_user,to_ip,to_dir)
             else:
-                cmd_current_host = """rsync %s --rsh='sshpass -p "%s" ssh -oStrictHostKeyChecking=no -p %s' %s@%s:%s %s""" % \
+                cmd_scp = """rsync %s --rsh='sshpass -p "%s" ssh -oStrictHostKeyChecking=no -p %s' %s@%s:%s %s""" % \
                                       (rsync_option,from_passwd,from_ssh_port,from_user,from_ip,from_file_or_dir,to_dir)
                 
-            logger.debug("transfer command: [%s] to [%s] ------------ <%s %s> %s" % (cmd_line,cmd_current_host,self.target,self.cluster_id,self.current_uuid))
+            logger.debug("transfer command: [%s] to [%s] ------------ <%s %s> %s" % (cmd_line,cmd_scp,self.target,self.cluster_id,self.current_uuid))
             
-            self.__single_exe(self.current_host,cmd_current_host,self.current_uuid)
+            self.__single_exe(exe_host,cmd_scp,self.current_uuid)
             scp_result = self.__check_result([self.current_uuid])[0]
             self.current_host = current_host 
-            return scp_result,cmd_current_host,real_try
+            return scp_result,cmd_scp,real_try
+            
+        
+        def __scp_current(real_try):
+            # 在current_host运行 
+            return __scp__(self.current_host,from_host,real_try)
         
         def __scp_remote(real_try):
             # 在remote_host运行 
-            real_try = real_try+1
-            self.redis_log_client.hset(self.current_uuid,"scp_desc","count:%s" % real_try)
-            logger.debug("from host [%s] to host [%s] current host [%s] remote host [%s] operate host [%s]" % (from_realhost,to_realhost,self.current_host,remote_realhost,remote_realhost))
-            if remote_realhost ==  from_realhost:
-                # 执行命令的主机为文件存放的主机
-                cmd_remote_host = """rsync %s --rsh='sshpass -p "%s" ssh -oStrictHostKeyChecking=no -p %s' %s %s@%s:%s""" % \
-                                    (rsync_option,to_passwd,to_ssh_port,from_file_or_dir,to_user,to_ip,to_dir)
-            else:
-                cmd_remote_host = """rsync %s --rsh='sshpass -p "%s" ssh -oStrictHostKeyChecking=no -p %s' %s@%s:%s %s""" % \
-                                    (rsync_option,from_passwd,from_ssh_port,from_user,from_ip,from_file_or_dir,to_dir)
-                
-            logger.debug("transfer command: [%s] to [%s] ------------ <%s %s> %s" % (cmd_line,cmd_remote_host,self.target,self.cluster_id,self.current_uuid))
-            # remote_realhost 可能还没有连接
-            #self.__host_change("[%s]" % remote_realhost,self.current_uuid)  # 需要检查连接，否则可能出现命令队列先存在
-            #self.redis_log_client.hdel(self.current_uuid,"exit_code")       # 需要移除主机连接的返回码，否则因为存在返回码导致会执行下一行命令
-            
-            self.__single_exe(remote_realhost,cmd_remote_host,self.current_uuid)
-            scp_result = self.__check_result([self.current_uuid])[0]
-            self.current_host = current_host
-            return scp_result,cmd_remote_host,real_try
+            return __scp__(remote_host,from_host,real_try)
         
         def __scp_proxy(real_try):
             # 在solve运行的机器上执行，因为solve可以连接两台服务器，从而可以实现代理
@@ -789,9 +833,9 @@ class ClusterExecution(object):
             self.redis_log_client.hset(self.current_uuid,"scp_desc","count:%s" % real_try)
             
             cmd_localhost = """sshpass -p '%s' ssh -p %s -oStrictHostKeyChecking=no %s@%s 'cd %s && tar %s -cf - %s' \
-                             | sshpass -p '%s' ssh -p %s -oStrictHostKeyChecking=no %s@%s 'tar %s -xf - -C %s %s'""" % \
+                             %s | sshpass -p '%s' ssh -p %s -oStrictHostKeyChecking=no %s@%s 'tar %s -xf - -C %s'""" % \
                             (from_passwd,from_ssh_port,from_user,from_ip,from_dir,tar_option,from_base,\
-                             to_passwd,to_ssh_port,to_user,to_ip,tar_option,to_dir,ssh_proxy_progress)
+                             ssh_proxy_pv,to_passwd,to_ssh_port,to_user,to_ip,tar_option,to_dir)
             
             logger.debug("run command: [%s] ------------ <%s %s> %s" % (cmd_localhost,self.target,self.cluster_id,self.current_uuid))
             if proxy_host:
@@ -813,7 +857,7 @@ class ClusterExecution(object):
             r["stdout"] = ""
             r["stderr"] = ""
             r["exit_code"] = "0"
-            if not is_file:
+            if not is_from_file:
                 r["stderr"] = "only file can use paramiko sftp module"
                 r["exit_code"] = "1"
                 self.redis_log_client.hset(self.current_uuid,"exit_code",r["exit_code"])
@@ -843,15 +887,31 @@ class ClusterExecution(object):
             
             from_file_attr = from_sftp_client.stat(from_file)
             total_size = from_file_attr.st_size                      # 只对文件准确   
-            current_size = 0
             self.redis_log_client.hset(self.current_uuid,"total_size",total_size)
-            self.redis_log_client.hset(self.current_uuid,"current_size",current_size)
-            batch_size = 512*1024
-            last_data = 0            
+            
+            from_seek = 0
+            begin_size = 0
+            write_mode = "wb"
+            if is_partial:
+                to_file_attr = to_sftp_client.stat(to_file)
+                begin_size = to_file_attr.st_size  
+                from_seek = begin_size
+                write_mode = "ab"
+            
+            self.redis_log_client.hset(self.current_uuid,"current_size",begin_size)
+            
             # 还是存在读写互相影响
             # todo 改用多线程实现？
+            transfer_size = total_size - begin_size
+            #batch_size = 512*1024
+            show_process_gap = int(transfer_size/(batch_size*20))          # 记录20次已传输大小
+            if not show_process_gap:
+                show_process_gap = 1
+            
+            last_data = 0   
             def read_remote():
                 with from_sftp_client.file(from_file, "rb") as src_file:
+                    src_file.seek(from_seek)
                     while True:
                         data = src_file.read(batch_size)
                         if data:
@@ -860,18 +920,18 @@ class ClusterExecution(object):
                             break
                 
             
-            with to_sftp_client.file(to_file, "wb") as dest_file:
+            with to_sftp_client.file(to_file, write_mode) as dest_file:
                 i = 0
                 last_data = ""
                 for data in read_remote():
-                    if i%100 == 0:
-                        self.redis_log_client.hset(self.current_uuid,"current_size",i*batch_size)
+                    if i%show_process_gap == 0:
+                        self.redis_log_client.hset(self.current_uuid,"current_size",begin_size+i*batch_size)
                 
                     dest_file.write(data)
                     last_data = data
                     i = i+1
                 
-                self.redis_log_client.hset(self.current_uuid,"current_size",(i-1)*batch_size+len(last_data))
+                self.redis_log_client.hset(self.current_uuid,"current_size",begin_size + (i-1)*batch_size+len(last_data))
 
             from_ssh.close()
             to_ssh.close()
@@ -888,12 +948,13 @@ class ClusterExecution(object):
         self.redis_log_client.hset(self.current_uuid,"cmd_type","EXTEND")  
         real_try = 0
         scp_functions = [__scp_current,__scp_remote,__scp_proxy,__scp_inner]
+        
         _try_seq = []
         for s in try_seq:
-            if int(s) <= len(scp_functions):
+            if int(s) in range(1,1+len(scp_functions)):
                 _try_seq.append(int(s)-1)
             else:
-                raise Exception("number in arg [try] should less than %s" % len(scp_functions))
+                raise Exception("number in arg [try] should in %s" % list(range(1,1+len(scp_functions))))
         
         for s in _try_seq:
             scp_function = scp_functions[s]
@@ -904,11 +965,11 @@ class ClusterExecution(object):
             if scp_result["exit_code"] in [0,"0"]:
                 logger.debug("run command: [%s] success ------------ <%s %s> %s" % (cmd_real,self.target,self.cluster_id,self.current_uuid))
                 
-                to_size = self.__get_path_size(to_realhost,to_full)
+                to_size = self.__get_path_size(to_host,to_full)
                 self.redis_log_client.hset(self.current_uuid,"current_size",to_size)
                 
                 if is_check:
-                    if is_file:
+                    if is_from_file:
                         # 为文件时校验MD5
                         from_ssh = MySSH({"ip":from_ip,"ssh_port":from_ssh_port,"user":from_user,"passwd":from_passwd})
                         to_ssh = MySSH({"ip":to_ip,"ssh_port":to_ssh_port,"user":to_user,"passwd":to_passwd})

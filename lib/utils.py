@@ -118,7 +118,7 @@ def cmd_options_split(option_str):
         if o:
             if len(o.split("="))==2 and (re.match("-\w+=\w+",o) or re.match("--\w+=\w+",o)):
                 o = o[1:]
-                if o[1] == "-":
+                if o[0] == "-":
                     o = o[1:]
                 _o = o.split("=")
                 options[_o[0]] = _o[1]
