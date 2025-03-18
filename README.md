@@ -98,8 +98,8 @@ playbook
 
   `__sync__ <from ip_tag>:<from full path> <to path> <options>`  或 `__sync__ <from full path> <to ip_tag>:<to path> <options>` 
 
-  内置文件、目录复制方法。不支持后台运行。<from ip_tag>与<to ip_tag>相同时只判断目录是否相同。
-  options
+  内置文件、目录复制方法。不支持后台运行。<from ip_tag>与<to ip_tag>相同时只判断目录是否相同。  
+  options  
 
   | option   | 描述                                               | 支持try类型 | 值格式               | 默认值 |
   | -------- | -------------------------------------------------- | ----------- | -------------------- | ------ |

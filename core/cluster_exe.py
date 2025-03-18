@@ -730,12 +730,12 @@ class ClusterExecution(object):
         
         from_passwd = password.decrypt(safe_decode(self.redis_config_client.hget(config.prefix_realhost+from_host,"passwd")))
         from_user = safe_decode(self.redis_config_client.hget(config.prefix_realhost+from_host,"user"))
-        from_ip = safe_decode(self.redis_config_client.hget(config.prefix_realhost+from_host,"ip"))
+        from_ip = safe_decode(self.redis_config_client.hget(config.prefix_realhost+from_host,"ip").split("_")[0])    # 这里需要由ip_tag转成ip
         from_ssh_port = safe_decode(self.redis_config_client.hget(config.prefix_realhost+from_host,"ssh_port"))
         
         to_passwd = password.decrypt(safe_decode(self.redis_config_client.hget(config.prefix_realhost+to_host,"passwd")))
         to_user = safe_decode(self.redis_config_client.hget(config.prefix_realhost+to_host,"user"))
-        to_ip = safe_decode(self.redis_config_client.hget(config.prefix_realhost+to_host,"ip"))
+        to_ip = safe_decode(self.redis_config_client.hget(config.prefix_realhost+to_host,"ip").split("_")[0])
         to_ssh_port = safe_decode(self.redis_config_client.hget(config.prefix_realhost+to_host,"ssh_port"))
         
         # remote_host 可能还没有连接
