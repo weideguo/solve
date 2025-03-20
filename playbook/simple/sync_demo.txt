@@ -1,0 +1,2 @@
+[{{db_from.host.ip}}]
+__sync__ /data/bak/{{session.sync_file_or_dir}} {{db_to.host.ip}}:/data/bak -try={{session.try}}
