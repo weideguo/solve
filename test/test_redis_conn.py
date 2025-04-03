@@ -11,10 +11,8 @@ if __name__ == "__main__":
     redis_send={
         "db": 0,
         "password": "my_redis_passwd",
-        "host": "127.0.0.1",                                                                  #使用sentinel则这个不必设置
-        "port": 6379,                                                                         #使用sentinel则这个不必设置
-        #"service_name": "mymaster",                                                          #是否使用sentinel
-        #"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)],       #是否使用sentinel
+        "service_name": "mymaster",          # 使用sentinel则需要这个                                                
+        "nodes": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)],       
     }
     #from conf import config
     #redis_send=config.redis_send
@@ -29,7 +27,7 @@ if __name__ == "__main__":
     
     #redis_send_client=rc.refresh(redis_send)
     
-    sentinels=redis_send["sentinels"]
+    sentinels=redis_send["nodes"]
     service_name=redis_send["service_name"]
     db=redis_send["db"]
     password=redis_send["password"]

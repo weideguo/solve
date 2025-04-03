@@ -3,7 +3,7 @@
 # SOLVE ![](./solve.ico)
 
 <!-- 暂时不展示 [![travis-ci](https://img.shields.io/travis/weideguo/solve.svg)](https://travis-ci.org/weideguo/solve) -->
-[![Python 3.7|3.9](https://img.shields.io/badge/python-3.7%7C3.9-blue.svg)](https://github.com/weideguo/solve) 
+[![Python 3.9|3.11|3.13](https://img.shields.io/badge/python-3.9%7C3.11%7C3.13-blue.svg)](https://github.com/weideguo/solve) 
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/weideguo/solve/blob/master/LICENSE) 
 
 
@@ -22,7 +22,7 @@ start
 ### prerun ###
 ```shell
 #set config
-vim conf/config.conf
+cp conf/config.conf.sample conf/config.conf
 #install dependency
 pip install -r requirements.txt
 #set env

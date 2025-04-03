@@ -1,8 +1,0 @@
-markupsafe==2.0.1
-six==1.15.0
-Jinja2==2.10.1
-paramiko==2.6.0
-python-daemon==2.2.3
-redis==3.3.8
-Flask==1.1.1
-pycryptodome==3.9.7

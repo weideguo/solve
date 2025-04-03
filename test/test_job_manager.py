@@ -13,11 +13,10 @@ if __name__=="__main__":
     #redis_config
     {
         "db": 0,
-        "password": "my_redis_passwd",
-        "host": "127.0.0.1",         
-        "port": 6379,                
-        "service_name": "mymaster",                                                         
-        "sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]      
+        "password": "my_redis_passwd",             
+        "service_name": "mymaster",   
+        #"nodes": [('127.0.0.1', 6379)]                                                      
+        "nodes": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]      
     }
     """
     #可清除以下

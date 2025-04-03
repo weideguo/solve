@@ -30,19 +30,13 @@ def get_redis_config(section):
     """
     db=int(cp.get(section,"db"))
     password=cp.get(section,"password")
-    sentinels=[]
     service_name=""
-    host=""
-    port=0
+    nodes = ast.literal_eval(cp.get(section,"nodes"))
     try:
-        #sentinels=eval(cp.get(section,"sentinels"))
-        sentinels=ast.literal_eval(cp.get(section,"sentinels"))
         service_name=cp.get(section,"service_name")
-        return {"db":db,"password":password,"sentinels":sentinels,"service_name":service_name}
-    except:    
-        host=cp.get(section,"host")
-        port=int(cp.get(section,"port"))
-        return {"db":db,"password":password,"host":host,"port":port}
+    except:
+        pass
+    return {"db":db,"password":password,"nodes":nodes,"service_name":service_name}
 
 
 redis_send = get_redis_config("redis_send")
@@ -98,7 +92,6 @@ core.plugin.salt.salt_conn.SaltConn                   使用salt单例模式实�
 """
 
 ###################################################################################################
-daemonize=False                     #是否使用后台运行模式，docker环境使用可能启动失败，不启用时传入参数只能为start，stop、restart不支持
 log_level=10                        #参考logging模块的值 logging.DEBUG=10 logging.INFO=20
 
 remote_process=3                    #使用多少个进程创建远程连接。进程之间竞争从队列获取创建信息以创建远程对象。不会影响实际并发数，设置跟cpu核心一致以便最大限度使用cpu。
@@ -177,9 +170,9 @@ prefix_job="job_"                   #每个任务的信息 job_<job id> 插入 k
 #禁止执行的命令 添加时请务必使用函数 re.match(cmd_pattern,cmd) 先行验证 
 #正则表达式，错误信息，退出码（等同于执行shell命令后的退出码）
 deny_commands=[
-("(.*(\s|\||;|&|\`)+|)rm\s+.*/(\s+.*|\||;|&||`$)", "too danger to execute", 1),    #带有 "rm /" 的命令
-(".*eval.*", "too danger to execute", 1),                                          #带有eval 的命令 
-(".*e(\'|\")*v(\'|\")*a(\'|\")*l.*", "too danger to execute", 1),                  #通过单引号 双引号拼接成eval                        #``中带有rm的命令
+(r"(.*(\s|\||;|&|\`)+|)rm\s+.*/(\s+.*|\||;|&||`$)", "too danger to execute", 1),    #带有 "rm /" 的命令
+(r".*eval.*", "too danger to execute", 1),                                          #带有eval 的命令 
+(r".*e(\'|\")*v(\'|\")*a(\'|\")*l.*", "too danger to execute", 1),                  #通过单引号 双引号拼接成eval                        #``中带有rm的命令
 ]
 
 #只能适合常规的正则匹配

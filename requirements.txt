@@ -1,6 +1,5 @@
 Jinja2
 paramiko
-python-daemon
 redis
-Flask
 pycryptodome
+Flask

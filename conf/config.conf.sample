@@ -1,48 +1,43 @@
 [redis_send]
 db=0
 password=my_redis_passwd
-#使用sentinel则会不必设置以下两项
-host=127.0.0.1
-port=6379
-#是否使用sentinel，注释或则不使用
-#service_name=mymaster                                                        
-#sentinels=[('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]      
+# 非空或存在，则当成sentinel
+#service_name=mymaster                     
+# 只有一组则当成单节点
+nodes=[('127.0.0.1', 6379)]              
+#nodes=[('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]   
 
 
 [redis_log]
 db=1
 password=my_redis_passwd
-host=127.0.0.1
-port=6379
-#service_name=mymaster                                                        
-#sentinels=[('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]  
+#service_name=mymaster                     
+nodes=[('127.0.0.1', 6379)]              
+#nodes=[('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]   
 
 
 [redis_tmp]
 db=2
 password=my_redis_passwd
-host=127.0.0.1
-port=6379
-#service_name=mymaster                                                        
-#sentinels=[('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]  
+#service_name=mymaster                     
+nodes=[('127.0.0.1', 6379)]              
+#nodes=[('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]  
 
 
 [redis_job]
 db=14
 password=my_redis_passwd
-host=127.0.0.1
-port=6379
-#service_name=mymaster                                                        
-#sentinels=[('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]  
+#service_name=mymaster                     
+nodes=[('127.0.0.1', 6379)]              
+#nodes=[('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]  
 
 
 [redis_config]
 db=15
 password=my_redis_passwd
-host=127.0.0.1
-port=6379
-#service_name=mymaster                                                        
-#sentinels=[('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]  
+#service_name=mymaster                     
+nodes=[('127.0.0.1', 6379)]              
+#nodes=[('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)]  
 
 
 [proxy]

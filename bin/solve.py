@@ -8,8 +8,6 @@ import os
 import sys
 import time
 from multiprocessing import Process
-
-from daemon.runner import DaemonRunner
     
 base_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
@@ -21,7 +19,7 @@ from core.proxy_manager import ProxyManager
 
 
 
-solve_logo="""
+solve_logo=r"""
  _____ _____ _ __   __ _____     
 |   __|     | |\ \ / /|  ___|    
 |__   |  |  | |_\ V / |  ___|   
@@ -178,60 +176,5 @@ if __name__=="__main__":
                 p.join()
     
     
-    class MyDaemonRunner(DaemonRunner):
-        """
-        重载以下方法
-        daemon可以防止多次启动
-        """
-
-        def _open_streams_from_app_stream_paths(self, app):
-            self.daemon_context.stdin = open(app.stdin_path, "r")
-            self.daemon_context.stdout = open(app.stdout_path, "a+")
-            self.daemon_context.stderr = open(app.stderr_path, "a+")
-       
-        def _terminate_daemon_process(self):
-            #结束进程时
-            #清理心跳包
-            
-            hbs=redis_send_client.keys(config.prefix_heart_beat+"*")
-            for h in hbs:
-                redis_send_client.delete(h)
-        
-            #写日志
-            with open(stdout_path,"a+") as f:
-                #f.write("%s,000 - %s\n" % (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), "stop"))
-                f.write(simple_log("stop\n"))
-
-            #python2.7时结束进程时需要使用kill -9
-            import signal
-            signal.SIGTERM=9
-            
-            #杀主进程
-            #super()._terminate_daemon_process()  
-            super(MyDaemonRunner,self)._terminate_daemon_process()  
-            
-            #杀死子进程
-            pid_key = "__pid__"
-            pid_key=pid_key+str(self.pidfile.read_pid())
-            pid=redis_send_client.lpop(pid_key)
-            while pid:
-                try:
-                    os.kill(int(pid), signal.SIGTERM)
-                except:
-                    pass
-                pid=redis_send_client.lpop(pid_key)
-            
-            #由于使用-9 需要自行删除pid文件
-            try:
-                os.remove(pidfile_path)
-            except:
-                pass
-
-    if config.daemonize:
-        run = MyDaemonRunner(Solve())
-        run.do_action()
-        #在此之后的所有操作会被跳过
-        #不要放任何操作在此之后
-    else:
-        Solve().run()
+    Solve().run()
     

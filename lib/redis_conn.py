@@ -1,18 +1,10 @@
 # -*- coding: utf-8 -*-
 import redis
 from redis import BlockingConnectionPool
-from redis.sentinel import Sentinel,SentinelConnectionPool
+from redis.sentinel import Sentinel
 
 from threading import Lock 
 
-
-class SentinelBlockingConnectionPool(SentinelConnectionPool,BlockingConnectionPool):
-    """
-    左边的方法覆盖右边的
-    实现一个sentinel在达到最高连接数时阻塞获取连接客户端的连接池类
-    """
-    pass
-    
 
 class RedisConn(object):
     """        
@@ -54,14 +46,26 @@ class RedisConn(object):
         if is_master:
             client = sentinel.master_for(service_name, password=password, db=db,\
                      decode_responses=self.decode_responses, encoding_errors=self.encoding_errors,retry_on_timeout=self.retry_on_timeout,\
-                     connection_pool_class=SentinelBlockingConnectionPool, max_connections=self.max_connections, timeout=self.timeout)
+                     max_connections=self.max_connections, socket_timeout=self.timeout)
         else:
             client = sentinel.slave_for(service_name, password=password, db=db, \
                      decode_responses=self.decode_responses, encoding_errors=self.encoding_errors,retry_on_timeout=self.retry_on_timeout,\
-                     connection_pool_class=SentinelBlockingConnectionPool, max_connections=self.max_connections, timeout=self.timeout)
+                     max_connections=self.max_connections, socket_timeout=self.timeout)
         
         return client
-        
+
+    def init_cluster(self, nodes, password):
+        """
+        cluster模式
+        """
+        # from redis.cluster import RedisCluster,ClusterNode
+        # cluster_nodes = [ ClusterNode(n[0],n[1]) for n in nodes]
+        # client = RedisCluster(startup_nodes=cluster_nodes, password=password,\
+        #          decode_responses=self.decode_responses, encoding_errors=self.encoding_errors,\
+        #          retry_on_timeout=self.retry_on_timeout, max_connections=self.max_connections, timeout=self.timeout)
+        # return client
+        raise Exception("not support redis cluster yet %s" % nodes)
+
         
     def init(self, redis_config):
         """
@@ -69,10 +73,9 @@ class RedisConn(object):
         {
             "db": 0,
             "password": "my_redis_passwd",
-            "host": "127.0.0.1",                                                                  #使用sentinel则这个不必设置
-            "port": 6379,                                                                         #使用sentinel则这个不必设置
             #"service_name": "mymaster",                                                          #是否使用sentinel
-            #"sentinels": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)],       #是否使用sentinel
+            "nodes": [('127.0.0.1', 26479)],
+            #"nodes": [('127.0.0.1', 26479),('127.0.0.1', 26480),('127.0.0.1', 26481)],       
         }
         """
         with self.lock:
@@ -85,30 +88,44 @@ class RedisConn(object):
             db=redis_config["db"]
             
             is_sentinel=False
-            if "sentinels" in redis_config and "service_name" in redis_config:
-                sentinels=redis_config["sentinels"]
-                service_name=redis_config["service_name"]
+            if len(redis_config["nodes"]) == 0:
+                raise Exception("redis nodes must not empty %s" % redis_config)
+
+            if "service_name" in redis_config and redis_config["service_name"]:
+                sentinels = redis_config["nodes"]
+                service_name = redis_config["service_name"]
                 if sentinels and service_name:
-                    is_sentinel=True
+                    is_sentinel = True
             
             if is_sentinel:
-                redis_client=self.init_sentinel(sentinels,service_name, db, password)  
+                redis_client = self.init_sentinel(sentinels, service_name, db, password)  
+            elif len(redis_config["nodes"]) == 1:
+                host = redis_config["nodes"][0][0]
+                port = redis_config["nodes"][0][1]
+                redis_client = self.init_single(host, port, db, password)
             else:
-                host=redis_config["host"]
-                port=redis_config["port"]
-                redis_client=self.init_single(host, port, db, password)
+                # cluster只能使用db0
+                redis_client = self.init_cluster(redis_config["nodes"], password)
             
             self.conn_list.append((redis_config,redis_client))
         
             return redis_client   
     
 
-    def refresh(self, redis_config, force=False):
+    def refresh(self, redis_config, force=False, connect_client=None):
         """
         如果发生断开，重新获取客户端
         使用连接池没有重连的必要，客户端自动重连
         多进程可能需要自己刷新 
         """
+        if connect_client:
+            try:
+                connect_client.ping()
+            except:
+                connect_client=self.redis_init(redis_config)
+        
+            return connect_client    
+            
         
         redis_client_pair=None
         for conf,conn in self.conn_list:
@@ -129,4 +146,3 @@ class RedisConn(object):
 
         return self.init(redis_config)
         
-    
