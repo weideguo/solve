@@ -110,3 +110,4 @@ bak/
 # ignore some file
 *.bak
 *.swp
+conf/config.conf
