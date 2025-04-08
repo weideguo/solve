@@ -100,8 +100,8 @@ class AbstractConn(object):
         """
         while True:
             #是否应该考虑跟配置的信息对比，只有特定的才监听？用于混合多种连接方式存在时？
-            if self.redis_send_client.keys(config.prefix_cmd+"*"):
-                for k in self.redis_send_client.keys(config.prefix_cmd+"*"):
+            if self.redis_send_client.scan_iter(config.prefix_cmd+"*"):
+                for k in self.redis_send_client.scan_iter(config.prefix_cmd+"*"):
                     self.thread_q.put(1)
                     allcmd = self.redis_send_client.lpop(k)
                     if allcmd:

@@ -125,7 +125,7 @@ class SaltConn(AbstractConn, AbstractHost):
         """
         
         r=self.salt.ping("*")
-        for ip in r.keys():
+        for ip in r.scan_iter():
             if r[ip]:
                 #salt-minion可以正常连接的情况
                 self.redis_send_client.set(config.prefix_heart_beat+ip,time.time())

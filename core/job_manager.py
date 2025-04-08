@@ -92,7 +92,7 @@ class JobManager(BaseManager):
         hb_tag=config.prefix_heart_beat
         while True:
             
-            for k in self.redis_send_client.keys(hb_tag+"*"):
+            for k in self.redis_send_client.scan_iter(hb_tag+"*"):
                 ip=k.lstrip(hb_tag)
                 
                 #logger.debug("< %s > auto check if should close connection." % ip )
