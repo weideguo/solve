@@ -135,7 +135,7 @@ if __name__=="__main__":
             print(simple_log("clear key %s" % str(clear_keys)))
             k_list=[]
             for k_pattern in clear_keys:
-                k_list +=redis_send_client.scan_iter(k_pattern+"*")
+                k_list += list(redis_send_client.scan_iter(k_pattern+"*"))
             for k in k_list:
                 redis_send_client.delete(k)
 
