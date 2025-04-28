@@ -1,10 +1,17 @@
 #
 [{{db1.host.ip}}]
 echo {{session.eee}}
+echo {{session.eee1}}
 echo {{session.aaa}}
 echo {{session.ccc}}
 echo {{session.ddd}}
+echo {{session.ddd1}}
+echo {{session.dddd}}
+echo {{session.dddd1}}
 echo {{session.bbb}}
+echo {{session.bbb1}}
+echo {{session.bbbb}}
+echo {{session.bbbb1}}
 echo {{session.fff}}
 echo "{{session.ggg}}"
 echo "{{session.mmm}}"
