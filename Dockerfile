@@ -16,8 +16,9 @@ ENV REDIS_PORT=6379
 #ENV REDIS_PASSWORD=xxx
 #ENV LC_ALL=en_US.UTF-8
 
-RUN apt update
-RUN apt install -y sshpass pv
+#安装失败，需要privileged启动容器后在手动安装？
+#RUN apt update
+#RUN apt install -y sshpass pv
 RUN rm /etc/localtime && ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 RUN mkdir -p /data/solve
 
@@ -26,7 +27,10 @@ ADD ./  /data/solve/
 WORKDIR /data/solve
 RUN chmod 755 docker-entrypoint.sh
 RUN cp docker-entrypoint.sh /usr/local/bin/
+RUN cp conf/config.conf.sample conf/config.conf
 
+# 需要关闭进度条，否则出现安装失败？
+ENV PIP_PROGRESS_BAR=off
 #RUN pip install -r requirements.txt ; echo "skip DEPRECATION info"
 RUN pip install -r requirements3.13.txt  --index-url ${INDEX_URL} --trusted-host ${TRUSTED_HOST} ; echo "skip DEPRECATION info"
 
