@@ -15,8 +15,17 @@ Simple command deliver server, base on SSH.
 start
 --------------
 
-### dependency servers ###
+### dependency ###
+**server**
 * redis (>= 2.0.0)
+
+**command**
+* sshpass  
+* pv  
+* tar  
+* gzip  
+* md5sum  
+* rsync  要控制的服务器需要
 
 
 ### prerun ###
