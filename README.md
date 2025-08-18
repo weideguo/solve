@@ -20,12 +20,9 @@ start
 * redis (>= 2.0.0)
 
 **command**
-* sshpass  
-* pv  
-* tar  
-* gzip  
-* md5sum  
-* rsync  要控制的服务器需要
+* cd tar gzip pv  
+* ssh sshpass  solve服务器、要控制的服务器    
+* rsync md5sum  要控制的服务器需要
 
 
 ### prerun ###
