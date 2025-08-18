@@ -22,7 +22,7 @@ start
 **command**
 * cd tar gzip pv  
 * ssh sshpass  solve服务器、要控制的服务器    
-* rsync md5sum  要控制的服务器需要
+* rsync md5sum  要控制的服务器
 
 
 ### prerun ###
