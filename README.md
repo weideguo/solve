@@ -126,7 +126,15 @@ playbook
 
    样例  
    ` __sync__ /a/b/c 10.0.0.1:/a/b  -compress=1 -try=1234 -proxy=192.168.0.1 -bwlimit=10m -partial=1 -check=1 --progress=1`  将目录或文件/a/b/c传输到10.0.0.1:/a/b下，目录或文件名保持原来的名字  
-
+    
+  
+  `__render__ <path to template> <path to file> -a=aaaa -b=bbb -c=ccc`  
+  
+  将jinja模板文件中的变量进行渲染。  
+  渲染值存在空格时使用单引号或双引号包含。  
+  复杂的格式则需要先存储成文件，如`-__d=/path_2_file`，通过变量加双下划线前缀，可实现将文件的内容赋给变量`d`。   
+  
+  
   其他扩展命令
   
   其他的扩展命令对应扩展目录extends下的文件，可用于自定义封装轻量级shell命令集合同时无需先预先上传文件（比较复杂的shell脚本建议上传后运行）。如 `__abc__`则类似于使用文件 `__abc__`或 `__abc__.sh` 执行。

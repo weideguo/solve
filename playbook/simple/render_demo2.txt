@@ -1,0 +1,4 @@
+[{{host.ip}}]
+global.tmp_file=/tmp/`date +%s`_${RANDOM}.txt
+__save__ {{global.tmp_file}} {{session.d}}
+__render__ /tmp/a.txt.template /tmp/a.txt -a=aaaa -b="b bb" -c="中文也可以渲染" -__d={{global.tmp_file}}

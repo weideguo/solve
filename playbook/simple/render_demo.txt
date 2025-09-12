@@ -1,0 +1,2 @@
+[{{host.ip}}]
+__render__ /tmp/a.txt.template /tmp/a.txt -a=aaaa -b="b bb" -c="中文也可以渲染" -d={{session.d}}
