@@ -320,6 +320,19 @@ class MySSH(object):
             f.write(content)
         
         ftp_client.close()
+    
+    def read_file(self,remote_file, mode="r",*arg,**kwargs):
+        """
+        读取远端文件的内容
+        """
+        content = ""
+        ftp_client = self.ssh_client.open_sftp()
+        with ftp_client.open(remote_file,mode) as f:
+            content = f.read()
+        
+        ftp_client.close()
+        return content
+    
 
     def is_remote_dir(self,ftp_client,remote_path):
         """

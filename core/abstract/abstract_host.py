@@ -4,6 +4,7 @@ import re
 import uuid
 import time
 import sys
+import json
 #if sys.version_info>(3,0):
 #    import queue as Queue
 #else:
@@ -11,8 +12,10 @@ import sys
 from threading import Thread
 from traceback import format_exc
 
+from jinja2 import Environment, StrictUndefined, meta
+
 from lib.wrapper import gen_background_log_set,connection_error_rerun,command_fliter,logger,logger_err,command_split
-from lib.utils import my_md5,get_host_ip,cmd_split,is_file_in_dir,safe_decode
+from lib.utils import my_md5,get_host_ip,cmd_split,is_file_in_dir,safe_decode,cmd_options_split
 from lib.compat import Queue
 
 from conf import config
@@ -61,10 +64,14 @@ class AbstractHost(object):
         """保存内容到远端文件"""
         raise Exception(".save_file() must be overridden") 
     
+    def read_file(self,*args,**kwargs):
+        """读取远端文件"""
+        raise Exception(".read_file() must be overridden") 
+    
     #####################################################
         
             
-    def single_run(self,cmd,cmd_uuid,ip_tag,extend_pattern="\s*__\w+__($|\s)",real_ip=None):
+    def single_run(self,cmd,cmd_uuid,ip_tag,extend_pattern=r"\s*__\w+__($|\s)",real_ip=None):
         """
         单个命令的执行
         
@@ -144,7 +151,11 @@ class AbstractHost(object):
         self.set_log(ip_tag,exe_result,is_update=False)  
         
         cmd_uuid=exe_result["uuid"]
-            
+        
+        stdout = ""
+        stderr = ""
+        exit_code = "0" 
+        
         try:
             # 默认全部按照命令行格式分割，因此不应该存在多余的空格，如果有多余空格存在，请自行分割
             _cmd = cmd_split(cmd_line)
@@ -215,6 +226,50 @@ class AbstractHost(object):
                 exit_code=1
                 logger_err.error(format_exc())
         
+        elif cmd=="__render__":
+            # __render__ /path_2_template /path_2_file -a=aaaa -b=bbb -c=ccc
+            cmd_options = None
+            _cmd = cmd_split(cmd_line,3)
+            if len(_cmd) < 3:
+                raise Exception("__render__ command length must not less than 3")
+            elif len(_cmd) == 4:
+                cmd_options = cmd_options_split(_cmd[3])
+                # 当存在key的名字以两个下划线开头，即如__d，则值当成为文件的路径，读取文件将结果设置为d的值。
+                for k in list(cmd_options.keys()):
+                    match = re.match("^\__([^\_]+$)",k)
+                    if match:
+                        real_key = match.group(1)
+                        filepath = cmd_options[k]
+                        cmd_options[real_key] = self.read_file(filepath,"r").decode(encoding="utf-8",errors="strict")
+                        
+            
+            if not cmd_options:
+                raise Exception("__render__ command options must exist")
+            
+            template_file = _cmd[1]
+            target_file = _cmd[2]
+            arg_options = cmd_options
+            
+            template_content = self.read_file(template_file,"r").decode(encoding="utf-8",errors="strict")
+            
+            # 直接渲染可能会出现有些变量没有被渲染，但没有任何提示
+            #target_content = Template(template_content).render(arg_options)
+            
+            env = Environment(undefined=StrictUndefined)
+            
+            ast = env.parse(template_content)
+            variables = meta.find_undeclared_variables(ast)
+            stdout = " ".join(variables)
+            stdout = stdout+"\n"+json.dumps(arg_options,ensure_ascii=False)
+            
+            try:
+                target_content = env.from_string(template_content).render(arg_options)
+            
+                self.save_file(target_file,target_content,mode="w")
+                
+            except:
+                stderr = format_exc()
+                exit_code = 1
         else:
             #扩展目录中的扩展命令
             filename,__cmd=is_file_in_dir(cmd,self.extends_postfixs,os.path.join(config.base_dir,self.extends_dir))

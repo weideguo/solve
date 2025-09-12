@@ -4,6 +4,7 @@ import re
 import socket
 import hashlib
 import threading
+import shlex
 
 def hash_bytestr_iter(bytesiter, hasher, hex_str=True):
     for block in bytesiter:
@@ -113,20 +114,18 @@ def cmd_options_split(option_str):
     """
     将形如`-compress=1 -type=file -try=4` 处理成 {"compress":"1","type":"file","try":"4"}
     """
+    tokens = shlex.split(option_str)
+    
     options = {}
-    for o in option_str.strip().split(" "):
-        if o:
-            if len(o.split("="))==2 and (re.match(r"-\w+=\w+",o) or re.match(r"--\w+=\w+",o)):
-                o = o[1:]
-                if o[0] == "-":
-                    o = o[1:]
-                _o = o.split("=")
-                options[_o[0]] = _o[1]
-            else:
-                raise Exception("option format error[%s]" % o)
-    
-    return options
-    
+    for token in tokens:
+        # if "=" in token:
+        if re.match(r"""^(-{1,2})([^-=]+)=(.+?)""",token):
+            key, value = token.split("=", 1)
+            key = key.lstrip("-")
+            options[key] = value
+        else:
+            raise Exception("option format error[%s]" % token)
+    return options   
 
 
 def is_file_in_dir(shorname,postfixs,dir):
