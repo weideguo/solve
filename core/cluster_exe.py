@@ -801,7 +801,7 @@ class ClusterExecution(object):
         def __scp__(exe_host, from_host, real_try):
             # 在current_host运行 
             real_try = real_try+1
-            self.redis_log_client.hset(self.current_uuid,"scp_desc","count:%s" % real_try)
+            self.redis_log_client.hset(self.current_uuid,"sync_desc","count:%s" % real_try)
             logger.debug("from_host [%s] to_host [%s] current_host [%s] remote_host [%s] exe_host [%s]" % (from_host,to_host,self.current_host,remote_host,exe_host))
             if exe_host == from_host:
                 # 执行命令的主机为文件存放的主机
@@ -830,7 +830,7 @@ class ClusterExecution(object):
         def __scp_proxy(real_try):
             # 在solve运行的机器上执行，因为solve可以连接两台服务器，从而可以实现代理
             real_try = real_try+1
-            self.redis_log_client.hset(self.current_uuid,"scp_desc","count:%s" % real_try)
+            self.redis_log_client.hset(self.current_uuid,"sync_desc","count:%s" % real_try)
             
             cmd_localhost = """sshpass -p '%s' ssh -p %s -oStrictHostKeyChecking=no %s@%s 'cd %s && tar %s -cf - %s' \
                              %s | sshpass -p '%s' ssh -p %s -oStrictHostKeyChecking=no %s@%s 'tar %s -xf - -C %s'""" % \
@@ -868,7 +868,7 @@ class ClusterExecution(object):
                 return r,"",real_try
             
             real_try = real_try+1
-            self.redis_log_client.hset(self.current_uuid,"scp_desc","count:%s" % real_try)
+            self.redis_log_client.hset(self.current_uuid,"sync_desc","count:%s" % real_try)
             from_file = from_file_or_dir            
             to_file = to_full
             
