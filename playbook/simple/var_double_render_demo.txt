@@ -1,0 +1,4 @@
+# 变量双重渲染
+[{{host.ip}}]
+global.user=aaa
+echo {{const.{{global.user}}}} {{const.{{session.user}}}}

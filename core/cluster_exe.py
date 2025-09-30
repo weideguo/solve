@@ -136,14 +136,27 @@ class ClusterExecution(object):
         变量存在左右空格不影响，会被清除
         变量中间不能存在空格
         """
-        data={}
-        for c in re.findall("(?<={{).+?(?=}})",cmd):
-            #c_r=c.replace(".","_____")                   #.被jinja2特殊使用 因此使用_____临时替代
-            c_r=re.sub("\s*\.\s*","_____",c).strip()      #去除字符串的左右空格 以及.左右的空格
-            cmd=cmd.replace("{{%s}}" % c, "{{%s}}" % c_r)
-            data[c_r]=password.decrypt(safe_decode(self.get_value(target,c)))
-            
-              
+        data = {}
+        # .被jinja2特殊使用 因此使用__SOLVE_INNER_KEEP__临时替代
+        sove_inner_keep = "__SOLVE_INNER_KEEP__"
+
+        # 处理形如 {{abc{{session.user}}ABC}} 的特殊jinja变量
+        for c_ in re.findall(r"(?<={{)[^{}]*?{{[^{}]+?}}[^{}]*?(?=}})",cmd): 
+            full_matches = re.findall(r"(?<={{).+?(?=}})",c_)
+            c = full_matches[0] # 有且仅有一个匹配
+            v = password.decrypt(safe_decode(self.get_value(target,c)))
+            if not v:
+                # 双重渲染第一次的值不因该为空
+                raise Exception("variable [%s] render error, double render value should not empty" % c)
+            # 直接进行替换
+            cmd = cmd.replace("{{%s}}" % c, v)
+        
+        # 处理普通的jinja变量
+        for c in re.findall(r"(?<={{).+?(?=}})",cmd):
+            c_r = re.sub(r"\s*\.\s*",sove_inner_keep,c).strip()      #去除字符串的左右空格 以及.左右的空格
+            cmd = cmd.replace("{{%s}}" % c, "{{%s}}" % c_r)
+            data[c_r] = password.decrypt(safe_decode(self.get_value(target,c)))
+        
         real_cmd=Template(cmd).render(data)      
         return real_cmd
         
