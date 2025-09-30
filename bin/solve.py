@@ -12,7 +12,6 @@ from multiprocessing import Process
 base_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
 from lib.redis_conn import RedisConn
-#from lib.logger import logger,logger_err
 from lib.wrapper import logger,logger_err
 from core.job_manager import JobManager
 from core.proxy_manager import ProxyManager
@@ -66,7 +65,7 @@ if __name__=="__main__":
     try:
         #如果命令行存在输入 则以命令行优先
         try:
-            start_mode=sys.argv[2].strip()
+            start_mode=sys.argv[1].strip()
         except:
             start_mode=None
         
@@ -88,33 +87,23 @@ if __name__=="__main__":
     
     manager=Manager(rc,[config.redis_send,config.redis_log,config.redis_tmp,config.redis_job,config.redis_config])
     
+    print("\033[1;32m %s \033[0m" % solve_logo)
+    print("%s mode \033[1;32m %s \033[0m" % ("start",start_mode))
     try:
-        opt=sys.argv[1].strip()
-        if opt != "stop":
-            if opt == "start":
-                print("\033[1;32m %s \033[0m" % solve_logo)
-                print("%s mode \033[1;32m %s \033[0m" % (opt,start_mode))
-            try:
-                #for proxy mode
-                print("proxy tag  \033[1;32m %s \033[0m" % manager.proxy_tag)
-                config_key=config_key+manager.proxy_mark
-            except:
-                pass
-            if is_start_fileserver:
-                print("fileserver listen on  \033[1;32m %s:%d \033[0m" % (config.bind,config.port))
-        else:
-            print("%s \033[1;32m success \033[0m" % opt) 
+        #for proxy mode
+        print("proxy tag  \033[1;32m %s \033[0m" % manager.proxy_tag)
+        config_key = config_key+manager.proxy_mark
     except:
         pass
+    if is_start_fileserver:
+        print("fileserver listen on  \033[1;32m %s:%d \033[0m" % (config.bind,config.port))
 
-    def simple_log(msg):
-        return "%s,000 - %s" % (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),msg)
-    
+
     #启动前对redis的清理与设置
-    #start restart 才使用
+    #start
     def init_set():
         #写日志
-        logger.info(opt)
+        logger.info("start")
         #启动时清除旧数据
         redis_send_client.delete(config_key)
         #重新设置新数据
@@ -132,7 +121,7 @@ if __name__=="__main__":
         #清除相关key
         if config.clear_start and Manager != ProxyManager:
             clear_keys=[config.key_conn_control,config.prefix_cmd,config.prefix_heart_beat,config.prefix_log_now]
-            print(simple_log("clear key %s" % str(clear_keys)))
+            logger.info("clear key %s" % str(clear_keys))
             k_list=[]
             for k_pattern in clear_keys:
                 k_list += list(redis_send_client.scan_iter(k_pattern+"*"))

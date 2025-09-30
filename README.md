@@ -36,13 +36,11 @@ pip install -r requirements.txt
 export LC_ALL=en_US.UTF-8
 ```
 
-### start stop restart ###
+### start stop ###
 ```shell
-python bin/solve.py start
+python bin/solve.py
 
-python bin/solve.py stop
-
-python bin/solve.py restart
+kill -9 ${pid}
 ```
 
 
@@ -343,7 +341,7 @@ proxy模式用于作为master的代理管理主机连接。整体任务协调均
 适用于多机房模式，一个机房使用一个proxy；或者使用多个proxy减少master发起大量ssh连接的压力。  
 
 * proxy启动方式:  
-  1.命令行中 python bin/solve.py start proxy  
+  1.命令行中 python bin/solve.py proxy  
   2.修改配置文件conf/config.py的PROXY，即设置conf/config.conf的proxy模块
 * proxy与master的通信通过redis实现  
 * 默认启动的模式为master模式，不需要与其他节点有关联  
