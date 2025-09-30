@@ -34,7 +34,7 @@ class ProxyManager(BaseManager):
         self.proxy_tag = "%s:%s" % (config.proxy_tag,self.proxy_mark)
         
         #为proxy时 在proxy本地不监听 127.0.0.1 localhost 防止跟master的发生冲突
-        self.listen_tag = [ ip for ip in listen_tag if ip not in ["127.0.0.1","localhost"] ]
+        self.listen_tag = [ ip for ip in self.listen_tag if ip not in ["127.0.0.1","localhost"] ]
         
     
     @connection_error_rerun()
