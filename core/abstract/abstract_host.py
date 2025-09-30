@@ -236,7 +236,7 @@ class AbstractHost(object):
                 cmd_options = cmd_options_split(_cmd[3])
                 # 当存在key的名字以两个下划线开头，即如__d，则值当成为文件的路径，读取文件将结果设置为d的值。
                 for k in list(cmd_options.keys()):
-                    match = re.match("^\__([^\_]+$)",k)
+                    match = re.match(r"^\_\_([^\_]+$)",k)
                     if match:
                         real_key = match.group(1)
                         filepath = cmd_options[k]

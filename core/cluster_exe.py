@@ -88,7 +88,7 @@ class ClusterExecution(object):
         """
         name_str=name_str.strip()
         key_name=target_name
-        pattern='^(%s|%s|%s)\s*\..*' % (config.prefix_global,config.prefix_session,config.prefix_select)
+        pattern = r'^(%s|%s|%s)\s*\..*' % (config.prefix_global,config.prefix_session,config.prefix_select)
         
         if re.match(pattern,name_str):
             change=False
@@ -248,7 +248,7 @@ class ClusterExecution(object):
                 self.current_uuid=uuid.uuid1().hex
                 if current_line < begin_line:
                     #主机切换的命令正常运行
-                    if re.match("^\[.*\]$",next_cmd):
+                    if re.match(r"^\[.*\]$",next_cmd):
                         cmd=next_cmd
                     else:
                         cmd=""
@@ -318,7 +318,7 @@ class ClusterExecution(object):
                     #结束暂停判断
                 
                     #[ip_addr] 主机切换命令 
-                    if re.match("^\[.*\]$",cmd):
+                    if re.match(r"^\[.*\]$",cmd):
                         self.__host_change(cmd,self.current_uuid)                        
                         self.__check_result([self.current_uuid])
                     
@@ -333,19 +333,19 @@ class ClusterExecution(object):
                     
                     #脚本全局变量设置
                     #elif re.match("^global\..+=",cmd):
-                    elif re.match("^"+config.prefix_global+"\..+=",cmd):
+                    elif re.match(r"^"+config.prefix_global+r"\..+=",cmd):
                         self.__global_var(cmd,self.current_uuid)
                     
                     #选择变量设置
                     #elif re.match("^select\..+=",cmd):
-                    elif re.match("^"+config.prefix_select+"\..+=",cmd):
+                    elif re.match(r"^"+config.prefix_select+r"\..+=",cmd):
                         if not self.__select_var(cmd,self.current_uuid):
                             self.exe_next=False
                             stop_str="select failed"
                             break
                     
                     #文件传输
-                    elif re.match("^__sync__ ",cmd):
+                    elif re.match(r"^__sync__ ",cmd):
                         try:
                             self.__sync_exe(cmd)
                         except Exception as e:
@@ -451,13 +451,13 @@ class ClusterExecution(object):
             #self.redis_log_client.expire(self.current_uuid,config.cmd_log_expire_sec)
             self.exe_uuid_list=[]
             r=""
-        elif re.match(".*&$",cmd.strip()):
+        elif re.match(r".*&$",cmd.strip()):
             #特殊处理如   shell command &   
             #print self.exe_uuid_list
             self.exe_uuid_list.append(c_uuid)
             check_reault_block=False 
             #print c_uuid,self.exe_uuid_list,self.target 
-            cmd=re.sub("&\s*?$","",cmd)
+            cmd = re.sub(r"&\s*?$","",cmd)
             self.redis_send_client.rpush(config.prefix_cmd+exe_tag,cmd+config.spliter+c_uuid)
             r=""
         else:        
@@ -538,8 +538,8 @@ class ClusterExecution(object):
         os_type = platform.system()
 
         #存在`shell_command` $(shell_command) 则分发到主机
-        if (os_type == "Linux" and (re.match(".*`.+`.*",g_value) or re.match(".*\$\(.+\).*",g_value) ) ) or \
-           (os_type == "Windows" and re.match(".*%.+%.*",g_value) ):
+        if (os_type == "Linux" and (re.match(r".*`.+`.*",g_value) or re.match(r".*\$\(.+\).*",g_value) ) ) or \
+           (os_type == "Windows" and re.match(r".*%.+%.*",g_value) ):
 
             tmp_cmd="echo %s" % (g_value)
 
@@ -689,7 +689,7 @@ class ClusterExecution(object):
             is_progress = int(cmd_options["progress"])==1 if "progress" in cmd_options else is_progress
             batch_size = int(cmd_options["batch"]) if "batch" in cmd_options else batch_size
         
-        if bwlimit and not re.match("\d+\.?\d*[kmg]$",bwlimit):
+        if bwlimit and not re.match(r"\d+\.?\d*[kmg]$",bwlimit):
             raise Exception("__sync__ bwlimit format error")
         
         current_host = self.current_host
