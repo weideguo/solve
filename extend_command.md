@@ -46,7 +46,7 @@
   渲染值存在空格时使用单引号或双引号包含。  
   复杂的格式则需要先存储成文件，如`-__d=/path_2_file`，通过变量加双下划线前缀，可实现将文件的内容赋给变量`d`。   
   
-*  `__call__ <playbook line num>`  
+*  `__call__ <playbook line num> <options>`  
   
   重新调用第几行playbook
 
