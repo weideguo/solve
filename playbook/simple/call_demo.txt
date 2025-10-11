@@ -1,0 +1,7 @@
+[{{host.ip}}]
+global.x=1111
+echo {{global.x}}
+global.x=2222
+__call__ 3 
+__call__ 3 -constrict=^echo.*$
+echo 3333

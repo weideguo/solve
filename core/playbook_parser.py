@@ -11,3 +11,14 @@ def simple_parser(playbook):
             yield next_cmd
             next_cmd=f.readline()
 
+def get_line_by_num(playbook,num):
+    """
+    获取playbook中的指定行
+    """
+    i = 0
+    for l in simple_parser(playbook):
+        i = i+1
+        if i == num:
+            return l
+    
+    return ""
