@@ -1,0 +1,11 @@
+# 变量双重渲染，以及调用之前的行
+[127.0.0.1]
+global.t=db1
+[{{{{global.t}}.host.ip}}]
+echo {{{{global.t}}.host.user}}
+/usr/sbin/ifconfig
+
+global.t=db2
+__call__ 4
+__call__ 5
+__call__ 6
