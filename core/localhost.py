@@ -55,7 +55,7 @@ class LocalHost(AbstractHost,AbstractThread):
     #重载AbstractHost函数
     def exe_cmd(self,cmd,background_log_set=None,*arg,**kwargs):
         
-        p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
+        p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1,text=True )
         
         if re.match(".*&$",cmd.strip()):
             #执行的命令为后台执行时

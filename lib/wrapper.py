@@ -52,7 +52,7 @@ def gen_background_log_set(cmd_uuid,redis_client,len=0,interval=1,retry=60):
                     
                 ###readline可能值                    
                 # new_log=u"中公文\n"         #ssh执行
-                # new_log=b"\xe4\xb8\xad1\n"  #本地执行
+                # new_log=b"\xe4\xb8\xad1\n" 
                 #
                 # new_log=b"\xe4"  #单字节可能需要先拼接后再转换
                                
