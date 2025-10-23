@@ -6,9 +6,9 @@
 #
 cd /data/solve
 sed -i "s|my_redis_passwd|${REDIS_PASSWORD}|g" ./conf/config.conf
-if [[ -n ${REDIS_HOST} ]]; then      sed -i "s|host=127.0.0.1|host=${REDIS_HOST}|g" ./conf/config.conf;fi
-if [[ -n ${REDIS_PORT} ]]; then      sed -i "s|6379|${REDIS_PORT}|g" ./conf/config.conf;fi
-if [[ -n ${AES_KEY} ]]; then         
+if [ -n ${REDIS_HOST} ]; then      sed -i "s|'127.0.0.1'|'${REDIS_HOST}'|g" ./conf/config.conf;fi
+if [ -n ${REDIS_PORT} ]; then      sed -i "s|6379|${REDIS_PORT}|g" ./conf/config.conf;fi
+if [ -n ${AES_KEY} ]; then         
 AES_KEY=`echo ${AES_KEY} | sed "s|&|\\\\\\&|g"`
 sed -i "s|aes_key=.*|aes_key=${AES_KEY}|g" ./conf/config.conf
 fi
