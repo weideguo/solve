@@ -40,7 +40,7 @@
    ` __sync__ /a/b/c 10.0.0.1:/a/b  -compress=1 -try=1234 -proxy=192.168.0.1 -bwlimit=10m -partial=1 -check=1 --progress=1`  将目录或文件/a/b/c传输到10.0.0.1:/a/b下，目录或文件名保持原来的名字  
   
   
-  `__render__ <path to template> <path to file> -a=aaaa -b=bbb -c=ccc`  
+*  `__render__ <path to template> <path to file> -a=aaaa -b=bbb -c=ccc`  
   
   将jinja模板文件中的变量进行渲染。  
   渲染值存在空格时使用单引号或双引号包含。  

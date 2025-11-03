@@ -778,7 +778,13 @@ class ClusterExecution(object):
         # 目标端必须为路径，不支持软链接
         to_path_info = self.__path_info(to_host,to_dir)
         if not to_path_info:
-            raise Exception("__sync__ to_dir not exists") 
+            # 目录不存在则创建
+            tmp_cmd = "mkdir -p %s" %  to_dir
+            tmp_uuid = uuid.uuid1().hex
+            self.__single_exe(to_host,tmp_cmd,tmp_uuid)
+            r = self.__check_result([tmp_uuid])[0]
+            if r["stderr"] or str(r["exit_code"]) != "0":
+                raise Exception("__sync__ to_dir not exists, and `%s` stderr:%s, exit code:%s" % (tmp_cmd,r["stderr"],r["exit_code"]))
         elif to_path_info not in ["dir"]:
             raise Exception("__sync__ to_dir not a dir") 
         
@@ -920,10 +926,13 @@ class ClusterExecution(object):
             begin_size = 0
             write_mode = "wb"
             if is_partial:
-                to_file_attr = to_sftp_client.stat(to_file)
-                begin_size = to_file_attr.st_size  
-                from_seek = begin_size
-                write_mode = "ab"
+                try:
+                    to_file_attr = to_sftp_client.stat(to_file)
+                    begin_size = to_file_attr.st_size                
+                    from_seek = begin_size
+                    write_mode = "ab"
+                except:
+                    pass
             
             self.redis_log_client.hset(self.current_uuid,"current_size",begin_size)
             
