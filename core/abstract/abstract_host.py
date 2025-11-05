@@ -21,24 +21,8 @@ from lib.compat import Queue
 from conf import config
 
 
-#class RemoteHost(MySSH, AbstractHost):  #左边的优先
-#class SaltConn(AbstractConn, AbstractHost)
-
-class AbstractHost(object):
-    """
-    执行命令的抽象类 所有具体实现都应该继承这个类
-    """
-    extends_postfixs = ["",".sh"]                                     #存放扩展命令对应文件的相对目录
-    extends_dir = "extends"                                           #扩展命令对应文件的可选后缀
+class AbstractHostBase(object):
     
-    def __init__(self,*args, **kargs):
-        """继承类根据需要调用的函数可能需要初始化以下对象 """
-        self.redis_log_client=None
-        self.redis_send_client=None
-        self.ip_tag=""
-        #self.host_uuid=""
-        
-    ######################################################
     ##需要重载的函数  具体的实现方式不同
     def forever_run(self):
         """提供给上层的入口函数"""
@@ -68,7 +52,20 @@ class AbstractHost(object):
         """读取远端文件"""
         raise Exception(".read_file() must be overridden") 
     
-    #####################################################
+
+class AbstractHost(AbstractHostBase):
+    """
+    执行命令的抽象类 所有具体实现都应该继承这个类
+    """
+    extends_postfixs = ["",".sh"]                                     #存放扩展命令对应文件的相对目录
+    extends_dir = "extends"                                           #扩展命令对应文件的可选后缀
+    
+    def __init__(self,*args, **kargs):
+        """继承类根据需要调用的函数可能需要初始化以下对象 """
+        self.redis_log_client=None
+        self.redis_send_client=None
+        self.ip_tag=""
+        #self.host_uuid=""
         
             
     def single_run(self,cmd,cmd_uuid,ip_tag,extend_pattern=r"\s*__\w+__($|\s)",real_ip=None):
