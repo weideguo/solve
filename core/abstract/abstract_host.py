@@ -240,7 +240,7 @@ class AbstractHost(object):
                     if match:
                         real_key = match.group(1)
                         filepath = cmd_options[k]
-                        cmd_options[real_key] = self.read_file(filepath,"r").decode(encoding="utf-8",errors="strict")
+                        cmd_options[real_key] = safe_decode(self.read_file(filepath,"r"))
                         
             
             if not cmd_options:
@@ -250,7 +250,7 @@ class AbstractHost(object):
             target_file = _cmd[2]
             arg_options = cmd_options
             
-            template_content = self.read_file(template_file,"r").decode(encoding="utf-8",errors="strict")
+            template_content = safe_decode(self.read_file(template_file,"r"))
             
             # 直接渲染可能会出现有些变量没有被渲染，但没有任何提示
             #target_content = Template(template_content).render(arg_options)

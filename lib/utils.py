@@ -144,7 +144,7 @@ def is_file_in_dir(shorname,postfixs,dir):
 def safe_decode(input):
     """转成unicode"""
     try:
-        output=input.decode("utf8")
+        output=input.decode("utf-8",errors="strict")
     except:
         output=input
     return output

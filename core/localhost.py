@@ -91,13 +91,21 @@ class LocalHost(AbstractHost,AbstractThread):
         
         with open(filename,mode) as f:
             f.write(content)
-            
-                        
+
+
+    # 重载AbstractHost函数
+    def read_file(self, remote_file, mode="r", *arg, **kwargs):
+        content = ""
+        with open(remote_file, mode) as f:
+            content = f.read()
+        return content
+
+    
     #重载AbstractThread的函数        
     def real_func(self,cmd,cmd_uuid,ip_tag,*args,**kwargs):
         if cmd:
             # 本地执行只实现部分扩展命令
-            self.single_run(cmd,cmd_uuid,ip_tag,extend_pattern=".*__save__.*")            
+            self.single_run(cmd,cmd_uuid,ip_tag,extend_pattern=r"\s*__(save|render)__($|\s)")            
             
                   
     #重载AbstractHost函数        
