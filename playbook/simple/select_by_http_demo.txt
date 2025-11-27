@@ -1,0 +1,3 @@
+# 通过http请求获取session的值
+[{{host.ip}}]
+echo {{session.aaa}}
