@@ -1,0 +1,5 @@
+# 通过http请求获取session的值，在点击后再获取，可以使用已有的session参数
+[{{host.ip}}]
+echo {{session.bbb}}
+echo {{session.ccc}}
+echo {{session.aaa}}
