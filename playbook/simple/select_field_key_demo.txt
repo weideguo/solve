@@ -1,0 +1,2 @@
+[{{host.ip}}]
+echo {{session.db_user}}

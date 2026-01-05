@@ -1,0 +1,2 @@
+[{{host.ip}}]
+echo username: {{session.db_user}} password: {{const.{{session.db_user}}}}
