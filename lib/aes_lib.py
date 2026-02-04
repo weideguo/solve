@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*- 
+import os
 import base64
-import random
 from Crypto.Cipher import AES
 
 class AesCrypt(object):
@@ -13,15 +13,12 @@ class AesCrypt(object):
         self.mode=AES.MODE_CBC
 
     @staticmethod
-    def get_key(key_len=32,begin_char=33,end_char=126):
+    def get_key(key_len=32):
         """
-        key_len 16 24 32
-        生产随机key
-        默认只用ascii的指定字符以实现可读
+        不要使用random，random容易预测
         """
-        return ("".join(map(lambda i : chr(random.randint(begin_char,end_char)) ,range(key_len)))).encode('latin1') 
-
-
+        return os.urandom(key_len)
+    
     def encrypt(self,data):  
         """
         加密
