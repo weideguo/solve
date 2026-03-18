@@ -521,7 +521,7 @@ class ClusterExecution(object):
                   and self.exe_next and (not self.redis_log_client.hget(current_uuid,"exit_code")):
                 time.sleep(config.host_check_time)
                 retry_flag = retry_flag+1
-                self.redis_log_client.hset(current_uuid,"desc","ckeck:"+str(retry_flag))
+                self.redis_log_client.hset(current_uuid,"desc","check:"+str(retry_flag))
 
             if retry_flag >= config.host_check_wait:
                 self.redis_log_client.hset(current_uuid,"exit_code","timeout")
