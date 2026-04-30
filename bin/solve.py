@@ -12,7 +12,7 @@ from multiprocessing import Process
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
 from lib.redis_conn import RedisConn
-from lib.wrapper import logger, logger_err
+from lib.wrapper import logger, logger_err, log_path
 from core.job_manager import JobManager
 from core.proxy_manager import ProxyManager
 
@@ -38,16 +38,6 @@ if __name__ == "__main__":
     # redis_tmp_client=rc.init(config.redis_tmp)
     # redis_job_client=rc.init(config.redis_job)
     # redis_config_client=rc.init(config.redis_config)
-
-    log_path = os.path.join(base_dir, "./logs")
-    if not os.path.exists(log_path):
-        os.makedirs(log_path)
-
-    stdin_path = "/dev/null"
-    stdout_path = os.path.join(log_path, "solve.out")
-    stderr_path = os.path.join(log_path, "solve.err")
-    pidfile_path = os.path.join(log_path, "solve.pid")
-    pidfile_timeout = 5
 
     # 存储运行时的一些配置，如：
     # playbook的根目录
@@ -162,12 +152,6 @@ if __name__ == "__main__":
         return p
 
     class Solve(object):
-
-        stdin_path = stdin_path
-        stdout_path = stdout_path
-        stderr_path = stderr_path
-        pidfile_path = pidfile_path
-        pidfile_timeout = pidfile_timeout
 
         def run(self):
             init_set()

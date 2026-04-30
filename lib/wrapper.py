@@ -11,7 +11,7 @@ from traceback import format_exc
 
 from redis.exceptions import ConnectionError
 
-from .logger import simple_logger
+from .logger import simple_logger, timed_rotating_logger
 from .password import Password
 
 from conf import config
@@ -22,8 +22,20 @@ from conf import config
 """
 
 
-logger = simple_logger("standard", sys.stdout, config.log_level)
-logger_err = simple_logger("error", sys.stderr, config.log_level)
+# logger = simple_logger("standard", sys.stdout, config.log_level)
+# logger_err = simple_logger("error", sys.stderr, config.log_level)
+
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+log_path = os.path.join(base_dir, "./logs")
+if not os.path.exists(log_path):
+    os.makedirs(log_path)
+
+logger = timed_rotating_logger(
+    "standard", os.path.join(log_path, "solve.out"), config.log_level
+)
+logger_err = timed_rotating_logger(
+    "error", os.path.join(log_path, "solve.err"), config.log_level
+)
 
 
 def gen_background_log_set(cmd_uuid, redis_client, len=0, interval=1, retry=60):

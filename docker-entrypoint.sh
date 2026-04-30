@@ -14,4 +14,4 @@ sed -i "s|aes_key=.*|aes_key=${AES_KEY}|g" ./conf/config.conf
 fi
 #python bin/solve.py 2>/dev/null
 if [ ! -d logs ]; then mkdir logs; fi
-python bin/solve.py > logs/solve.out 2>logs/solve.err
+python bin/solve.py
