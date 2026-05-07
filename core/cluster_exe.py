@@ -793,6 +793,8 @@ class ClusterExecution(object):
             )
             try_seq = cmd_options["try"] if "try" in cmd_options else try_seq
             proxy_host = cmd_options["proxy"] if "proxy" in cmd_options else proxy_host
+            if proxy_host.lower() in ["none", "null"]:
+                proxy_host = ""
             bwlimit = cmd_options["bwlimit"] if "bwlimit" in cmd_options else bwlimit
             is_partial = (
                 int(cmd_options["partial"]) == 1
