@@ -9,6 +9,9 @@ ENV TZ=Asia/Shanghai \
     # 设置非交互模式，避免安装时的交互提示
     DEBIAN_FRONTEND=noninteractive
 
+# ssh_config注释这一行，防止远程其他主机时自动执行 export LC_ALL=C.UTF-8
+RUN sed -i '/SendEnv LANG LC_\*/s/^/#/' /etc/ssh/ssh_config
+
 WORKDIR /data/solve
 
 ARG INDEX_URL="https://pypi.org/simple/"
