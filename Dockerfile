@@ -9,9 +9,6 @@ ENV TZ=Asia/Shanghai \
     # 设置非交互模式，避免安装时的交互提示
     DEBIAN_FRONTEND=noninteractive
 
-# ssh_config注释这一行，防止远程其他主机时自动执行 export LC_ALL=C.UTF-8
-RUN sed -i '/SendEnv LANG LC_\*/s/^/#/' /etc/ssh/ssh_config
-
 WORKDIR /data/solve
 
 ARG INDEX_URL="https://pypi.org/simple/"
@@ -31,6 +28,9 @@ RUN sed -i 's|deb.debian.org|ftp.cn.debian.org|g' /etc/apt/sources.list.d/debian
 #    # 清理缓存，减小镜像体积
 #    apt-get clean && \
 #    rm -rf /var/lib/apt/lists/*
+
+# ssh_config注释这一行，防止远程其他主机时自动执行 export LC_ALL=C.UTF-8，安装依赖包后才能执行
+# RUN sed -i '/SendEnv LANG LC_\*/s/^/#/' /etc/ssh/ssh_config
 
 COPY requirements3.13.txt ./
 RUN pip install --no-cache-dir \
