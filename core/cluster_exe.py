@@ -870,6 +870,14 @@ class ClusterExecution(object):
             self.redis_log_client.hset(self.current_uuid, "stdout", stdout)
             return
 
+        from_ip_tag = self.redis_config_client.hget(
+            config.prefix_realhost + from_host, "ip"
+        )
+        # 只检查ip字段即可
+        if not from_ip_tag:
+            raise Exception("from_host `ip` field is empty")
+        from_ip = safe_decode(from_ip_tag.split("_")[0])  # 这里需要由ip_tag转成ip
+
         from_passwd = password.decrypt(
             safe_decode(
                 self.redis_config_client.hget(
@@ -880,16 +888,19 @@ class ClusterExecution(object):
         from_user = safe_decode(
             self.redis_config_client.hget(config.prefix_realhost + from_host, "user")
         )
-        from_ip = safe_decode(
-            self.redis_config_client.hget(
-                config.prefix_realhost + from_host, "ip"
-            ).split("_")[0]
-        )  # 这里需要由ip_tag转成ip
+
         from_ssh_port = safe_decode(
             self.redis_config_client.hget(
                 config.prefix_realhost + from_host, "ssh_port"
             )
         )
+
+        to_ip_tag = self.redis_config_client.hget(
+            config.prefix_realhost + to_host, "ip"
+        )
+        if not to_ip_tag:
+            raise Exception("to_host `ip` field is empty")
+        to_ip = safe_decode(to_ip_tag.split("_")[0])
 
         to_passwd = password.decrypt(
             safe_decode(
@@ -901,11 +912,7 @@ class ClusterExecution(object):
         to_user = safe_decode(
             self.redis_config_client.hget(config.prefix_realhost + to_host, "user")
         )
-        to_ip = safe_decode(
-            self.redis_config_client.hget(config.prefix_realhost + to_host, "ip").split(
-                "_"
-            )[0]
-        )
+
         to_ssh_port = safe_decode(
             self.redis_config_client.hget(config.prefix_realhost + to_host, "ssh_port")
         )
